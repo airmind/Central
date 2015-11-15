@@ -35,7 +35,7 @@ before_deploy:
   - dir %APPVEYOR_BUILD_FOLDER%
 
 artifacts:
-  - path: './qgroundcontrol-installer.exe'
+  - path: '.\qgroundcontrol-installer.exe'
     name: s3
 
 deploy:
@@ -47,11 +47,11 @@ deploy:
     bucket: qgroundcontrol
     set_public: true
     folder: $(APPVEYOR_REPO_BRANCH)
-    artifact: './qgroundcontrol-installer.exe'
+    artifact: '.\qgroundcontrol-installer.exe'
     on:
       CONFIG: installer
   - provider: GitHub
-    artifact: './qgroundcontrol-installer.exe'
+    artifact: '.\qgroundcontrol-installer.exe'
     draft: false
     prerelease: false
     on:
