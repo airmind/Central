@@ -7,9 +7,11 @@
 //
 
 #import "ConnectPopoverViewController.h"
-#include "MainToolBar.h"
+#include "MainToolBarController.h"
 #include "LinkManager.h"
 #include "qt2ioshelper.h"
+#include "ConnectPopover.h"
+#include "QGCApplication.h"
 
 NSString* qt2ioshelper::QString2NSString (const QString* qstr) {
     
@@ -295,7 +297,8 @@ void ConnectPopover::dismissPopover(){
             break;
         case 1:
             //call link manager as self delegate;
-            LinkManager::instance()->discoverBTLinks((__bridge void *)self);
+            //LinkManager::instance()->discoverBTLinks((__bridge void *)self);
+            qgcApp()->toolbox()->linkManager()->discoverBTLinks((__bridge void *)self);
             break;
         case 2:
             //add back button;
@@ -338,7 +341,7 @@ void ConnectPopover::dismissPopover(){
     }
     else {
         //menutoolbar call back;
-        ((MainToolBar*)delegate)->onConnect(QString::fromNSString([conarray objectAtIndex:idx]));
+        ((MainToolBarController*)delegate)->onConnect(QString::fromNSString([conarray objectAtIndex:idx]));
     }
     
     [tableView deselectRowAtIndexPath:indexPath animated:YES];

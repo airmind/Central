@@ -35,6 +35,10 @@ This file is part of the QGROUNDCONTROL project
 #include "Vehicle.h"
 #include "UASMessageView.h"
 
+#ifdef __mindskin__
+#include "ConnectPopover.h"
+#endif
+
 #define TOOL_BAR_SETTINGS_GROUP "TOOLBAR_SETTINGS_GROUP"
 #define TOOL_BAR_SHOW_BATTERY   "ShowBattery"
 #define TOOL_BAR_SHOW_GPS       "ShowGPS"
@@ -54,6 +58,9 @@ public:
     Q_INVOKABLE void    onPlanView();
     Q_INVOKABLE void    onFlyView();
     Q_INVOKABLE void    onConnect(QString conf);
+#ifdef __mindskin__
+    Q_INVOKABLE void    onConnectTapped(QString conf);
+#endif
     Q_INVOKABLE void    onDisconnect(QString conf);
     Q_INVOKABLE void    onEnterMessageArea(int x, int y);
     Q_INVOKABLE void    onToolBarMessageClosed(void);
@@ -121,6 +128,10 @@ private:
     bool            _toolbarMessageVisible;
     QStringList     _toolbarMessageQueue;
     QMutex          _toolbarMessageQueueMutex;
+    
+#ifdef __mindskin__
+    ConnectPopover* popover;
+#endif
 };
 
 #endif // MainToolBarController_H

@@ -39,6 +39,8 @@ This file is part of the QGROUNDCONTROL project
 #include "MultiVehicleManager.h"
 #include "UAS.h"
 
+
+
 MainToolBarController::MainToolBarController(QObject* parent)
     : QObject(parent)
     , _vehicle(NULL)
@@ -136,6 +138,19 @@ void MainToolBarController::onConnect(QString conf)
         qgcApp()->toolbox()->linkManager()->suspendConfigurationUpdates(false);
     }
 }
+
+#ifdef __mindskin__
+/***
+ for iOS
+ ****/
+void MainToolBarController::onConnectTapped(QString conf)
+{
+    // show iOS popover from right side;
+    popover = new ConnectPopover();
+    popover->presentPopover(this->_linkConfigurations);
+    
+}
+#endif
 
 void MainToolBarController::onEnterMessageArea(int x, int y)
 {

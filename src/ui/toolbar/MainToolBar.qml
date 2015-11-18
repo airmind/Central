@@ -322,8 +322,11 @@ Rectangle {
             source:         "/qmlimages/Connect.svg"
             checked:        false
             onClicked: {
+
                 checked = false
-                connectMenu.popup()
+//for ios;
+                _controller.onConnectTapped("");
+                //connectMenu.popup()
                 /*
                 console.log("Main Window Width:   " + mainWindow.width)
                 console.log("Toolbar height:      " + toolBar.height)
