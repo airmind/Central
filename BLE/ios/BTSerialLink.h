@@ -17,7 +17,7 @@
 #include <QHostAddress>
 #include <LinkInterface.h>
 #include "QGCConfig.h"
-#include "LinkManager.h"
+//#include "LinkManager.h"
 //#include "QGBTSerialManager.h"
 
 class BTSerialConfigurationWrapper;
