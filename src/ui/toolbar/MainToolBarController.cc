@@ -150,6 +150,18 @@ void MainToolBarController::onConnectTapped(QString conf)
     popover->presentPopover(this->_linkConfigurations);
     
 }
+
+
+void MainToolBarController::onConnectTappedDismiss(QString conf)
+{
+    // show iOS popover from right side;
+    //popover = new ConnectPopover();
+    if (popover!=nullptr) {
+        popover->dismissPopover();
+    }
+    
+}
+
 #endif
 
 void MainToolBarController::onEnterMessageArea(int x, int y)

@@ -85,7 +85,7 @@ void ConnectPopoverWrapper::presentPopover(QStringList connectionList) {
     popoverctrol = [[ConnectPopoverViewController alloc] init:connectionarray];
     CGRect viewFrame = ((UIViewController*)responder).view.frame;
     
-    [popoverctrol.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height-200, 60, 200, viewFrame.size.width)];
+    [popoverctrol.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height, 60, 200, viewFrame.size.width)];
     //[popoverctrol.view setFrame:CGRectMake(0, 0, 100, 100)];
     
     //[responder presentViewController:popoverctrol animated:YES completion:^{
@@ -95,13 +95,27 @@ void ConnectPopoverWrapper::presentPopover(QStringList connectionList) {
 
     [((UIViewController*)responder).view addSubview:popoverctrol.view];
     
+    [UIView animateWithDuration:0.2
+                          delay:0
+                        options:UIViewAnimationOptionBeginFromCurrentState
+                     animations:^{
+                         [popoverctrol.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height-200, 60, 200, viewFrame.size.width)];
+                         
+                     }
+                     completion:^(BOOL finished){
+                         if (finished) {
+                             
+                         }
+                         
+                     }];
+
+    
     //return nil;
 
 }
 
 void ConnectPopoverWrapper::dismissPopover() {
-   [ popoverctrol dismissViewControllerAnimated:YES completion:^{
-   }];
+   [ popoverctrol.view removeFromSuperview];
 }
 
 ConnectPopover::ConnectPopover() {

@@ -62,6 +62,8 @@ public:
     Q_INVOKABLE void    onConnect(QString conf);
 #ifdef __mindskin__
     Q_INVOKABLE void    onConnectTapped(QString conf);
+    Q_INVOKABLE void    onConnectTappedDismiss(QString conf);
+
 #endif
     Q_INVOKABLE void    onDisconnect(QString conf);
     Q_INVOKABLE void    onEnterMessageArea(int x, int y);
