@@ -35,6 +35,8 @@ This file is part of the QGROUNDCONTROL project
 #include "Vehicle.h"
 #include "UASMessageView.h"
 
+#define __mindskin__ 1 //for the moment;
+
 #ifdef __mindskin__
 #include "ConnectPopover.h"
 #endif

@@ -53,7 +53,7 @@ public:
     BTSerialConfiguration(BTSerialConfiguration* source);
     
     /// From LinkConfiguration
-    int  type() { return LinkConfiguration::TypeBTSerial; }
+    int  type() { return LinkConfiguration::TypeBLESerial; }
     void copyFrom(LinkConfiguration* source);
     void loadSettings(QSettings& settings, const QString& root);
     void saveSettings(QSettings& settings, const QString& root);

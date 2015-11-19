@@ -31,6 +31,10 @@ This file is part of the QGROUNDCONTROL project
 #ifndef __ios__
 #include "SerialLink.h"
 #endif
+#ifdef __ios__
+#include "BTSerialLink.h"
+#endif
+
 #include "UDPLink.h"
 #include "TCPLink.h"
 #include "LogReplayLink.h"
@@ -90,6 +94,11 @@ LinkConfiguration* LinkConfiguration::createSettings(int type, const QString& na
             config = new SerialConfiguration(name);
             break;
 #endif
+#ifdef __ios__
+        case LinkConfiguration::TypeBLESerial:
+            config = new BTSerialConfiguration(name);
+            break;
+#endif
         case LinkConfiguration::TypeUdp:
             config = new UDPConfiguration(name);
             break;
@@ -121,6 +130,13 @@ LinkConfiguration* LinkConfiguration::duplicateSettings(LinkConfiguration* sourc
             dupe = new SerialConfiguration(dynamic_cast<SerialConfiguration*>(source));
             break;
 #endif
+
+#ifdef __ios__
+        case TypeBLESerial:
+            dupe = new BTSerialConfiguration(dynamic_cast<BTSerialConfiguration*>(source));
+            break;
+#endif
+
         case TypeUdp:
             dupe = new UDPConfiguration(dynamic_cast<UDPConfiguration*>(source));
             break;

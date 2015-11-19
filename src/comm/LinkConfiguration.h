@@ -42,6 +42,10 @@ public:
 #ifndef __ios__
         TypeSerial,     ///< Serial Link
 #endif
+        
+#ifdef __ios__
+        TypeBLESerial,     ///< Bluetooth Serial Link
+#endif
         TypeUdp,        ///< UDP Link
         TypeTcp,        ///< TCP Link
 #if 0

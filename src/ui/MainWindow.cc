@@ -78,6 +78,7 @@ This file is part of the QGROUNDCONTROL project
 /// The key under which the Main Window settings are saved
 const char* MAIN_SETTINGS_GROUP = "QGC_MAINWINDOW";
 
+
 #ifndef __mobile__
 enum DockWidgetTypes {
     MAVLINK_INSPECTOR,

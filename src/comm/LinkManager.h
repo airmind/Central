@@ -40,6 +40,12 @@ This file is part of the PIXHAWK project
 #ifndef __ios__
 #include "SerialLink.h"
 #endif
+
+#ifdef __ios__
+#include "BTSerialLink.h"
+#endif
+
+
 #include "UDPLink.h"
 #include "TCPLink.h"
 #include "LogReplayLink.h"
@@ -103,6 +109,17 @@ public:
 #ifndef __ios__
     const QList<SerialLink*> getSerialLinks();
 #endif
+    
+#ifdef __ios__
+    //BTSerialLink* getlink();
+    const QList<BTSerialLink*> getBTSerialLinks();
+    bool discoverBTLinks(void * delegate);
+    LinkInterface* createConnectedBTLink(LinkConfiguration* config);
+    LinkInterface* createConnectedBTLink(const QString& name);
+    
+#endif
+
+    
     /// Sets the flag to suspend the all new connections
     ///     @param reason User visible reason to suspend connections
     void setConnectionsSuspended(QString reason);

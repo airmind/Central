@@ -80,6 +80,13 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 #endif
 }
 
+#ifdef __ios__
+//for BT LE;
+bool LinkManager::discoverBTLinks(void* delegate) {
+    
+}
+#endif
+
 LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)
 {
     Q_ASSERT(config);
