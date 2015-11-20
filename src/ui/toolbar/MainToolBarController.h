@@ -135,6 +135,8 @@ private:
     
 #ifdef __mindskin__
     ConnectPopover* popover;
+    bool popoverpresented;
+    
 #endif
 };
 

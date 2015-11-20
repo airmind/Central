@@ -115,7 +115,23 @@ void ConnectPopoverWrapper::presentPopover(QStringList connectionList) {
 }
 
 void ConnectPopoverWrapper::dismissPopover() {
-   [ popoverctrol.view removeFromSuperview];
+    
+    CGRect viewFrame = [popoverctrol.view frame];
+    [UIView animateWithDuration:0.2
+                          delay:0
+                        options:UIViewAnimationOptionBeginFromCurrentState
+                     animations:^{
+                         [popoverctrol.view setFrame:CGRectMake(viewFrame.origin.x+200, 60, 200, viewFrame.size.width)];
+                         
+                     }
+                     completion:^(BOOL finished){
+                         if (finished) {
+                             [ popoverctrol.view removeFromSuperview];
+                         }
+                         
+                     }];
+ 
+   
 }
 
 ConnectPopover::ConnectPopover() {
@@ -129,10 +145,12 @@ ConnectPopover::~ConnectPopover() {
 
 void ConnectPopover::presentPopover(QStringList connectionlist){
     this->popoverwrapper->presentPopover(connectionlist);
+
 }
 
 void ConnectPopover::dismissPopover(){
-    this->popoverwrapper->dismissPopover();
+    
+        this->popoverwrapper->dismissPopover();
 }
 
 
@@ -147,6 +165,7 @@ void ConnectPopover::dismissPopover(){
     self = [super init];
     conarray = array;
     conn_stage = CONN_ALLLINKS;
+    presented = NO;
     return self;
 }
 

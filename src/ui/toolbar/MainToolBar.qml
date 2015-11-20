@@ -323,16 +323,11 @@ Rectangle {
             checked:        false
             onClicked: {
 
-                //checked = false
-                checked = !checked;
+                checked = false
+                //checked = !checked;
 
 //for ios;
-if (checked == false) {
                 _controller.onConnectTapped("");
-}
-else {
-                _controller.onConnectTappedDismiss("");
-}
                 //connectMenu.popup()
                 /*
                 console.log("Main Window Width:   " + mainWindow.width)

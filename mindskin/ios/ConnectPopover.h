@@ -14,6 +14,7 @@ class ConnectPopoverWrapper;
 class ConnectPopover{
 private:
     ConnectPopoverWrapper* popoverwrapper;
+    //bool presented;
     
 public:
     ConnectPopover();

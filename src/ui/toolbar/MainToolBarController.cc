@@ -69,6 +69,11 @@ MainToolBarController::MainToolBarController(QObject* parent)
         SLOT(_telemetryChanged(LinkInterface*, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)));
     
     connect(qgcApp()->toolbox()->multiVehicleManager(), &MultiVehicleManager::activeVehicleChanged, this, &MainToolBarController::_activeVehicleChanged);
+    
+#ifdef __mindskin__
+    popoverpresented=false;
+#endif
+    
 }
 
 MainToolBarController::~MainToolBarController()
@@ -146,8 +151,17 @@ void MainToolBarController::onConnect(QString conf)
 void MainToolBarController::onConnectTapped(QString conf)
 {
     // show iOS popover from right side;
-    popover = new ConnectPopover();
-    popover->presentPopover(this->_linkConfigurations);
+    if (popoverpresented==false) {
+    
+    
+        popover = new ConnectPopover();
+        popoverpresented=true;
+        popover->presentPopover(this->_linkConfigurations);
+    }
+    else {
+        popover->dismissPopover();
+        popoverpresented=false;
+    }
     
 }
 

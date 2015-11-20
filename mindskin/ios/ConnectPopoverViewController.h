@@ -20,10 +20,12 @@ typedef enum {
     NSArray* conarray;
     NSArray* btlinksarray;
     
-    BOOL showbluetoothui;
+    BOOL presented;
     CONN_STAGE conn_stage;
     
     void* delegate;
+    
+
 }
 
 
