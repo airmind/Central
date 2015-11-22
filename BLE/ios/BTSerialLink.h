@@ -22,6 +22,18 @@
 
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
+class BLEHelperWrapper;
+
+class BLEHelper {
+private:
+    BLEHelperWrapper* ble_wrapper;
+public:
+    void discover(void*);
+    void discoverServices(void*);
+    void discoverCharacteristics(void*);
+    
+    
+};
 
 class BTSerialConfiguration : public LinkConfiguration
 {
@@ -31,6 +43,9 @@ class BTSerialConfiguration : public LinkConfiguration
 private:
     
     BTSerialConfigurationWrapper* btcwrapper;
+    //for peripheral on the link;
+    QString identifier; //NSUUID
+    QString pname;
     
 public:
     
@@ -62,7 +77,14 @@ public:
 
 };
 
-class BTSerialLink : public LinkInterface
+/**
+ A BTSerialLink is a link between one ble central and one ble peripheral. One ble central can have seral links with multiple peripherals.
+ 
+ NOTE: BTserial doesnot use QThread, but use ios GCD instead.
+ 
+ **/
+
+class BTSerialLink //: public LinkInterface
 {
     //Q_OBJECT
     
@@ -76,6 +98,9 @@ private:
    
     
 public:
+    
+    
+    
     //QTcpSocket* getSocket(void) { return _socket; }
     LinkConfiguration* getLinkConfiguration() { return _config; }
 
@@ -104,7 +129,7 @@ public:
     void waitForReadyRead(int msecs);
     
     
-    //new interface for BT LE;
+    //new interfaces for BT LE;
     void writeMAVDataBytes(const char* data, qint64 size);
     
     void writeBytes(QString characteristic, const char* data, qint64 size);
@@ -135,6 +160,8 @@ private:
     
     //for BT LE;
     bool _discover(void*);
+    bool _discoverServices(void*);
+    bool _discoverCharacteristics(void*);
     
     bool _hardwareConnect();
     void _restartConnection();

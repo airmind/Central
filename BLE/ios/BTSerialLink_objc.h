@@ -9,11 +9,17 @@
 #ifndef qgroundcontrol_BTSerialLink_objc_h
 #define qgroundcontrol_BTSerialLink_objc_h
 
+#import <CoreBluetooth/CoreBluetooth.h>
 
 //class BTSerialConfigurationWrapper;
 //class BTSerialLinkWrapper;
 
 
+@interface BLEHelper_objc: NSObject {
+    
+}
+
+@end
 
 @interface BTSerialConfiguration_objc : NSObject {
     
@@ -23,8 +29,11 @@
 
 
 @interface BTSerialLink_objc : NSObject {
-    
+    CBCentralManager* cbmgr;
+    CBPeripheralManager* cbpmgr;
 }
+
+
 
 @end
 

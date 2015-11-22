@@ -114,8 +114,14 @@ public:
     //BTSerialLink* getlink();
     const QList<BTSerialLink*> getBTSerialLinks();
     bool discoverBTLinks(void * delegate);
+    bool discoverServices(void*);
+    bool discoverCharacteristics(void*);
     LinkInterface* createConnectedBTLink(LinkConfiguration* config);
     LinkInterface* createConnectedBTLink(const QString& name);
+    //void didDiscoverBTLinks(QStringList* ids);
+    //void disDiscoverServices(QStringList* svcids);
+    //void disDiscoverPeripherals(QStringList* pids);
+    
     
 #endif
 
@@ -183,6 +189,11 @@ private:
 #ifndef __ios__
     SerialConfiguration* _findSerialConfiguration(const QString& portName);
 #endif
+    
+#ifdef __ios__
+    BLEHelper* blehelper;
+#endif
+    
     QList<LinkConfiguration*>   _linkConfigurations;    ///< List of configured links
     
     /// List of available links kept as QSharedPointers. We use QSharedPointer since

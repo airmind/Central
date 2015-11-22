@@ -150,7 +150,7 @@ void ConnectPopover::presentPopover(QStringList connectionlist){
 
 void ConnectPopover::dismissPopover(){
     
-        this->popoverwrapper->dismissPopover();
+    this->popoverwrapper->dismissPopover();
 }
 
 

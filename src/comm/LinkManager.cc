@@ -66,6 +66,9 @@ LinkManager::~LinkManager()
         _linkConfigurations.removeAt(0);
     }
     Q_ASSERT_X(_links.count() == 0, "LinkManager", "LinkManager::_shutdown should have been called previously");
+#ifdef __ios__
+    delete blehelper;
+#endif
 }
 
 void LinkManager::setToolbox(QGCToolbox *toolbox)
@@ -83,7 +86,13 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 #ifdef __ios__
 //for BT LE;
 bool LinkManager::discoverBTLinks(void* delegate) {
-    
+    if (blehelper == NULL) {
+        //create blehelper object;
+        blehelper = new BLEHelper();
+    }
+    else {
+        blehelper->discover(delegate);
+    }
 }
 #endif
 

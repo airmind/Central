@@ -21,7 +21,6 @@
 #import "BTSerialLink_objc.h"
 #include "BTSerialLink.h"
 
-#import <CoreBluetooth/CoreBluetooth.h>
 
 static NSString * const kServiceUUID = @"FC00"; //mindstick
 static NSString * const kCharacteristicUUID = @"FC20";
@@ -56,6 +55,57 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
  
  *****/
 
+@interface BLEHelper_objc ()<CBCentralManagerDelegate,CBPeripheralDelegate>
+{
+    //CBCharacteristic *writeCharacteristic;
+    CBCentralManager* centralmanager;
+}
++(BLEHelper_objc*)sharedInstance;
+-(CBCentralManager*)getBLECentralManager;
+-(CBPeripheralManager*)getBLEPeripheralManager;
+
+-(BOOL) discover:(NSObject*)delegate;
+-(BOOL) discoverServices:(NSObject*)delegate;
+-(BOOL) discoverCharacteristics:(NSObject*)delegate;
+
+
+@end
+
+
+@implementation BLEHelper_objc
+
+
++(BLEHelper_objc*)sharedInstance{
+    static BLEHelper_objc* sharedInstance;
+    
+    @synchronized(self)
+    {
+        if (!sharedInstance) {
+            sharedInstance = [[BLEHelper_objc alloc] init];
+        }
+        
+        return sharedInstance;
+    }
+
+}
+
+-(id)init {
+    [super init];
+    
+    //init cbcentralmanager;
+    centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
+
+    return self;
+}
+
+
+-(BOOL) discover:(NSObject*)delegate{
+    
+}
+
+
+@end
+
 @interface BTSerialLink_objc ()<CBCentralManagerDelegate,CBPeripheralDelegate>
 {
     CBCharacteristic *writeCharacteristic;
@@ -74,6 +124,17 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 ///
 ///     @author Don Gagne <don@thegagnes.com>
 
+class BLEHelperWrapper {
+    BLEHelper_objc* ble_objc;
+public:
+    BLEHelperWrapper();
+    ~BLEHelperWrapper();
+    
+    void discover(void*);
+    void discoverServices(void*);
+    void discoverCharacteristics(void*);
+
+};
 
 class BTSerialConfigurationWrapper {
     BTSerialConfiguration_objc* btc_objc;
@@ -127,7 +188,7 @@ BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
     btlwrapper=new BTSerialLinkWrapper();
     // We're doing it wrong - because the Qt folks got the API wrong:
     // http://blog.qt.digia.com/blog/2010/06/17/youre-doing-it-wrong/
-    moveToThread(this);
+    //moveToThread(this);
     qDebug() << "Bluetooth serial comm Created " << _config->name();
 }
 
@@ -135,15 +196,17 @@ BTSerialLink::~BTSerialLink()
 {
     _disconnect();
     // Tell the thread to exit
-    quit();
+    //quit();
     // Wait for it to exit
-    wait();
+    //wait();
 }
 
 void BTSerialLink::run()
 {
+    /*
     _hardwareConnect();
     exec();
+     */
 }
 
 
@@ -237,8 +300,8 @@ void BTSerialLink::readBytes(QString characteristic) {
  **/
 bool BTSerialLink::_disconnect(void)
 {
-    quit();
-    wait();
+    //quit();
+    //wait();
     /*
     if (_socket)
     {
