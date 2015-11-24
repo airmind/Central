@@ -21,6 +21,7 @@
 #import "BTSerialLink_objc.h"
 #include "BTSerialLink.h"
 
+#import "ConnectPopoverViewController.h"
 
 static NSString * const kServiceUUID = @"FC00"; //mindstick
 static NSString * const kCharacteristicUUID = @"FC20";
@@ -59,15 +60,21 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 {
     //CBCharacteristic *writeCharacteristic;
     CBCentralManager* centralmanager;
+    dispatch_queue_t ble_q;
+    dispatch_semaphore_t ble_q_Semaphore;
+    NSMutableArray* discoveredPeripherals;
+    id delegatecontroller;
+
 }
 +(BLEHelper_objc*)sharedInstance;
 -(CBCentralManager*)getBLECentralManager;
 -(CBPeripheralManager*)getBLEPeripheralManager;
 
+-(BOOL) setCallbackDelegate:(NSObject*)delegate;
 -(BOOL) discover:(NSObject*)delegate;
 -(BOOL) discoverServices:(NSObject*)delegate;
 -(BOOL) discoverCharacteristics:(NSObject*)delegate;
-
+-(void) stopScanning;
 
 @end
 
@@ -91,16 +98,80 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 -(id)init {
     [super init];
-    
-    //init cbcentralmanager;
-    centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
 
+    //create a queue;
+    ble_q = dispatch_queue_create("bleQ", NULL);
+
+    //init cbcentralmanager;
+    centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:ble_q];
+    discoveredPeripherals = [[NSMutableArray alloc] initWithCapacity:0];
+    
     return self;
+}
+
+-(BOOL) setCallbackDelegate:(NSObject*)delegate{
+    delegatecontroller = delegate;
+    
 }
 
 
 -(BOOL) discover:(NSObject*)delegate{
+    [centralmanager scanForPeripheralsWithServices:@[ [CBUUID UUIDWithString:kServiceUUID]]
+                                         options:@{CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
     
+}
+
+-(void) stopScanning {
+    [centralmanager stopScan];
+}
+
+- (void)centralManagerDidUpdateState:(CBCentralManager *)central
+{
+    switch (central.state)
+    {
+        case CBCentralManagerStatePoweredOn:
+        {
+            [centralmanager scanForPeripheralsWithServices:@[ [CBUUID UUIDWithString:kServiceUUID]]
+                                                 options:@{CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+        }
+            break;
+        default:
+        {
+            NSLog(@"Central Manager did change state");
+        }
+            break;
+    }
+}
+
+
+- (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
+{
+    BOOL seen = [discoveredPeripherals containsObject:peripheral];
+    // Reject any where the value is above reasonable range, or if the signal strength is too low to be close enough (Close is around -22dB)
+    if (RSSI.integerValue > -15 || (RSSI.integerValue < -50/*-35*/))
+    {
+        //remove from found list;
+        if(seen==YES) {
+            NSUInteger idx = [discoveredPeripherals indexOfObject:peripheral];
+            [discoveredPeripherals removeObjectAtIndex:idx];
+            [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinks:peripheral.name action:0];
+        }
+        return;
+    }
+    
+    
+    NSLog(@"Discovered %@ at %@", peripheral.name, RSSI);
+    
+    // Ok, it's in range - have we already seen it?
+    if ([discoveredPeripherals containsObject:peripheral]==NO)
+    {
+        
+        // Save a local copy of the peripheral, so CoreBluetooth doesn't get rid of it
+        [discoveredPeripherals addObject:peripheral];
+        
+        // call back;
+        [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinks:peripheral.name action:1];
+    }
 }
 
 
@@ -133,8 +204,31 @@ public:
     void discover(void*);
     void discoverServices(void*);
     void discoverCharacteristics(void*);
-
+    void stopScanning();
 };
+
+
+void BLEHelperWrapper::discover(void*) {
+    [ble_objc discover:nil];
+}
+
+void BLEHelperWrapper::discoverServices(void*) {
+    [ble_objc discoverServices:nil];
+}
+
+void BLEHelperWrapper::discoverCharacteristics(void*) {
+    [ble_objc discoverCharacteristics:nil];
+}
+
+void BLEHelperWrapper::stopScanning() {
+    [ble_objc stopScanning];
+}
+
+
+/**
+ BTSerialConfigurationWrapper
+ 
+ **/
 
 class BTSerialConfigurationWrapper {
     BTSerialConfiguration_objc* btc_objc;
@@ -151,7 +245,7 @@ public:
     BTSerialLinkWrapper();
     ~BTSerialLinkWrapper();
     
-    bool _discover(void*);
+    //bool _discover(void*);
     bool _connect();
 };
 
@@ -168,8 +262,25 @@ bool BTSerialLinkWrapper::_connect() {
     //btl_objc = [[BTSerialLink_objc alloc] init];
 }
 
-bool BTSerialLinkWrapper::_discover(void*) {
-    //btl_objc = [[BTSerialLink_objc alloc] init];
+
+/**
+ BLEHelper class
+ **/
+
+void BLEHelper::discover(void*) {
+    ble_wrapper->discover(nil);
+}
+
+void BLEHelper::discoverServices(void*){
+    ble_wrapper->discoverServices(nil);
+}
+
+void BLEHelper::discoverCharacteristics(void*){
+    ble_wrapper->discoverCharacteristics(nil);
+}
+
+void BLEHelper::stopScanning(){
+    ble_wrapper->stopScanning();
 }
 
 

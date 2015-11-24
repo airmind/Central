@@ -94,6 +94,10 @@ bool LinkManager::discoverBTLinks(void* delegate) {
         blehelper->discover(delegate);
     }
 }
+
+bool LinkManager::stopScanning() {
+    blehelper->stopScanning();
+}
 #endif
 
 LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)

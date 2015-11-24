@@ -18,7 +18,7 @@ typedef enum {
 
 @interface ConnectPopoverViewController : UITableViewController <NSFetchedResultsControllerDelegate> {
     NSArray* conarray;
-    NSArray* btlinksarray;
+    NSMutableArray* btlinksarray;
     
     BOOL presented;
     CONN_STAGE conn_stage;
@@ -28,6 +28,7 @@ typedef enum {
 
 }
 
+-(void)didDiscoverBTLinks:(NSString*)linkname action:(int)act;
 
 -(void)setConnectActionDelegate:(void*)delegate;
 

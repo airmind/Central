@@ -31,7 +31,7 @@ public:
     void discover(void*);
     void discoverServices(void*);
     void discoverCharacteristics(void*);
-    
+    void stopScanning();
     
 };
 

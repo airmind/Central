@@ -116,6 +116,7 @@ public:
     bool discoverBTLinks(void * delegate);
     bool discoverServices(void*);
     bool discoverCharacteristics(void*);
+    bool stopScanning();
     LinkInterface* createConnectedBTLink(LinkConfiguration* config);
     LinkInterface* createConnectedBTLink(const QString& name);
     //void didDiscoverBTLinks(QStringList* ids);
