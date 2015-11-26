@@ -204,6 +204,19 @@ void ConnectPopover::dismissPopover(){
     }
 }
 
+-(CGFloat)tableView:(UITableView*)tableView heightForFooterInSection:(NSInteger)section {
+    return 10;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    
+    UIView* tableFooterView = [[UIView alloc] initWithFrame:CGRectZero];
+    return tableFooterView;
+    //return nil;
+    
+    
+}
+
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     //int numRows = [gridData count]/4;
@@ -309,8 +322,12 @@ void ConnectPopover::dismissPopover(){
     int cellwidth = cell.frame.size.width;
     CGRect btnrect = CGRectMake(30, 5, 160, 40);
     
-    
-    UILabel* label = [[UILabel alloc] initWithFrame:btnrect];
+    UILabel* label= (UILabel*)[cell.contentView viewWithTag:(200+idx)];
+    if ( label== nil) {
+        
+        label = [[UILabel alloc] initWithFrame:btnrect];
+        label.tag = 200 + idx;
+    }
     //[btn setFrame:btnrect];
     
     
@@ -354,10 +371,23 @@ void ConnectPopover::dismissPopover(){
 - (void)configureBluetoothCell:(UITableViewCell *)cell atIndexPath:(NSIndexPath *)indexPath {
     //searching bluetooth device;
     int idx = [indexPath indexAtPosition:1];
-    
+    int cellwidth = cell.frame.size.width;
+    CGRect btnrect = CGRectMake(30, 5, 160, 40);
+
+    UILabel* label =(UILabel*)[cell.contentView viewWithTag:(200+idx)];
+    if ( label== nil) {
+        
+        label = [[UILabel alloc] initWithFrame:btnrect];
+        label.tag = 200 + idx;
+        label.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:16];
+        label.textColor=[UIColor colorWithRed:0.95f green:0.95f blue:0.95f alpha:1.0f];
+        [cell.contentView addSubview:label];
+
+    }
+
     switch (idx) {
         case 0:
-            cell.textLabel.text = @"Searching...";
+            label.text = @"Searching...";
             break;
         case 1:
             //call link manager as self delegate;
@@ -411,25 +441,69 @@ void ConnectPopover::dismissPopover(){
 {
     
     int idx = [indexPath indexAtPosition:1];
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+
+    
+    
     if (conn_stage == CONN_ALLLINKS) {
         if (idx == [conarray count]) {
             //bluetooth connect pressed;
             conn_stage = BT_SCANNING;
+
             [tableView beginUpdates];
+            if ([conarray count]+2>3) {
+                //remove extra cells;
+                NSMutableArray *paths = [[NSMutableArray alloc] initWithCapacity:0];
+                for(int i=0; i<[conarray count]+2-3; i++) {
+                    [paths addObject:[NSIndexPath indexPathForRow:[conarray count]+1-i inSection:0]];
+                }
+
+                //NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:idx inSection:1]];
+                
+                [self.tableView deleteRowsAtIndexPaths:paths
+                                      withRowAnimation:UITableViewRowAnimationFade];
+
+            }
+            else {
+                //add needed cells;
+                NSMutableArray *paths = [[NSMutableArray alloc] initWithCapacity:0];
+                for(int i=0; i<3-[conarray count]; i++) {
+                    [paths addObject:[NSIndexPath indexPathForRow:[conarray count]+i inSection:0]];
+                }
+                
+                //NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:idx inSection:1]];
+                
+                [self.tableView insertRowsAtIndexPaths:paths
+                                      withRowAnimation:UITableViewRowAnimationFade];
+               
+                
+            }
+            
+            //update menu text;
+            for (NSInteger i = 0; i < [tableView numberOfRowsInSection:0]; ++i)
+            {
+                UITableViewCell* cell = [tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
+                [self configureBluetoothCell:cell atIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
+            }
+
+            
             [tableView endUpdates];
         
+            
+            
             //start scan;
             qgcApp()->toolbox()->linkManager()->discoverBTLinks((__bridge void *)self);
 
         
         }
-        else if (idx == [btlinksarray count] + 1) {
+        else if (idx == [conarray count] + 1) {
             //add connection pressed;
         }
         else {
             //menutoolbar call back;
             ((MainToolBarController*)delegate)->onConnect(QString::fromNSString([conarray objectAtIndex:idx]));
         }
+        
     }
     else if (conn_stage == BT_SCANNING) {
         
@@ -463,7 +537,6 @@ void ConnectPopover::dismissPopover(){
         }
         
     }
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
     
 }
 
