@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <CoreData/CoreData.h>
+#import <CoreBluetooth/CoreBluetooth.h>
 
 typedef enum {
     CONN_ALLLINKS,
@@ -28,7 +29,7 @@ typedef enum {
 
 }
 
--(void)didDiscoverBTLinks:(NSString*)linkname action:(int)act;
+-(void)didDiscoverBTLinks:(CBPeripheral*)peripheral action:(int)act;
 
 -(void)setConnectActionDelegate:(void*)delegate;
 

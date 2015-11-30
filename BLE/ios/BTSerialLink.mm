@@ -100,7 +100,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     [super init];
 
     //create a queue;
-    ble_q = dispatch_queue_create("bleQ", NULL);
+    ble_q = dispatch_queue_create("bleQ", DISPATCH_QUEUE_SERIAL); //FIFO queue;
 
     //init cbcentralmanager;
     centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:ble_q];
@@ -116,8 +116,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 
 -(BOOL) discover:(NSObject*)delegate{
-    [centralmanager scanForPeripheralsWithServices:@[ [CBUUID UUIDWithString:kServiceUUID]]
-                                         options:@{CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+    [self centralManagerDidUpdateState:centralmanager];
     
 }
 
@@ -131,7 +130,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     {
         case CBCentralManagerStatePoweredOn:
         {
-            [centralmanager scanForPeripheralsWithServices:@[ [CBUUID UUIDWithString:kServiceUUID]]
+            [centralmanager scanForPeripheralsWithServices:nil/*@[ [CBUUID UUIDWithString:kServiceUUID]]*/
                                                  options:@{CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
         }
             break;
@@ -147,20 +146,23 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
 {
     BOOL seen = [discoveredPeripherals containsObject:peripheral];
+    NSLog(@"Discovered %@ at %@", peripheral.name, RSSI);
+
     // Reject any where the value is above reasonable range, or if the signal strength is too low to be close enough (Close is around -22dB)
     if (RSSI.integerValue > -15 || (RSSI.integerValue < -50/*-35*/))
     {
         //remove from found list;
+        NSLog(@"not in range, return ...");
+
         if(seen==YES) {
             NSUInteger idx = [discoveredPeripherals indexOfObject:peripheral];
             [discoveredPeripherals removeObjectAtIndex:idx];
-            [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinks:peripheral.name action:0];
+            [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinks:peripheral action:0];
         }
         return;
     }
     
     
-    NSLog(@"Discovered %@ at %@", peripheral.name, RSSI);
     
     // Ok, it's in range - have we already seen it?
     if ([discoveredPeripherals containsObject:peripheral]==NO)
@@ -170,7 +172,13 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         [discoveredPeripherals addObject:peripheral];
         
         // call back;
-        [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinks:peripheral.name action:1];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            
+            [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinks:peripheral action:1];
+            
+            
+        });
     }
 }
 
@@ -201,11 +209,24 @@ public:
     BLEHelperWrapper();
     ~BLEHelperWrapper();
     
+    void setCallbackDelegate(void*);
     void discover(void*);
     void discoverServices(void*);
     void discoverCharacteristics(void*);
     void stopScanning();
 };
+
+BLEHelperWrapper::BLEHelperWrapper () {
+    ble_objc = [BLEHelper_objc sharedInstance];
+}
+
+BLEHelperWrapper::~BLEHelperWrapper () {
+
+}
+
+void BLEHelperWrapper::setCallbackDelegate(void* delegate) {
+    [ble_objc setCallbackDelegate:(__bridge id)delegate];
+}
 
 
 void BLEHelperWrapper::discover(void*) {
@@ -266,6 +287,23 @@ bool BTSerialLinkWrapper::_connect() {
 /**
  BLEHelper class
  **/
+
+BLEHelper::BLEHelper(){
+    ble_wrapper = new BLEHelperWrapper();
+
+}
+
+BLEHelper::~BLEHelper() {
+    if (ble_wrapper != NULL) {
+        delete ble_wrapper;
+    }
+}
+
+void BLEHelper::setCallbackDelegate(void* delegate) {
+
+    ble_wrapper->setCallbackDelegate(delegate);
+}
+
 
 void BLEHelper::discover(void*) {
     ble_wrapper->discover(nil);

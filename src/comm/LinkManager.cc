@@ -90,14 +90,20 @@ bool LinkManager::discoverBTLinks(void* delegate) {
         //create blehelper object;
         blehelper = new BLEHelper();
     }
-    else {
-        blehelper->discover(delegate);
-    }
+    blehelper->discover(delegate);
 }
 
 bool LinkManager::stopScanning() {
     blehelper->stopScanning();
 }
+
+void LinkManager::setCallbackDelegate(void* delegate) {
+    if(blehelper==NULL) {
+        blehelper = new BLEHelper();
+    }
+    blehelper->setCallbackDelegate(delegate);
+}
+
 #endif
 
 LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)

@@ -166,6 +166,7 @@ void ConnectPopover::dismissPopover(){
     conarray = array;
     conn_stage = CONN_ALLLINKS;
     presented = NO;
+    btlinksarray = [[NSMutableArray alloc] initWithCapacity:0];
     return self;
 }
 
@@ -198,6 +199,9 @@ void ConnectPopover::dismissPopover(){
     //return [sectionInfo numberOfObjects];
     if (conn_stage==BT_SCANNING) {
         return 3;
+    }
+    else if (conn_stage == BT_DISCOVERED) {
+        return [btlinksarray count];
     }
     else {
         return [conarray count]+2;
@@ -253,7 +257,15 @@ void ConnectPopover::dismissPopover(){
         }
     }
     else {
-        
+        if (idx==0) {
+            return 40;
+        }
+        else if (idx==[btlinksarray count]-1) {
+            return 40;
+        }
+        else {
+            return 40;
+        }
     }
 }
 
@@ -292,11 +304,19 @@ void ConnectPopover::dismissPopover(){
     int idx = [indexPath indexAtPosition:1];
     
     int cellwidth = cell.frame.size.width;
-    CGRect btnrect = CGRectMake(30, 5, 120, 60);
+    CGRect btnrect = CGRectMake(30, 5, 120, 40);
     
-    
-    UILabel* label = [[UILabel alloc] initWithFrame:btnrect];
-    //[label setFrame:btnrect];
+    UILabel* label= (UILabel*)[cell.contentView viewWithTag:(200+idx)];
+    if ( label== nil) {
+        
+        label = [[UILabel alloc] initWithFrame:btnrect];
+        label.tag = 200 + idx;
+        label.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:16];
+        label.textColor=[UIColor colorWithRed:1.0f green:1.0f blue:1.0 alpha:1.0f];
+
+        [cell.contentView addSubview:label];
+
+    }
     
     
     if (idx==0) {
@@ -306,11 +326,16 @@ void ConnectPopover::dismissPopover(){
         label.text = @"back";
     }
     else {
-        label.text = [btlinksarray objectAtIndex:idx];
+        CBPeripheral* p = [btlinksarray objectAtIndex:idx];
+        if (p.name==nil) {
+            label.text = [p.identifier UUIDString];
+        }
+        else {
+            label.text = p.name;
+        }
     }
     
     //NSString* btnTitle;
-    [cell.contentView addSubview:label];
 
 }
 
@@ -327,6 +352,9 @@ void ConnectPopover::dismissPopover(){
         
         label = [[UILabel alloc] initWithFrame:btnrect];
         label.tag = 200 + idx;
+        
+        [cell.contentView addSubview:label];
+
     }
     //[btn setFrame:btnrect];
     
@@ -364,8 +392,6 @@ void ConnectPopover::dismissPopover(){
 
         }
     }
-    
-    [cell.contentView addSubview:label];
 }
 
 - (void)configureBluetoothCell:(UITableViewCell *)cell atIndexPath:(NSIndexPath *)indexPath {
@@ -404,34 +430,58 @@ void ConnectPopover::dismissPopover(){
 }
 
 
--(void)didDiscoverBTLinks:(NSString*)linkname action:(int)act {
-    //update bluetooth cell;
-    conn_stage = BT_DISCOVERED;
+-(void)didDiscoverBTLinks:(CBPeripheral*)peripheral action:(int)act {
+    //clear cells;
+    if (conn_stage != BT_DISCOVERED) {
+        conn_stage = BT_DISCOVERED;
+
+        [self.tableView beginUpdates];
+        NSMutableArray *paths=[[NSMutableArray alloc] initWithCapacity:0];
+        for (NSInteger i = 0; i < [self.view numberOfRowsInSection:0]; ++i)
+        {
+
+            [paths addObject:[NSIndexPath indexPathForRow:i inSection:0]];
+        }
+    
+        [self.tableView deleteRowsAtIndexPaths:paths
+                          withRowAnimation:UITableViewRowAnimationFade];
+    
+        [self.tableView endUpdates];
+    }
+    
+    //update discovered list;
     if (act==0) {
         //remove linkname;
-        NSUInteger idx = [btlinksarray indexOfObject:linkname];
+        NSUInteger idx = [btlinksarray indexOfObject:peripheral];
         if (idx != NSNotFound) {
             [btlinksarray removeObjectAtIndex:idx];
-        }
-        [self.tableView beginUpdates];
-        NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:idx inSection:1]];
         
-        [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:paths]
+            [self.tableView beginUpdates];
+        //considering table headers;
+            NSLog(@"removing row ... %d", idx);
+            NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:idx inSection:0]];
+        
+            [self.tableView deleteRowsAtIndexPaths:paths
                               withRowAnimation:UITableViewRowAnimationFade];
 
-        [self.tableView endUpdates];
+            [self.tableView endUpdates];
+        }
         
     }
     else {
         //add linkname;
-        [btlinksarray addObject:linkname];
+        [btlinksarray addObject:peripheral];
         [self.tableView beginUpdates];
-        NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:[btlinksarray count] inSection:1]];
+        NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
         
-        [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:paths]
+        [self.tableView insertRowsAtIndexPaths:paths
                               withRowAnimation:UITableViewRowAnimationFade];
         
         [self.tableView endUpdates];
+        /*
+        UITableViewCell* cell = [self.view cellForRowAtIndexPath:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
+        [self configureDiscoveredBTLinksCell:cell atIndexPath:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
+*/
 
     }
     
@@ -492,7 +542,8 @@ void ConnectPopover::dismissPopover(){
             
             
             //start scan;
-            qgcApp()->toolbox()->linkManager()->discoverBTLinks((__bridge void *)self);
+            qgcApp()->toolbox()->linkManager()->setCallbackDelegate((__bridge void *)self);
+            qgcApp()->toolbox()->linkManager()->discoverBTLinks(nil);
 
         
         }

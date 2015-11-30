@@ -24,10 +24,18 @@ class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
 
+
+/**
+ 1. the class will continously monitoring rssi to tell if device in range during scanning.
+ 2. 
+ **/
 class BLEHelper {
 private:
     BLEHelperWrapper* ble_wrapper;
 public:
+    BLEHelper();
+    ~BLEHelper();
+    void setCallbackDelegate(void* delegate);
     void discover(void*);
     void discoverServices(void*);
     void discoverCharacteristics(void*);

@@ -113,6 +113,7 @@ public:
 #ifdef __ios__
     //BTSerialLink* getlink();
     const QList<BTSerialLink*> getBTSerialLinks();
+    void setCallbackDelegate(void*);
     bool discoverBTLinks(void * delegate);
     bool discoverServices(void*);
     bool discoverCharacteristics(void*);
