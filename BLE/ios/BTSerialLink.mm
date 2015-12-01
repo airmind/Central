@@ -56,13 +56,15 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
  
  *****/
 
+
+
 @interface BLEHelper_objc ()<CBCentralManagerDelegate,CBPeripheralDelegate>
 {
     //CBCharacteristic *writeCharacteristic;
     CBCentralManager* centralmanager;
     dispatch_queue_t ble_q;
     dispatch_semaphore_t ble_q_Semaphore;
-    NSMutableArray* discoveredPeripherals;
+    BLE_Discovered_Peripheral_List* discoveredPeripherals;
     id delegatecontroller;
 
 }
@@ -75,6 +77,147 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(BOOL) discoverServices:(NSObject*)delegate;
 -(BOOL) discoverCharacteristics:(NSObject*)delegate;
 -(void) stopScanning;
+
+@end
+
+
+@implementation BLE_LowPassFilter_objc
+
+-(BLE_LowPassFilter_objc*)init {
+    [super init];
+
+    for (int i=0; i<LP_RSSI_WINDOW_LENGTH; i++) {
+        lp_win[i] = -100;
+    }
+    rp = 0;
+    return self;
+}
+
+-(int)filteredRssi {
+    int x=0;
+    for (int i=0; i<LP_RSSI_WINDOW_LENGTH; i++) {
+        x += lp_win[i];
+    }
+    
+    return x/LP_RSSI_WINDOW_LENGTH;
+}
+
+-(void)updateWindowWith:(int)rssi {
+    if (rp<9) {
+        rp = rp + 1;
+        lp_win[rp] = rssi;
+        
+    }
+    else {
+        rp = 0;
+        lp_win[rp] = rssi;
+    }
+
+}
+
+
+@end
+
+@implementation BLE_Discovered_Peripheral
+
+-(BLE_Discovered_Peripheral*)init {
+    [super init];
+    
+    lp_filter = [[BLE_LowPassFilter_objc alloc] init];
+    inrange = NO;
+    connected = NO;
+    
+    return self;
+}
+
+-(void)isInRange {
+    inrange=YES;
+}
+
+-(void)outOfRange {
+    inrange=NO;
+}
+
+-(void)isConnected {
+    connected=YES;
+}
+
+-(void)isDisconnected {
+    connected=NO;
+}
+
+-(int)getFilteredRssi:(int)rssi {
+    [lp_filter updateWindowWith:rssi];
+    return [lp_filter filteredRssi];
+}
+
+
+@end
+
+
+@implementation BLE_Discovered_Peripheral_List
+
+-(BLE_Discovered_Peripheral*)containsPeripheral:(CBPeripheral*)p {
+    //BOOL found = NO;
+    for (BLE_Discovered_Peripheral* btp in self) {
+        if ([p isEqual:btp.peripheral]) {
+            return btp;
+            
+        }
+    }
+    return nil;
+}
+
+-(NSUInteger)indexOfPeripheral:(CBPeripheral*)p {
+    //BOOL found = NO;
+    int idx = 0;
+    for (BLE_Discovered_Peripheral* btp in self) {
+        if ([p isEqual:btp.peripheral]) {
+            return idx;
+            
+        }
+        idx ++;
+    }
+    return NSNotFound;
+}
+
+-(BOOL)addPeripheral:(BLE_Discovered_Peripheral*)p {
+    [self addObject:p];
+    return YES;
+}
+
+-(BOOL)removePeripheral:(BLE_Discovered_Peripheral*)p {
+    NSUInteger idx = [self indexOfPeripheral:p.peripheral];
+    if (idx != NSNotFound) {
+        [self removeObjectAtIndex:idx];
+        return YES;
+    }
+    return NO;
+    
+}
+
+-(NSArray*)getInRangePeripheralList {
+    NSMutableArray* in_array = [[NSMutableArray alloc] initWithCapacity:0];
+    for (BLE_Discovered_Peripheral* blep in self) {
+        if (blep.inrange == YES) {
+            [in_array addObject:blep];
+        }
+    }
+    return in_array;
+}
+
+-(NSArray*)getOutOfRangePeripheralList {
+    NSMutableArray* out_array = [[NSMutableArray alloc] initWithCapacity:0];
+    for (BLE_Discovered_Peripheral* blep in self) {
+        if (blep.inrange == NO) {
+            [out_array addObject:blep];
+        }
+    }
+    return out_array;
+
+}
+
+
 
 @end
 
@@ -104,9 +247,23 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
     //init cbcentralmanager;
     centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:ble_q];
-    discoveredPeripherals = [[NSMutableArray alloc] initWithCapacity:0];
+    discoveredPeripherals = [[BLE_Discovered_Peripheral_List alloc] initWithCapacity:0];
     
+    
+    
+    //init timer;
+    t1 = [NSTimer scheduledTimerWithTimeInterval:1.0f
+                                     target:self
+                                   selector:@selector(flipflag:)
+                                   userInfo:nil
+                                    repeats:YES];
+    
+    sync = NO;
     return self;
+}
+
+-(void)flipflag :(id)sender{
+    sync = YES;
 }
 
 -(BOOL) setCallbackDelegate:(NSObject*)delegate{
@@ -145,25 +302,51 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
 {
-    BOOL seen = [discoveredPeripherals containsObject:peripheral];
+    if (RSSI.integerValue > -15) {
+        //not reasonable value, simply return;
+        return;
+    }
+
+    BLE_Discovered_Peripheral* p = [discoveredPeripherals containsPeripheral:peripheral];
+    if (p == nil) {
+        //newly discovered, initialize;
+        p = [[BLE_Discovered_Peripheral alloc] init];
+        p.peripheral = peripheral;
+        [discoveredPeripherals addPeripheral:p];
+    }
     NSLog(@"Discovered %@ at %@", peripheral.name, RSSI);
 
+    int averagedRSSI = [p getFilteredRssi:RSSI.integerValue];
+
+    
     // Reject any where the value is above reasonable range, or if the signal strength is too low to be close enough (Close is around -22dB)
-    if (RSSI.integerValue > -15 || (RSSI.integerValue < -50/*-35*/))
+    /*
+    
+    int averagedRSSI = [self lowpass_rssi:lp_win];
+    */
+    //if (check==YES) {
+        
+    
+    if (averagedRSSI < -50/*-35*/)
     {
-        //remove from found list;
+        //remove from in range list;
         NSLog(@"not in range, return ...");
 
+        [p isInRange];
+        /*
         if(seen==YES) {
-            NSUInteger idx = [discoveredPeripherals indexOfObject:peripheral];
+            NSUInteger idx = [discoveredPeripherals indexOfPeripheral:peripheral];
             [discoveredPeripherals removeObjectAtIndex:idx];
             [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinks:peripheral action:0];
         }
-        return;
+         */
+        //return;
     }
     
-    
-    
+    else {
+        [p outOfRange];
+    }
+    /*
     // Ok, it's in range - have we already seen it?
     if ([discoveredPeripherals containsObject:peripheral]==NO)
     {
@@ -179,7 +362,23 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
             
             
         });
-    }
+    }*/
+    
+    NSArray* p_in = [discoveredPeripherals getInRangePeripheralList];
+    NSArray* p_out = [discoveredPeripherals getOutOfRangePeripheralList];
+        
+        if (sync == YES) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                
+                [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinksInRange:p_in outOfRange:p_out];
+                
+                
+            });
+            
+        }
+        sync = NO;
+    
 }
 
 

@@ -29,7 +29,7 @@ typedef enum {
 
 }
 
--(void)didDiscoverBTLinks:(CBPeripheral*)peripheral action:(int)act;
+-(void)didDiscoverBTLinksInRange:(NSArray*)p_in outOfRange:(NSArray*)p_out;
 
 -(void)setConnectActionDelegate:(void*)delegate;
 

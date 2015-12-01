@@ -430,7 +430,7 @@ void ConnectPopover::dismissPopover(){
 }
 
 
--(void)didDiscoverBTLinks:(CBPeripheral*)peripheral action:(int)act {
+-(void)didDiscoverBTLinksInRange:(NSArray*)p_in outOfRange:(NSArray*)p_out {
     //clear cells;
     if (conn_stage != BT_DISCOVERED) {
         conn_stage = BT_DISCOVERED;
@@ -450,6 +450,56 @@ void ConnectPopover::dismissPopover(){
     }
     
     //update discovered list;
+    //check in list first;
+    CBPeripheral* p;
+    for (p in p_in) {
+        BOOL found=NO;
+        int idx=0;
+        for (CBPeripheral* pt in btlinksarray) {
+            
+            if (pt == p) {
+                found = YES;
+                break;
+            }
+            idx ++;
+        }
+        if (found==NO) {
+            //add this in range device;
+            [btlinksarray addObject:p];
+            [self.tableView beginUpdates];
+            NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
+            
+            [self.tableView insertRowsAtIndexPaths:paths
+                                  withRowAnimation:UITableViewRowAnimationFade];
+
+            [self.tableView endUpdates];
+            
+        }
+    }
+    
+    //check outrange list;
+    for (p in p_out) {
+        //BOOL found = NO;
+        int idx = 0;
+        for (CBPeripheral* pt in btlinksarray) {
+            if (pt == p) {
+                [btlinksarray removeObjectAtIndex:idx];
+                [self.tableView beginUpdates];
+                
+                NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:idx inSection:0]];
+                
+                [self.tableView deleteRowsAtIndexPaths:paths
+                                      withRowAnimation:UITableViewRowAnimationFade];
+                [self.tableView endUpdates];
+                break;
+
+            }
+            idx ++;
+        }
+    }
+    
+    /*
+    
     if (act==0) {
         //remove linkname;
         NSUInteger idx = [btlinksarray indexOfObject:peripheral];
@@ -458,7 +508,7 @@ void ConnectPopover::dismissPopover(){
         
             [self.tableView beginUpdates];
         //considering table headers;
-            NSLog(@"removing row ... %d", idx);
+            NSLog(@"removing row --->\n %d", idx);
             NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:idx inSection:0]];
         
             [self.tableView deleteRowsAtIndexPaths:paths
@@ -471,6 +521,8 @@ void ConnectPopover::dismissPopover(){
     else {
         //add linkname;
         [btlinksarray addObject:peripheral];
+        NSLog(@"adding row --->\n %d", 1);
+        
         [self.tableView beginUpdates];
         NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
         
@@ -481,9 +533,9 @@ void ConnectPopover::dismissPopover(){
         /*
         UITableViewCell* cell = [self.view cellForRowAtIndexPath:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
         [self configureDiscoveredBTLinksCell:cell atIndexPath:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
-*/
+        */
 
-    }
+    
     
 }
 
