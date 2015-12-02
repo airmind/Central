@@ -457,7 +457,7 @@ void ConnectPopover::dismissPopover(){
         int idx=0;
         for (CBPeripheral* pt in btlinksarray) {
             
-            if (pt == p) {
+            if (pt.identifier == p.identifier) {
                 found = YES;
                 break;
             }
@@ -482,7 +482,7 @@ void ConnectPopover::dismissPopover(){
         //BOOL found = NO;
         int idx = 0;
         for (CBPeripheral* pt in btlinksarray) {
-            if (pt == p) {
+            if (pt.identifier == p.identifier) {
                 [btlinksarray removeObjectAtIndex:idx];
                 [self.tableView beginUpdates];
                 

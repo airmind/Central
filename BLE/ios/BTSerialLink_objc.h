@@ -32,8 +32,8 @@
 @interface BLE_Discovered_Peripheral : NSObject {
     //CBPeripheral* p;
     BLE_LowPassFilter_objc* lp_filter;
-    BOOL inrange;
-    BOOL connected;
+    //BOOL inrange;
+    //BOOL connected;
 }
 
 @property (assign, nonatomic) CBPeripheral*  peripheral;
@@ -50,16 +50,17 @@
 
 @end
 
-@interface BLE_Discovered_Peripheral_List : NSMutableArray {
-    
+@interface BLE_Discovered_Peripheral_List : NSObject {
+    NSMutableArray* p_list; //BLE_peripheral list;
 }
-
+-(BLE_Discovered_Peripheral_List*)init;
 -(BLE_Discovered_Peripheral*)containsPeripheral:(CBPeripheral*)p;
 -(NSUInteger)indexOfPeripheral:(CBPeripheral*)p;
 -(BOOL)addPeripheral:(BLE_Discovered_Peripheral*)p;
 -(BOOL)removePeripheral:(BLE_Discovered_Peripheral*)p;
 -(NSArray*)getInRangePeripheralList;
 -(NSArray*)getOutOfRangePeripheralList;
+-(void)emptyList;
 
 @end
 

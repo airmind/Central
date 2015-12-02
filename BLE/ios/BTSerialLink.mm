@@ -96,21 +96,25 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(int)filteredRssi {
     int x=0;
     for (int i=0; i<LP_RSSI_WINDOW_LENGTH; i++) {
-        x += lp_win[i];
+        //NSLog(@"----->%d", lp_win[i]);
+        x = x + lp_win[i];
     }
+    
+    //NSLog(@"++++++->%d", x/LP_RSSI_WINDOW_LENGTH);
     
     return x/LP_RSSI_WINDOW_LENGTH;
 }
 
 -(void)updateWindowWith:(int)rssi {
-    if (rp<9) {
-        rp = rp + 1;
+    if (rp<LP_RSSI_WINDOW_LENGTH-1) {
         lp_win[rp] = rssi;
+        rp = rp + 1;
         
     }
     else {
-        rp = 0;
         lp_win[rp] = rssi;
+        rp = 0;
+
     }
 
 }
@@ -119,6 +123,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 @end
 
 @implementation BLE_Discovered_Peripheral
+@synthesize inrange, connected, peripheral;
 
 -(BLE_Discovered_Peripheral*)init {
     [super init];
@@ -151,16 +156,36 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     return [lp_filter filteredRssi];
 }
 
+-(void)dealloc {
+    
+    [lp_filter release];
+    [super dealloc];
+}
 
 @end
 
 
 @implementation BLE_Discovered_Peripheral_List
 
+-(BLE_Discovered_Peripheral_List*)init {
+    [super init];
+    p_list = [[NSMutableArray alloc] initWithCapacity:0];
+    
+    return self;
+}
+
+-(void)emptyList {
+    for (BLE_Discovered_Peripheral* p in p_list) {
+        [p release];
+    }
+    [p_list removeAllObjects];
+
+}
+
 -(BLE_Discovered_Peripheral*)containsPeripheral:(CBPeripheral*)p {
     //BOOL found = NO;
-    for (BLE_Discovered_Peripheral* btp in self) {
-        if ([p isEqual:btp.peripheral]) {
+    for (BLE_Discovered_Peripheral* btp in p_list) {
+        if (p.identifier == btp.peripheral.identifier) {
             return btp;
             
         }
@@ -171,8 +196,8 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(NSUInteger)indexOfPeripheral:(CBPeripheral*)p {
     //BOOL found = NO;
     int idx = 0;
-    for (BLE_Discovered_Peripheral* btp in self) {
-        if ([p isEqual:btp.peripheral]) {
+    for (BLE_Discovered_Peripheral* btp in p_list) {
+        if (p.identifier == btp.peripheral.identifier) {
             return idx;
             
         }
@@ -182,14 +207,15 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 }
 
 -(BOOL)addPeripheral:(BLE_Discovered_Peripheral*)p {
-    [self addObject:p];
+    [p_list addObject:p];
+    
     return YES;
 }
 
 -(BOOL)removePeripheral:(BLE_Discovered_Peripheral*)p {
     NSUInteger idx = [self indexOfPeripheral:p.peripheral];
     if (idx != NSNotFound) {
-        [self removeObjectAtIndex:idx];
+        [p_list removeObjectAtIndex:idx];
         return YES;
     }
     return NO;
@@ -198,9 +224,9 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 -(NSArray*)getInRangePeripheralList {
     NSMutableArray* in_array = [[NSMutableArray alloc] initWithCapacity:0];
-    for (BLE_Discovered_Peripheral* blep in self) {
+    for (BLE_Discovered_Peripheral* blep in p_list) {
         if (blep.inrange == YES) {
-            [in_array addObject:blep];
+            [in_array addObject:blep.peripheral];
         }
     }
     return in_array;
@@ -208,15 +234,25 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 -(NSArray*)getOutOfRangePeripheralList {
     NSMutableArray* out_array = [[NSMutableArray alloc] initWithCapacity:0];
-    for (BLE_Discovered_Peripheral* blep in self) {
+    for (BLE_Discovered_Peripheral* blep in p_list) {
         if (blep.inrange == NO) {
-            [out_array addObject:blep];
+            [out_array addObject:blep.peripheral];
         }
     }
     return out_array;
 
 }
 
+-(void)dealloc {
+    
+    
+    for (BLE_Discovered_Peripheral* p in p_list) {
+        [p release];
+    }
+    [p_list removeAllObjects];
+    
+    [super dealloc];
+}
 
 
 @end
@@ -247,7 +283,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
     //init cbcentralmanager;
     centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:ble_q];
-    discoveredPeripherals = [[BLE_Discovered_Peripheral_List alloc] initWithCapacity:0];
+    discoveredPeripherals = [[BLE_Discovered_Peripheral_List alloc] init];
     
     
     
@@ -279,7 +315,20 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 -(void) stopScanning {
     [centralmanager stopScan];
+    [discoveredPeripherals emptyList];
+    
 }
+
+-(void)dealloc{
+    NSLog(@"ble helper dealloced...");
+    if (discoveredPeripherals!=nil) {
+    
+        [discoveredPeripherals release];
+        discoveredPeripherals = nil;
+    }
+    [super dealloc];
+}
+
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
 {
@@ -310,14 +359,17 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     BLE_Discovered_Peripheral* p = [discoveredPeripherals containsPeripheral:peripheral];
     if (p == nil) {
         //newly discovered, initialize;
+        NSLog(@"newly discovered *********%@", peripheral.identifier);
         p = [[BLE_Discovered_Peripheral alloc] init];
-        p.peripheral = peripheral;
+        p.peripheral = [peripheral copy];
+        p.inrange=NO;
+        p.connected=NO;
         [discoveredPeripherals addPeripheral:p];
     }
-    NSLog(@"Discovered %@ at %@", peripheral.name, RSSI);
 
     int averagedRSSI = [p getFilteredRssi:RSSI.integerValue];
 
+    //NSLog(@"Discovered %@ at %d", peripheral.name, averagedRSSI);
     
     // Reject any where the value is above reasonable range, or if the signal strength is too low to be close enough (Close is around -22dB)
     /*
@@ -332,7 +384,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         //remove from in range list;
         NSLog(@"not in range, return ...");
 
-        [p isInRange];
+        [p outOfRange];
         /*
         if(seen==YES) {
             NSUInteger idx = [discoveredPeripherals indexOfPeripheral:peripheral];
@@ -344,7 +396,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     }
     
     else {
-        [p outOfRange];
+        [p isInRange];
     }
     /*
     // Ok, it's in range - have we already seen it?
@@ -364,10 +416,12 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         });
     }*/
     
-    NSArray* p_in = [discoveredPeripherals getInRangePeripheralList];
-    NSArray* p_out = [discoveredPeripherals getOutOfRangePeripheralList];
-        
+    
         if (sync == YES) {
+            NSArray* p_in = [discoveredPeripherals getInRangePeripheralList];
+            NSArray* p_out = [discoveredPeripherals getOutOfRangePeripheralList];
+
+            NSLog(@"in range, call display...");
             dispatch_async(dispatch_get_main_queue(), ^{
                 
                 
