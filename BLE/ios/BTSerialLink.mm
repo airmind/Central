@@ -315,6 +315,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 -(void) stopScanning {
     [centralmanager stopScan];
+    [t1 invalidate];
     [discoveredPeripherals emptyList];
     
 }

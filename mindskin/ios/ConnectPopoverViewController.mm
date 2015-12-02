@@ -498,6 +498,9 @@ void ConnectPopover::dismissPopover(){
         }
     }
     
+    [p_in release];
+    [p_out release];
+    
     /*
     
     if (act==0) {
