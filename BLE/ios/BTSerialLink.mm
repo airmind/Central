@@ -23,6 +23,11 @@
 
 #import "ConnectPopoverViewController.h"
 
+
+#define TRANSFER_SERVICE_UUID           @"E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
+#define TRANSFER_CHARACTERISTIC_UUID    @"08590F7E-DB05-467E-8757-72F6FAEB13D4"
+
+
 static NSString * const kServiceUUID = @"FC00"; //mindstick
 static NSString * const kCharacteristicUUID = @"FC20";
 static NSString * const kCharacteristicInputstickUUID = @"FC21";  //inputstick
@@ -65,6 +70,8 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     dispatch_queue_t ble_q;
     dispatch_semaphore_t ble_q_Semaphore;
     BLE_Discovered_Peripheral_List* discoveredPeripherals;
+    BLE_Discovered_Peripheral_List* connectedPeripheral;
+    NSUInteger cr_polling_idx;
     id delegatecontroller;
 
 }
@@ -77,6 +84,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(BOOL) discoverServices:(NSObject*)delegate;
 -(BOOL) discoverCharacteristics:(NSObject*)delegate;
 -(void) stopScanning;
+-(CBPeripheral*)getCBPeripheralFromIdentifier:(NSString*)identifier;
 
 @end
 
@@ -284,7 +292,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     //init cbcentralmanager;
     centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:ble_q];
     discoveredPeripherals = [[BLE_Discovered_Peripheral_List alloc] init];
-    
+    connectedPeripheral = [[BLE_Discovered_Peripheral_List alloc] init];
     
     
     //init timer;
@@ -299,7 +307,12 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 }
 
 -(void)flipflag :(id)sender{
+    //for not connected devices;
     sync = YES;
+    
+    //for connected devices;
+    //call readrssi one by one;
+    
 }
 
 -(BOOL) setCallbackDelegate:(NSObject*)delegate{
@@ -316,8 +329,34 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(void) stopScanning {
     [centralmanager stopScan];
     [t1 invalidate];
+    
+    //empty discovered list - but not connected list;
     [discoveredPeripherals emptyList];
     
+}
+
+-(BOOL) connect : (NSString*) identifier {
+    CBPeripheral* p = [self getCBPeripheralFromIdentifier:identifier];
+    if (p != nil) {
+        [centralmanager connectPeripheral:p options:nil];
+        return YES;
+    }
+    else {
+        return NO;
+    }
+    
+    
+    
+}
+
+-(CBPeripheral*)getCBPeripheralFromIdentifier:(NSString*)identifier {
+    for (BLE_Discovered_Peripheral* bp in discoveredPeripherals) {
+        if ([[bp.peripheral.identifier UUIDString] isEqual:identifier]) {
+            return bp.peripheral;
+        }
+    }
+    return nil;
+
 }
 
 -(void)dealloc{
@@ -364,6 +403,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         p = [[BLE_Discovered_Peripheral alloc] init];
         p.peripheral = [peripheral copy];
         p.inrange=NO;
+        //connected only by this app;
         p.connected=NO;
         [discoveredPeripherals addPeripheral:p];
     }
@@ -435,6 +475,235 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         sync = NO;
     
 }
+
+/** If the connection fails for whatever reason, we need to deal with it.
+ */
+- (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
+{
+    NSLog(@"Failed to connect to %@. (%@)", peripheral, [error localizedDescription]);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        [(ConnectPopoverViewController*)delegatecontroller didFailToConnectBTLink];
+        
+        
+    });
+}
+
+
+/** We've connected to the peripheral, now we need to discover the services and characteristics to find the 'transfer' characteristic.
+ */
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral
+{
+    NSLog(@"Peripheral Connected");
+    
+    // Stop scanning - ??
+    [centralmanager stopScan];
+    NSLog(@"Scanning stopped");
+    
+    // Make sure we get the discovery callbacks
+    peripheral.delegate = self;
+    
+    //start update rssi of connected devices;
+    if ([connectedPeripheral counts]==0) {
+        //first connected to this app;
+        //init timer;
+        t_connected = [NSTimer scheduledTimerWithTimeInterval:0.1f
+                                              target:self
+                                            selector:@selector(udpaterssi:)
+                                            userInfo:nil
+                                             repeats:YES];
+        //add into list;
+        [connectedPeripheral addPeripheral:peripheral];
+    }
+    else {
+        if ([connectedPeripheral containsPeripheral:peripheral]==nil) {
+             [connectedPeripheral addPeripheral:peripheral];
+        }
+        //already connnectd;
+    }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        
+        [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        
+        
+    });
+
+    
+    // Search only for services that match our UUID
+    [peripheral discoverServices:@[[CBUUID UUIDWithString:TRANSFER_SERVICE_UUID]]];
+}
+
+
+/**
+ start update rssi;
+ 
+ **/
+
+-(void)updaterssi : (id)sender {
+    //check all connected devices;
+    cr_polling_idx = 0;
+    CBPeripheral* p = [connectedPeripheral peripheralAtIndex:0];
+    [p readRSSI];
+}
+
+- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
+    int filteredvalue;
+    
+    BLE_Discovered_Peripheral* p = [connectedPeripheral containsPeripheral:peripheral];
+    if (error == nil) {
+        filteredvalue = [p getFilteredRssi:peripheral.RSSI.intValue];
+        if (filteredvalue < -50 ) {
+            //out of range;
+            p.inrange = NO;
+        }
+        else {
+            p.inrange = YES;
+        }
+    }
+
+    //check next;
+    if (cr_polling_idx < [connectedPeripheral count]-1) {
+        CBPeripheral* p = [connectedPeripheral peripheralAtIndex:cr_polling_idx+1];
+        [p readRSSI];
+    }
+    else {
+        //reached end; notify UI;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            
+            [(ConnectPopoverViewController*)delegatecontroller didReadConnectedBTLinkRSSI];
+            
+            
+        });
+    }
+}
+
+
+/** The Transfer Service was discovered
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error discovering services: %@", [error localizedDescription]);
+        [self cleanup];
+        return;
+    }
+    
+    // Discover the characteristic we want...
+    
+    // Loop through the newly filled peripheral.services array, just in case there's more than one.
+    for (CBService *service in peripheral.services)
+    {
+        [peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]] forService:service];
+    }
+}
+
+
+/** The Transfer characteristic was discovered.
+ *  Once this has been found, we want to subscribe to it, which lets the peripheral know we want the data it contains
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error
+{
+    // Deal with errors (if any)
+    if (error) {
+        NSLog(@"Error discovering characteristics: %@", [error localizedDescription]);
+        [self cleanup];
+        return;
+    }
+    
+    // Again, we loop through the array, just in case.
+    for (CBCharacteristic *characteristic in service.characteristics)
+    {
+        
+        // And check if it's the right one
+        if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]]) {
+            
+            // If it is, subscribe to it
+            [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+        }
+    }
+    
+    // Once this is complete, we just need to wait for the data to come in.
+}
+
+
+/** This callback lets us know more data has arrived via notification on the characteristic
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error discovering characteristics: %@", [error localizedDescription]);
+        return;
+    }
+    
+    NSString *stringFromData = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
+    
+    // Have we got everything we need?
+    if ([stringFromData isEqualToString:@"EOM"])
+    {
+        
+        // We have, so show the data,
+        //[self.textview setText:[[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding]];
+        
+        // Cancel our subscription to the characteristic
+        //[peripheral setNotifyValue:NO forCharacteristic:characteristic];
+        
+        // and disconnect from the peripehral
+        //[self.centralManager cancelPeripheralConnection:peripheral];
+    }
+    
+    // Otherwise, just add the data on to what we already have
+    //[self.data appendData:characteristic.value];
+    
+    // Log it
+    NSLog(@"Received: %@", stringFromData);
+}
+
+
+/** The peripheral letting us know whether our subscribe/unsubscribe happened or not
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error changing notification state: %@", error.localizedDescription);
+    }
+    
+    // Exit if it's not the transfer characteristic
+    if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]]) {
+        return;
+    }
+    
+    // Notification has started
+    if (characteristic.isNotifying)
+    {
+        NSLog(@"Notification began on %@", characteristic);
+    }
+    
+    // Notification has stopped
+    else {
+        // so disconnect from the peripheral
+        NSLog(@"Notification stopped on %@.  Disconnecting", characteristic);
+        [centralmanager cancelPeripheralConnection:peripheral];
+    }
+}
+
+
+/** Once the disconnection happens, we need to clean up our local copy of the peripheral
+ */
+- (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
+{
+    NSLog(@"Peripheral Disconnected");
+    //self.discoveredPeripheral = nil;
+    
+    // We're disconnected, so start scanning again
+    [self scan];
+}
+
 
 
 @end
@@ -522,6 +791,7 @@ public:
     
     //bool _discover(void*);
     bool _connect();
+    bool _disconnect();
 };
 
 
@@ -533,8 +803,9 @@ BTSerialLinkWrapper::BTSerialLinkWrapper() {
     btl_objc = [[BTSerialLink_objc alloc] init];
 }
 
-bool BTSerialLinkWrapper::_connect() {
+bool BTSerialLinkWrapper::_connect(NSString* identifier) {
     //btl_objc = [[BTSerialLink_objc alloc] init];
+    [btl_objc connect:identifier];
 }
 
 
@@ -588,11 +859,10 @@ BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
 
     btlwrapper = new BTSerialLinkWrapper();
     
-    btlwrapper=new BTSerialLinkWrapper();
-    // We're doing it wrong - because the Qt folks got the API wrong:
-    // http://blog.qt.digia.com/blog/2010/06/17/youre-doing-it-wrong/
-    //moveToThread(this);
     qDebug() << "Bluetooth serial comm Created " << _config->name();
+    
+    
+    
 }
 
 BTSerialLink::~BTSerialLink()
@@ -734,6 +1004,7 @@ bool BTSerialLink::_connect(void)
     return true;
      */
     
+    btlwrapper->_connect();
     
 }
 
@@ -919,11 +1190,14 @@ void BTSerialConfiguration::updateSettings()
         self.peripheraldelegate = self;
         
     }
+    cbmgr = [[BLEHelper_objc sharedInstance] getBLECentralManager];
     return self;
 }
 
--(BOOL)connect {
+-(BOOL)connect:(NSString*) identifier {
     
+   CBPeripheral* p = getCBPeripheralFromIdentifier:(NSString*)identifier;
+   [cbmgr connectPeripheral:p options:<#(NSDictionary *)#>];
 }
 
 -(BOOL)scan {
@@ -947,157 +1221,6 @@ void BTSerialConfiguration::updateSettings()
             break;
     }
 }
-
-- (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
-{
-    
-    NSString *UUID = [peripheral.identifier UUIDString];
-    NSString *UUID1 = CFBridgingRelease(CFUUIDCreateString(NULL, peripheral.UUID));
-    NSLog(@"----发现外设----%@%@", UUID,UUID1);
-    [self.manager stopScan];
-    
-    if (self.peripheral != peripheral)
-    {
-        self.peripheral = peripheral;
-        NSLog(@"Connecting to peripheral %@", peripheral);
-        [self.manager connectPeripheral:peripheral options:nil];
-    }
-}
-
-- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral
-{
-    NSLog(@"----成功连接外设----");
-    [self.peripheral setDelegate:self];
-    [self.peripheral discoverServices:@[ [CBUUID UUIDWithString:kServiceUUID]]];
-}
-
-
-
-- (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
-{
-    NSLog(@"----连接外设失败----Error:%@",error);
-    [self cleanup];
-}
-
-- (void)peripheral:(CBPeripheral *)aPeripheral didDiscoverServices:(NSError *)error
-{
-    NSLog(@"----didDiscoverServices----Error:%@",error);
-    if (error)
-    {
-        NSLog(@"Error discovering service: %@", [error localizedDescription]);
-        [self cleanup];
-        return;
-    }
-    
-    for (CBService *service in aPeripheral.services)
-    {
-        NSLog(@"Service found with UUID: %@", service.UUID);
-        if ([service.UUID isEqual:[CBUUID UUIDWithString:kServiceUUID]])
-        {
-            [self.peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:kCharacteristicUUID],[CBUUID UUIDWithString:kWrriteCharacteristicUUID]] forService:service];
-        }
-    }
-}
-
-- (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
-{
-    NSLog(@"-----外设断开连接------%@",error);
-    self.peripheral = nil;
-    [self cleanup];
-}
-
-
-- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error
-{
-    if (error)
-    {
-        NSLog(@"Error discovering characteristic: %@", [error localizedDescription]);
-        return;
-    }
-    if ([service.UUID isEqual:[CBUUID UUIDWithString:kServiceUUID]])
-    {
-        for (CBCharacteristic *characteristic in service.characteristics)
-        {
-            NSLog(@"----didDiscoverCharacteristicsForService---%@",characteristic);
-            if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:kCharacteristicUUID]])
-            {
-                [peripheral readValueForCharacteristic:characteristic];
-                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-            }
-            
-            if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:kWrriteCharacteristicUUID]])
-            {
-                writeCharacteristic = characteristic;
-            }
-            
-        }
-    }
-}
-
-- (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
-{
-    if (error)
-    {
-        NSLog(@"Error changing notification state: %@", error.localizedDescription);
-    }
-    
-    // Exits if it's not the transfer characteristic
-    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:kCharacteristicUUID]] )
-    {
-        // Notification has started
-        if (characteristic.isNotifying)
-        {
-            NSLog(@"Notification began on %@", characteristic);
-            [peripheral readValueForCharacteristic:characteristic];
-        }
-        else
-        { // Notification has stopped
-            // so disconnect from the peripheral
-            NSLog(@"Notification stopped on %@.  Disconnecting", characteristic);
-            [self.manager cancelPeripheralConnection:self.peripheral];
-        }
-    }
-}
-
-- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
-{
-    NSLog(@"----Value---%@",characteristic.value);
-    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:kCharacteristicUUID]])
-    {
-        //        NSData *valueData = [characteristic value];
-        //        Byte value[16] = {0};
-        //        [valueData getBytes:&value length:sizeof(value)];
-        //        for ( int istep1 = 0; istep1 < 16; istep1++ )
-        //        {
-        //            printf("%02x ",value[istep1]);
-        //
-        //        }
-        //        printf("\n ");
-        //        [peripheral setNotifyValue:NO forCharacteristic:characteristic];
-        if (writeCharacteristic)
-        {
-            Byte ACkValue[3] = {0};
-            ACkValue[0] = 0xe0; ACkValue[1] = 0x00; ACkValue[2] = ACkValue[0] + ACkValue[1];
-            NSData *data = [NSData dataWithBytes:&ACkValue length:sizeof(ACkValue)];
-            [self.peripheral writeValue:data
-                      forCharacteristic:writeCharacteristic
-                                   type:CBCharacteristicWriteWithoutResponse];
-        }
-    }
-}
-
-- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
-{
-    NSLog(@"---didWriteValueForCharacteristic-----");
-    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:kWrriteCharacteristicUUID]])
-    {
-        NSLog(@"----value更新----");
-        //         [peripheral readValueForCharacteristic:characteristic];
-        
-        //        [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-    }
-}
-
 
 
 @end

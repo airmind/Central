@@ -51,11 +51,13 @@
 @end
 
 @interface BLE_Discovered_Peripheral_List : NSObject {
+    //TODO: need a time out for power down device in range?
     NSMutableArray* p_list; //BLE_peripheral list;
 }
 -(BLE_Discovered_Peripheral_List*)init;
 -(BLE_Discovered_Peripheral*)containsPeripheral:(CBPeripheral*)p;
 -(NSUInteger)indexOfPeripheral:(CBPeripheral*)p;
+-(CBPeripheral*)peripheralAtIndex:(NSUInteger)idx;
 -(BOOL)addPeripheral:(BLE_Discovered_Peripheral*)p;
 -(BOOL)removePeripheral:(BLE_Discovered_Peripheral*)p;
 -(NSArray*)getInRangePeripheralList;
@@ -65,9 +67,9 @@
 @end
 
 @interface BLEHelper_objc: NSObject {
-    //int lp_window_lenth;
     int rp;
-    NSTimer* t1;
+    NSTimer* t1; //scan rssi timer, every 1s;
+    NSTimer* t_connected; //connected rssi timer, every 100ms;
     BOOL sync;
 }
 

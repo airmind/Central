@@ -30,7 +30,7 @@ typedef enum {
 }
 
 -(void)didDiscoverBTLinksInRange:(NSArray*)p_in outOfRange:(NSArray*)p_out;
-
+-(void)didConnectedBTLink;
 -(void)setConnectActionDelegate:(void*)delegate;
 
 @end

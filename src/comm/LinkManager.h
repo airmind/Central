@@ -118,8 +118,8 @@ public:
     bool discoverServices(void*);
     bool discoverCharacteristics(void*);
     bool stopScanning();
-    LinkInterface* createConnectedBTLink(LinkConfiguration* config);
-    LinkInterface* createConnectedBTLink(const QString& name);
+    BTSerialLink* createConnectedBLELink(LinkConfiguration* config);
+    BTSerialLink* createConnectedBLELink(const QString& identifier);
     //void didDiscoverBTLinks(QStringList* ids);
     //void disDiscoverServices(QStringList* svcids);
     //void disDiscoverPeripherals(QStringList* pids);
@@ -193,7 +193,7 @@ private:
 #endif
     
 #ifdef __ios__
-    BLEHelper* blehelper;
+    BLEHelper* blehelper = NULL;
 #endif
     
     QList<LinkConfiguration*>   _linkConfigurations;    ///< List of configured links

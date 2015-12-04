@@ -22,6 +22,7 @@ NSString* qt2ioshelper::QString2NSString (const QString* qstr) {
 }
 
 
+
 //ConnectPopoverWrapper;
 //----
 class ConnectPopoverWrapper{
@@ -542,6 +543,12 @@ void ConnectPopover::dismissPopover(){
     
 }
 
+
+-(void)didConnectedBTLink{
+    
+}
+
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     
@@ -640,8 +647,16 @@ void ConnectPopover::dismissPopover(){
         }
         else {
             //connect selected devices;
+#ifdef _BLE_DEBUG_
+            //pop up debug view;
+#endif
+            
         }
-        
+        //create a physical link and connect;
+        NSString* ident = [((CBPeripheral*)[btlinksarray objectAtIndex:idx]).identifier UUIDString];
+        BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(QString::fromNSString(ident));
+        //[blelink _connect];
+
     }
     
 }
