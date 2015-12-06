@@ -120,7 +120,7 @@ public:
     
     
     //QTcpSocket* getSocket(void) { return _socket; }
-    LinkConfiguration* getLinkConfiguration() { return _config; }
+    BTSerialConfiguration* getLinkConfiguration() { return _config; }
 
     void signalBytesWritten(void);
     
