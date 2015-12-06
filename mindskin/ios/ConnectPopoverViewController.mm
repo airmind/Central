@@ -548,6 +548,9 @@ void ConnectPopover::dismissPopover(){
     
 }
 
+-(void)didReadConnectedBTLinkRSSI : (BOOL)inrange {
+    
+}
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {

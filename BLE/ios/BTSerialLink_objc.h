@@ -23,6 +23,8 @@
 
 }
 -(BLE_LowPassFilter_objc*)init;
+-(BLE_LowPassFilter_objc*)initWith:(int)rssi;
+
 -(int)filteredRssi;
 -(void)updateWindowWith:(int)rssi;
 @end
@@ -42,11 +44,16 @@
 
 //-(CBPeripheral*)peripheral;
 -(BLE_Discovered_Peripheral*)init;
+-(BLE_Discovered_Peripheral*)initWithCurrentRSSI:(int)rssi;
+
+-(BLE_Discovered_Peripheral*)BLEPeripheralFromCBPeripheral:(CBPeripheral*)p;
+
 -(void)isInRange;
 -(void)outOfRange;
 -(void)isConnected;
 -(void)isDisconnected;
 -(int)getFilteredRssi:(int)rssi;
+
 
 @end
 
@@ -85,9 +92,12 @@
 @interface BTSerialLink_objc : NSObject {
     CBCentralManager* cbmgr;
     CBPeripheralManager* cbpmgr;
+    id delegatecontroller;
+
 }
 
-
+-(void)setCallbackDelegate:(NSObject*)delegate;
+-(BOOL)connect:(NSString*) identifier;
 
 @end
 

@@ -20,6 +20,14 @@
 //#include "LinkManager.h"
 //#include "QGBTSerialManager.h"
 
+
+typedef enum  {
+    BLE_LINK_NOT_CONNECTED,
+    BLE_LINK_CONNECTED,
+    BLE_LINK_ENDPOINT   //fully connected to service and characteristic;
+
+}BLE_LINK_STATUS;
+
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
@@ -54,6 +62,8 @@ private:
     //for peripheral on the link;
     QString identifier; //NSUUID
     QString pname;
+    QString serviceID;
+    QString characteristicID;
     
 public:
     
@@ -167,7 +177,7 @@ private:
     virtual bool _disconnect(void);
     
     //for BT LE;
-    bool _discover(void*);
+    void setCallbackDelegate(void*);
     bool _discoverServices(void*);
     bool _discoverCharacteristics(void*);
     
@@ -180,7 +190,8 @@ private:
     
     BTSerialConfiguration* _config;
     //QTcpSocket*       _socket;
-    bool              _socketIsConnected;
+    //bool              _socketIsConnected;
+    BLE_LINK_STATUS _linkstatus;
     
     quint64 _bitsSentTotal;
     quint64 _bitsSentCurrent;

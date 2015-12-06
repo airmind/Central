@@ -101,6 +101,17 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     return self;
 }
 
+-(BLE_LowPassFilter_objc*)initWith:(int)rssi {
+    [super init];
+    
+    for (int i=0; i<LP_RSSI_WINDOW_LENGTH; i++) {
+        lp_win[i] = rssi;
+    }
+    rp = 0;
+    return self;
+   
+}
+
 -(int)filteredRssi {
     int x=0;
     for (int i=0; i<LP_RSSI_WINDOW_LENGTH; i++) {
@@ -142,6 +153,28 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     
     return self;
 }
+
+-(BLE_Discovered_Peripheral*)initWithCurrentRSSI:(int)rssi{
+    [super init];
+    
+    lp_filter = [[BLE_LowPassFilter_objc alloc] initWith:rssi];
+    inrange = NO;
+    connected = NO;
+    
+    return self;
+    
+}
+
+/*
+-(BLE_Discovered_Peripheral*)BLEPeripheralFromCBPeripheral:(CBPeripheral*)p {
+
+    BLE_Discovered_Peripheral* bp = [[BLE_Discovered_Peripheral alloc] initWithCurrentRSSI:p.RSSI.integerValue];
+    bp.peripheral = p;
+    
+    
+    return bp;
+}
+*/
 
 -(void)isInRange {
     inrange=YES;
@@ -503,6 +536,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     // Make sure we get the discovery callbacks
     peripheral.delegate = self;
     
+    NSLog(@"connected device RSSI: %d", peripheral.RSSI.integerValue);
     //start update rssi of connected devices;
     if ([connectedPeripheral counts]==0) {
         //first connected to this app;
@@ -513,11 +547,16 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
                                             userInfo:nil
                                              repeats:YES];
         //add into list;
-        [connectedPeripheral addPeripheral:peripheral];
+        BLE_Discovered_Peripheral* bp = [[BLE_Discovered_Peripheral alloc] initWithCurrentRSSI:peripheral.RSSI.integerValue];
+        bp.peripheral = peripheral;
+        [connectedPeripheral addPeripheral:bp];
     }
     else {
         if ([connectedPeripheral containsPeripheral:peripheral]==nil) {
-             [connectedPeripheral addPeripheral:peripheral];
+            BLE_Discovered_Peripheral* bp = [[BLE_Discovered_Peripheral alloc] initWithCurrentRSSI:peripheral.RSSI.integerValue];
+            bp.peripheral = peripheral;
+
+            [connectedPeripheral addPeripheral:bp];
         }
         //already connnectd;
     }
@@ -573,7 +612,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         dispatch_async(dispatch_get_main_queue(), ^{
             
             
-            [(ConnectPopoverViewController*)delegatecontroller didReadConnectedBTLinkRSSI];
+            [(ConnectPopoverViewController*)delegatecontroller didReadConnectedBTLinkRSSI:p.inrange];
             
             
         });
@@ -783,6 +822,23 @@ public:
     
 };
 
+BTSerialConfigurationWrapper::BTSerialConfigurationWrapper() {
+    btc_objc = [[BTSerialConfiguration_objc alloc] init];
+}
+
+BTSerialConfigurationWrapper::~BTSerialConfigurationWrapper() {
+    if (btc_objc!=nil) {
+        
+    
+        [btc_objc release];
+    }
+}
+
+
+/**
+ BTSerialLinkWrapper
+ **/
+
 class BTSerialLinkWrapper {
     BTSerialLink_objc* btl_objc;
 public:
@@ -790,17 +846,21 @@ public:
     ~BTSerialLinkWrapper();
     
     //bool _discover(void*);
-    bool _connect();
+    bool _connect(NSString*);
     bool _disconnect();
+    void setCallbackDelegate (void*);
 };
 
 
-BTSerialConfigurationWrapper::BTSerialConfigurationWrapper() {
-    btc_objc = [[BTSerialConfiguration_objc alloc] init];
-}
 
 BTSerialLinkWrapper::BTSerialLinkWrapper() {
     btl_objc = [[BTSerialLink_objc alloc] init];
+}
+
+BTSerialLinkWrapper::~BTSerialLinkWrapper() {
+    if (btl_objc!=nil) {
+        [btl_objc release];
+    }
 }
 
 bool BTSerialLinkWrapper::_connect(NSString* identifier) {
@@ -808,6 +868,10 @@ bool BTSerialLinkWrapper::_connect(NSString* identifier) {
     [btl_objc connect:identifier];
 }
 
+
+void BTSerialLinkWrapper::setCallbackDelegate (void* delegate) {
+    [btl_objc setCallbackDelegate:(__bridge id)delegate];
+}
 
 /**
  BLEHelper class
@@ -881,6 +945,7 @@ void BTSerialLink::run()
     exec();
      */
 }
+
 
 
 #ifdef BTSERIALLINK_READWRITE_DEBUG
@@ -1038,6 +1103,11 @@ bool BTSerialLink::_hardwareConnect()
     
 }
 
+void BTSerialLink::setCallbackDelegate(void* delegate) {
+    btlwrapper->setCallbackDelegate(delegate);
+}
+
+
 /*
 bool BTSerialLink::scan ()
 {
@@ -1045,10 +1115,6 @@ bool BTSerialLink::scan ()
 }
 */
 
-bool BTSerialLink::_discover (void*)
-{
-    //btlwrapper->_discover(nil) ;
-}
 
 
 
@@ -1194,15 +1260,19 @@ void BTSerialConfiguration::updateSettings()
     return self;
 }
 
--(BOOL)connect:(NSString*) identifier {
-    
-   CBPeripheral* p = getCBPeripheralFromIdentifier:(NSString*)identifier;
-   [cbmgr connectPeripheral:p options:<#(NSDictionary *)#>];
+-(void)setCallbackDelegate:(NSObject*)delegate {
+    delegatecontroller = delegate;
 }
 
--(BOOL)scan {
-    //[self.centraldelegate centralManagerDidUpdateState:manager];
+
+-(BOOL)connect:(NSString*) identifier {
+    
+    
+    CBPeripheral* p =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
+    
+    [cbmgr connectPeripheral:p options:nil];
 }
+
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
 {
