@@ -21,6 +21,7 @@
 //#include "QGBTSerialManager.h"
 
 
+
 typedef enum  {
     BLE_LINK_NOT_CONNECTED,
     BLE_LINK_CONNECTED,
@@ -91,6 +92,13 @@ public:
     void loadSettings(QSettings& settings, const QString& root);
     void saveSettings(QSettings& settings, const QString& root);
     void updateSettings();
+    
+    void configBLESerialLink(QString&, QString&, QString&, QString&);
+    void setBLEPeripheralIdentifier(QString*);
+    QString getBLEPeripheralIdentifier();
+    QString getBLEPeripheralName();
+    QString getBLEPeripheralServiceID();
+    QString getBLEPeripheralCharacteristicID();
 
 
 };

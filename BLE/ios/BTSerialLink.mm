@@ -20,6 +20,7 @@
 
 #import "BTSerialLink_objc.h"
 #include "BTSerialLink.h"
+#include "qt2ioshelper.h"
 
 #import "ConnectPopoverViewController.h"
 
@@ -747,18 +748,6 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 @end
 
-@interface BTSerialLink_objc ()<CBCentralManagerDelegate,CBPeripheralDelegate>
-{
-    CBCharacteristic *writeCharacteristic;
-    
-}
-@property (nonatomic, strong) CBCentralManager *manager;
-@property (nonatomic, strong) CBPeripheral *peripheral;
-@property (nonatomic, strong) NSObject* centraldelegate;
-@property (nonatomic, strong) NSObject* peripheraldelegate;
-
-
-@end
 
 /// @file
 ///     @brief TCP link type for SITL support
@@ -808,78 +797,13 @@ void BLEHelperWrapper::stopScanning() {
 }
 
 
-/**
- BTSerialConfigurationWrapper
- 
- **/
-
-class BTSerialConfigurationWrapper {
-    BTSerialConfiguration_objc* btc_objc;
-public:
-    BTSerialConfigurationWrapper();
-    ~BTSerialConfigurationWrapper();
-    
-    
-};
-
-BTSerialConfigurationWrapper::BTSerialConfigurationWrapper() {
-    btc_objc = [[BTSerialConfiguration_objc alloc] init];
-}
-
-BTSerialConfigurationWrapper::~BTSerialConfigurationWrapper() {
-    if (btc_objc!=nil) {
-        
-    
-        [btc_objc release];
-    }
-}
-
-
-/**
- BTSerialLinkWrapper
- **/
-
-class BTSerialLinkWrapper {
-    BTSerialLink_objc* btl_objc;
-public:
-    BTSerialLinkWrapper();
-    ~BTSerialLinkWrapper();
-    
-    //bool _discover(void*);
-    bool _connect(NSString*);
-    bool _disconnect();
-    void setCallbackDelegate (void*);
-};
-
-
-
-BTSerialLinkWrapper::BTSerialLinkWrapper() {
-    btl_objc = [[BTSerialLink_objc alloc] init];
-}
-
-BTSerialLinkWrapper::~BTSerialLinkWrapper() {
-    if (btl_objc!=nil) {
-        [btl_objc release];
-    }
-}
-
-bool BTSerialLinkWrapper::_connect(NSString* identifier) {
-    //btl_objc = [[BTSerialLink_objc alloc] init];
-    [btl_objc connect:identifier];
-}
-
-
-void BTSerialLinkWrapper::setCallbackDelegate (void* delegate) {
-    [btl_objc setCallbackDelegate:(__bridge id)delegate];
-}
-
-/**
+/****************************
  BLEHelper class
  **/
 
 BLEHelper::BLEHelper(){
     ble_wrapper = new BLEHelperWrapper();
-
+    
 }
 
 BLEHelper::~BLEHelper() {
@@ -889,7 +813,7 @@ BLEHelper::~BLEHelper() {
 }
 
 void BLEHelper::setCallbackDelegate(void* delegate) {
-
+    
     ble_wrapper->setCallbackDelegate(delegate);
 }
 
@@ -911,9 +835,113 @@ void BLEHelper::stopScanning(){
 }
 
 
-/*
+/**
+ BTSerialConfigurationWrapper
+ 
+ **/
+
+class BTSerialConfigurationWrapper {
+    BTSerialConfiguration_objc* btc_objc;
+public:
+    BTSerialConfigurationWrapper();
+    ~BTSerialConfigurationWrapper();
+    void configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid);
+    
+};
+
+BTSerialConfigurationWrapper::BTSerialConfigurationWrapper() {
+    btc_objc = [[BTSerialConfiguration_objc alloc] init];
+}
+
+BTSerialConfigurationWrapper::~BTSerialConfigurationWrapper() {
+    if (btc_objc!=nil) {
+        
+    
+        [btc_objc release];
+    }
+}
+
+void BTSerialConfigurationWrapper::configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid) {
+    NSString* identifier = qt2ioshelper::QString2NSString(&linkid);
+    NSString* name = qt2ioshelper::QString2NSString(&linkname);
+    NSString* serviceid = qt2ioshelper::QString2NSString(&sid);
+    NSString* characteristicid = qt2ioshelper::QString2NSString(&cid);
+    
+    [btc_objc configLinkId:identifier linkname:name serviceid:serviceid characteristicid:characteristicid];
+}
+
+/**
+ BTSerialLinkWrapper
+ **/
+
+class BTSerialLinkWrapper {
+    BTSerialLink_objc* btl_objc;
+public:
+    BTSerialLinkWrapper(BTSerialConfiguration* config);
+    ~BTSerialLinkWrapper();
+    
+    BTSerialConfiguration_objc* createObjCConfigObjectFromQObject(BTSerialConfiguration*);
+    //bool _discover(void*);
+    bool _connect();
+    bool _hardwareConnect();
+    bool _disconnect();
+    void setCallbackDelegate (void*);
+    
+    //void configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid) ;
+};
+
+
+
+BTSerialLinkWrapper::BTSerialLinkWrapper(BTSerialConfiguration* config) {
+    BTSerialConfiguration_objc* _config = createObjCConfigObjectFromQObject(config);
+    btl_objc = [[BTSerialLink_objc alloc] initWith:_config];
+
+}
+
+BTSerialLinkWrapper::~BTSerialLinkWrapper() {
+    if (btl_objc!=nil) {
+        [btl_objc release];
+    }
+}
+
+BTSerialConfiguration_objc* BTSerialLinkWrapper::createObjCConfigObjectFromQObject(BTSerialConfiguration* config) {
+    QString qidentifier = config->getBLEPeripheralIdentifier();
+    QString qname = config->getBLEPeripheralName();
+    QString qserviceid = config->getBLEPeripheralServiceID();
+    QString qcharacteristicid = config->getBLEPeripheralCharacteristicID();
+
+    NSString* identifier = qt2ioshelper::QString2NSString(&qidentifier);
+    NSString* name = qt2ioshelper::QString2NSString(&qname);
+    NSString* serviceid = qt2ioshelper::QString2NSString(&qserviceid);
+    NSString* characteristicid = qt2ioshelper::QString2NSString(&qcharacteristicid);
+
+    BTSerialConfiguration_objc* config_obj = [[BTSerialConfiguration_objc alloc] init];
+
+    [config_obj configLinkId:identifier linkname:name serviceid:serviceid characteristicid:characteristicid];
+
+    //configBLESerialLink(identifier, name, serviceid, characteristicid);
+    return config_obj;
+}
+
+
+bool BTSerialLinkWrapper::_connect() {
+    //btl_objc = [[BTSerialLink_objc alloc] init];
+    //NSString* nsidentifier = qt2ioshelper::QString2NSString(identifier);
+    [btl_objc connect];
+    return true;
+}
+
+
+void BTSerialLinkWrapper::setCallbackDelegate (void* delegate) {
+    [btl_objc setCallbackDelegate:(__bridge id)delegate];
+}
+
+
+/******************************************
  BTSerialLink class;
+ 
  */
+
 BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
 //, _socket(NULL)
 //, _socketIsConnected(false)
@@ -921,12 +949,12 @@ BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
     _config = config;
     Q_ASSERT(_config != NULL);
 
-    btlwrapper = new BTSerialLinkWrapper();
+    btlwrapper = new BTSerialLinkWrapper(config);
     
     qDebug() << "Bluetooth serial comm Created " << _config->name();
     
     
-    
+
 }
 
 BTSerialLink::~BTSerialLink()
@@ -1057,7 +1085,7 @@ bool BTSerialLink::_disconnect(void)
  *
  * @return True if connection has been established, false if connection couldn't be established.
  **/
-bool BTSerialLink::_connect(void)
+bool BTSerialLink::_connect()
 {
     /*
     if (isRunning())
@@ -1069,37 +1097,21 @@ bool BTSerialLink::_connect(void)
     return true;
      */
     
+    
+    //connect to peripheral only?
+    //QString identifier = _config->getBLEPeripheralIdentifier();
+    //QString serviceid = _config->getBLEPeripheralServiceID();
+    //QString cid = _config->getBLEPeripheralCharacteristicID();
+
     btlwrapper->_connect();
     
 }
 
 bool BTSerialLink::_hardwareConnect()
 {
-    /*
-    Q_ASSERT(_socket == NULL);
-    _socket = new QTcpSocket();
-    QSignalSpy errorSpy(_socket, SIGNAL(error(QAbstractSocket::SocketError)));
-    _socket->connectToHost(_config->address(), _config->port());
-    QObject::connect(_socket, SIGNAL(readyRead()), this, SLOT(readBytes()));
-    QObject::connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(_socketError(QAbstractSocket::SocketError)));
-    // Give the socket a second to connect to the other side otherwise error out
-    if (!_socket->waitForConnected(1000))
-    {
-        // Whether a failed connection emits an error signal or not is platform specific.
-        // So in cases where it is not emitted, we emit one ourselves.
-        if (errorSpy.count() == 0) {
-            emit communicationError(tr("Link Error"), QString("Error on link %1. Connection failed").arg(getName()));
-        }
-        delete _socket;
-        _socket = NULL;
-        return false;
-    }
-    _socketIsConnected = true;
-    emit connected();
-    return true;
-     */
+    //QString* identifier = _config->getBLEPeripheralIdentifier();
     
-    return btlwrapper->_connect() ;
+    return btlwrapper->_hardwareConnect();
     
 }
 
@@ -1187,13 +1199,28 @@ BTSerialConfiguration::BTSerialConfiguration(const QString& name) : LinkConfigur
 {
     //_port    = QGC_TCP_PORT;
     //_address = QHostAddress::Any;
+    btcwrapper =  new BTSerialConfigurationWrapper();
 }
 
 BTSerialConfiguration::BTSerialConfiguration(BTSerialConfiguration* source) : LinkConfiguration(source)
 {
     //_port    = source->port();
     //_address = source->address();
+    if (btcwrapper!=NULL) {
+        delete btcwrapper;
+    }
 }
+
+void BTSerialConfiguration::configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid) {
+
+    identifier = linkid;
+    pname = linkname;
+    serviceID = sid;
+    characteristicID = cid;
+    
+    btcwrapper -> configBLESerialLink (identifier, pname, serviceID, characteristicID);
+}
+
 
 void BTSerialConfiguration::copyFrom(LinkConfiguration *source)
 {
@@ -1245,6 +1272,24 @@ void BTSerialConfiguration::updateSettings()
     }
 }
 
+/***************************
+ Objective C implementation
+ 
+ ***************/
+
+@interface BTSerialLink_objc ()<CBCentralManagerDelegate,CBPeripheralDelegate>
+{
+    CBCharacteristic *writeCharacteristic;
+    
+}
+@property (nonatomic, strong) CBCentralManager *manager;
+@property (nonatomic, strong) CBPeripheral *peripheral;
+@property (nonatomic, strong) NSObject* centraldelegate;
+@property (nonatomic, strong) NSObject* peripheraldelegate;
+
+
+@end
+
 
 @implementation BTSerialLink_objc
 
@@ -1260,19 +1305,45 @@ void BTSerialConfiguration::updateSettings()
     return self;
 }
 
+
+-(BTSerialLink_objc*)initWith:(BTSerialConfiguration_objc*)config {
+    [super init];
+    if (self)
+    {
+        self.centraldelegate = self;
+        self.peripheraldelegate = self;
+        
+    }
+    config_objc = config;
+    cbmgr = [[BLEHelper_objc sharedInstance] getBLECentralManager];
+    return self;
+}
+
+
 -(void)setCallbackDelegate:(NSObject*)delegate {
     delegatecontroller = delegate;
 }
 
 
--(BOOL)connect:(NSString*) identifier {
+-(BOOL)connect {
     
+    NSString* identifier = [config_objc getLinkId];
+    connectstage = BLE_LINK_CONNECTED_CHARACTERISTIC;
     
     CBPeripheral* p =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
     
     [cbmgr connectPeripheral:p options:nil];
 }
 
+-(BOOL)hardwareConnect {
+    NSString* identifier = [config_objc getLinkId];
+    connectstage = BLE_LINK_CONNECTED_PERIPHERAL;
+    
+    CBPeripheral* p =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
+    
+    [cbmgr connectPeripheral:p options:nil];
+
+}
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
 {
@@ -1298,6 +1369,29 @@ void BTSerialConfiguration::updateSettings()
 
 @implementation BTSerialConfiguration_objc
 
+-(void)configLinkId:(NSString*)linkid linkname:(NSString*)name serviceid:(NSString*)sid characteristicid:(NSString*)cid{
+    link_identifier=linkid;
+    link_name=name;
+    link_service_id=sid;
+    link_characteristic_id=cid;
+
+}
+
+-(NSString*)getLinkId {
+    return link_identifier;
+}
+
+-(NSString*)getLinkName {
+    return link_name;
+}
+
+-(NSString*)getServiceId {
+    return link_service_id;
+}
+
+-(NSString*)getCharacteristicId {
+    return link_characteristic_id;
+}
 
 
 @end
