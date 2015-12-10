@@ -107,6 +107,11 @@ typedef enum {
 @interface BTSerialLink_objc : NSObject {
     CBCentralManager* cbmgr;
     CBPeripheralManager* cbpmgr;
+    
+    CBPeripheral* cbp;
+    CBService* targetService;
+    CBCharacteristic* targetCharacteristic;
+    
     id delegatecontroller;
     BTSerialConfiguration_objc* config_objc;
     
@@ -118,6 +123,17 @@ typedef enum {
 
 -(void)setCallbackDelegate:(NSObject*)delegate;
 -(BOOL)connect:(NSString*) identifier;
+
+//read/write;
+
+-(void)readBytes;
+-(void)readBytes:(CBCharacteristic*)characteristic;
+
+-(void)writeBytes:(const char*)data size:(int)size ;
+-(void)writeBytesNeedsAck:(const char*)data size:(int)size ;
+
+-(void)writeBytes:(const char*)data characteristic:(CBCharacteristic*)cid size:(int)size ;
+-(void)writeBytesNeedsAck:(const char *)data characteristic:(CBCharacteristic*)cid size:(int)size ;
 
 @end
 

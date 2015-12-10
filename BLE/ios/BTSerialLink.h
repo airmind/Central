@@ -24,8 +24,8 @@
 
 typedef enum  {
     BLE_LINK_NOT_CONNECTED,
-    BLE_LINK_CONNECTED,
-    BLE_LINK_ENDPOINT   //fully connected to service and characteristic;
+    BLE_LINK_HARDWARE_CONNECTED,
+    BLE_LINK_ENDPOINT_CONNECTED   //fully connected to service and characteristic;
 
 }BLE_LINK_STATUS;
 
@@ -150,18 +150,23 @@ public:
     public slots:
     
     // From LinkInterface
-    void writeBytes(const char* data, qint64 length);
-    void waitForBytesWritten(int msecs);
-    void waitForReadyRead(int msecs);
+    //void waitForBytesWritten(int msecs);
+    //void waitForReadyRead(int msecs);
     
     
     //new interfaces for BT LE;
     void writeMAVDataBytes(const char* data, qint64 size);
     
     void writeBytes(QString characteristic, const char* data, qint64 size);
+    void writeBytesNeedsAck(QString characteristic, const char* data, qint64 size);
+
+    void writeBytes(const char* data, qint64 size);
+    void writeBytesNeedsAck(const char* data, qint64 size);
+
     
     void readMAVDataBytes();
     void readBytes(QString characteristic);
+    
     
     protected slots:
     void _socketError(QAbstractSocket::SocketError socketError);

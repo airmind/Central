@@ -887,6 +887,14 @@ public:
     bool _disconnect();
     void setCallbackDelegate (void*);
     
+    //read/write;
+    void writeBytes(QString characteristic, const char* data, qint64 size);
+    void writeBytesNeedsAck(QString characteristic, const char* data, qint64 size);
+    
+    void writeBytes(const char* data, qint64 size);
+    void writeBytesNeedsAck(const char* data, qint64 size);
+
+    
     //void configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid) ;
 };
 
@@ -903,6 +911,25 @@ BTSerialLinkWrapper::~BTSerialLinkWrapper() {
         [btl_objc release];
     }
 }
+
+void BTSerialLinkWrapper::writeBytes(QString characteristic, const char* data, qint64 size) {
+    [btl_objc writeBytes:data characteristic:characteristic size:size];
+    
+}
+
+void BTSerialLinkWrapper::writeBytesNeedsAck(QString characteristic, const char* data, qint64 size) {
+    [btl_objc writeBytesNeedsAck:data characteristic:characteristic size:size];
+}
+
+void BTSerialLinkWrapper::writeBytes(const char* data, qint64 size) {
+    [btl_objc writeBytes:data size:size];
+}
+
+void BTSerialLinkWrapper::writeBytesNeedsAck(const char* data, qint64 size) {
+    [btl_objc writeBytesNeedsAck:data size:size];
+}
+
+
 
 BTSerialConfiguration_objc* BTSerialLinkWrapper::createObjCConfigObjectFromQObject(BTSerialConfiguration* config) {
     QString qidentifier = config->getBLEPeripheralIdentifier();
@@ -1012,6 +1039,8 @@ void BTSerialLink::writeBytes(const char* data, qint64 size)
     _socket->write(data, size);
     _logOutputDataRate(size, QDateTime::currentMSecsSinceEpoch());
      */
+    btlwrapper->writeBytes(data, size);
+    
 }
 
 
@@ -1023,6 +1052,14 @@ void BTSerialLink::writeMAVDataBytes(const char* data, qint64 size) {
 void BTSerialLink::writeBytes(QString characteristic, const char* data, qint64 size) {
     
 }
+
+
+void writeBytes(QString characteristic, const char* data, qint64 size);
+void writeBytesNeedsAck(QString characteristic, const char* data, qint64 size);
+
+void writeBytes(const char* data, qint64 size);
+void writeBytesNeedsAck(const char* data, qint64 size);
+
 
 /**
  * @brief Read a number of bytes from the interface.
@@ -1143,7 +1180,10 @@ void BTSerialLink::_socketError(QAbstractSocket::SocketError socketError)
  **/
 bool BTSerialLink::isConnected() const
 {
-    return _socketIsConnected;
+    if (_linkstatus == BLE_LINK_NOT_CONNECTED) {
+        return false;
+    }
+    return true;
 }
 
 QString BTSerialLink::getName() const
@@ -1167,21 +1207,6 @@ qint64 BTSerialLink::getCurrentOutDataRate() const
 }
 
 
-void BTSerialLink::waitForBytesWritten(int msecs)
-{
-    /*
-    Q_ASSERT(_socket);
-    _socket->waitForBytesWritten(msecs);
-     */
-}
-
-void BTSerialLink::waitForReadyRead(int msecs)
-{
-    /*
-    Q_ASSERT(_socket);
-    _socket->waitForReadyRead(msecs);
-     */
-}
 
 void BTSerialLink::_restartConnection()
 {
@@ -1319,6 +1344,80 @@ void BTSerialConfiguration::updateSettings()
     return self;
 }
 
+-(void)readBytes {
+    [cbp readValueForCharacteristic:targetCharacteristic];
+}
+
+
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic
+             error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error discovering services: %@", [error localizedDescription]);
+        //[self cleanup];
+        return;
+    }
+    
+    //did write and call back;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        
+        [(ConnectPopoverViewController*)delegatecontroller didReadBytes:characteristic.value];
+        
+        
+    });
+    
+
+}
+
+-(void)writeBytes:(const char*)data size:(int)size {
+    
+    //NSString* cid = [config_objc getCharacteristicId];
+    NSData *ndata = [NSData dataWithBytes: data  length:size];
+    [cbp writeValue:ndata forCharacteristic:targetCharacteristic type:CBCharacteristicWriteWithoutResponse];
+}
+
+
+-(void)writeBytesNeedsAck:(const char*)data size:(int)size {
+    //NSString* cid = [config_objc getCharacteristicId];
+    NSData *ndata = [NSData dataWithBytes: data  length:size];
+
+    [cbp writeValue:ndata forCharacteristic:targetCharacteristic type:CBCharacteristicWriteWithResponse];
+    
+}
+
+
+- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
+             error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error discovering services: %@", [error localizedDescription]);
+        [self cleanup];
+        return;
+    }
+
+    //did write and call back;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        
+        [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        
+        
+    });
+    
+
+    
+}
+
+-(void)writeBytes:(const char*)data characteristic:(CBCharacteristic*)cid size:(int)size {
+    
+}
+
+-(void)writeBytesNeedsAck:(const char *)data characteristic:(CBCharacteristic*)cid size:(int)size {
+}
+
 
 -(void)setCallbackDelegate:(NSObject*)delegate {
     delegatecontroller = delegate;
@@ -1344,6 +1443,162 @@ void BTSerialConfiguration::updateSettings()
     [cbmgr connectPeripheral:p options:nil];
 
 }
+
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
+    if (connectstage == BLE_LINK_CONNECTED_PERIPHERAL) {
+        
+        cbp = peripheral;
+        //connected and call back;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+            
+        });
+        
+
+    }
+    else{
+        
+        //continue connect to services/characteristics;
+        
+        // Search only for services that match our UUID
+        NSString* sid = [config_objc getServiceId];
+        [peripheral discoverServices:@[[CBUUID UUIDWithString:sid]]];
+
+        
+    }
+
+}
+
+/** The Transfer Service was discovered
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error discovering services: %@", [error localizedDescription]);
+        [self cleanup];
+        return;
+    }
+    
+    targetService = [peripheral.services objectAtIndex:0];
+    
+    // Loop through the newly filled peripheral.services array, just in case there's more than one.
+    
+    NSString* cid = [config_objc getCharacteristicId];
+    for (CBService *service in peripheral.services)
+    {
+        [peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:cid]] forService:service];
+    }
+    
+
+}
+
+
+/** The Transfer characteristic was discovered.
+ *  Once this has been found, we want to subscribe to it, which lets the peripheral know we want the data it contains
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error
+{
+    // Deal with errors (if any)
+    if (error) {
+        NSLog(@"Error discovering characteristics: %@", [error localizedDescription]);
+        [self cleanup];
+        return;
+    }
+    
+    targetCharacteristic = [service.characteristics objectAtIndex:0];
+    
+    NSString* cid = [config_objc getCharacteristicId];
+
+    // Again, we loop through the array, just in case.
+    for (CBCharacteristic *characteristic in service.characteristics)
+    {
+        
+        // And check if it's the right one
+        if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:cid]]) {
+            
+            // If it is, subscribe to it
+            [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+        }
+    }
+    
+    //reached the end of connection, call back;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        
+        [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        
+        
+    });
+
+}
+
+
+/** This callback lets us know more data has arrived via notification on the characteristic
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error discovering characteristics: %@", [error localizedDescription]);
+        return;
+    }
+    
+    NSString *stringFromData = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
+    
+    // Have we got everything we need?
+    if ([stringFromData isEqualToString:@"EOM"])
+    {
+        
+        // We have, so show the data,
+        //[self.textview setText:[[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding]];
+        
+        // Cancel our subscription to the characteristic
+        //[peripheral setNotifyValue:NO forCharacteristic:characteristic];
+        
+        // and disconnect from the peripehral
+        //[self.centralManager cancelPeripheralConnection:peripheral];
+    }
+    
+    // Otherwise, just add the data on to what we already have
+    //[self.data appendData:characteristic.value];
+    
+    // Log it
+    NSLog(@"Received: %@", stringFromData);
+}
+
+
+/** The peripheral letting us know whether our subscribe/unsubscribe happened or not
+ */
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error changing notification state: %@", error.localizedDescription);
+    }
+    
+    // Exit if it's not the transfer characteristic
+    if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]]) {
+        return;
+    }
+    
+    // Notification has started
+    if (characteristic.isNotifying)
+    {
+        NSLog(@"Notification began on %@", characteristic);
+    }
+    
+    // Notification has stopped
+    else {
+        // so disconnect from the peripheral
+        NSLog(@"Notification stopped on %@.  Disconnecting", characteristic);
+        [_manager cancelPeripheralConnection:peripheral];
+    }
+}
+
+
+
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
 {
