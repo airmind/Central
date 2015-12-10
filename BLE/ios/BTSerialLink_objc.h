@@ -129,11 +129,11 @@ typedef enum {
 -(void)readBytes;
 -(void)readBytes:(CBCharacteristic*)characteristic;
 
--(void)writeBytes:(const char*)data size:(int)size ;
--(void)writeBytesNeedsAck:(const char*)data size:(int)size ;
+-(void)writeBytes:(const char*)data size:(long long)size ;
+-(void)writeBytesNeedsAck:(const char*)data size:(long long)size ;
 
--(void)writeBytes:(const char*)data characteristic:(CBCharacteristic*)cid size:(int)size ;
--(void)writeBytesNeedsAck:(const char *)data characteristic:(CBCharacteristic*)cid size:(int)size ;
+-(void)writeBytes:(const char*)data characteristic:(CBCharacteristic*)cid size:(long long)size ;
+-(void)writeBytesNeedsAck:(const char *)data characteristic:(CBCharacteristic*)cid size:(long long)size ;
 
 @end
 

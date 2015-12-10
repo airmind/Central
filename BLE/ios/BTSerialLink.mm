@@ -913,20 +913,23 @@ BTSerialLinkWrapper::~BTSerialLinkWrapper() {
 }
 
 void BTSerialLinkWrapper::writeBytes(QString characteristic, const char* data, qint64 size) {
-    [btl_objc writeBytes:data characteristic:characteristic size:size];
+    NSString* cid = qt2ioshelper::QString2NSString(&characteristic);
+    //[btl_objc writeBytes:data characteristic:cid size:(long long)size];
     
 }
 
 void BTSerialLinkWrapper::writeBytesNeedsAck(QString characteristic, const char* data, qint64 size) {
-    [btl_objc writeBytesNeedsAck:data characteristic:characteristic size:size];
+    NSString* cid = qt2ioshelper::QString2NSString(&characteristic);
+
+    //[btl_objc writeBytesNeedsAck:data characteristic:cid size:(long long)size];
 }
 
 void BTSerialLinkWrapper::writeBytes(const char* data, qint64 size) {
-    [btl_objc writeBytes:data size:size];
+    [btl_objc writeBytes:data size:(long long)size];
 }
 
 void BTSerialLinkWrapper::writeBytesNeedsAck(const char* data, qint64 size) {
-    [btl_objc writeBytesNeedsAck:data size:size];
+    [btl_objc writeBytesNeedsAck:data size:(long long)size];
 }
 
 
@@ -1535,38 +1538,6 @@ void BTSerialConfiguration::updateSettings()
 }
 
 
-/** This callback lets us know more data has arrived via notification on the characteristic
- */
-- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
-{
-    if (error)
-    {
-        NSLog(@"Error discovering characteristics: %@", [error localizedDescription]);
-        return;
-    }
-    
-    NSString *stringFromData = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
-    
-    // Have we got everything we need?
-    if ([stringFromData isEqualToString:@"EOM"])
-    {
-        
-        // We have, so show the data,
-        //[self.textview setText:[[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding]];
-        
-        // Cancel our subscription to the characteristic
-        //[peripheral setNotifyValue:NO forCharacteristic:characteristic];
-        
-        // and disconnect from the peripehral
-        //[self.centralManager cancelPeripheralConnection:peripheral];
-    }
-    
-    // Otherwise, just add the data on to what we already have
-    //[self.data appendData:characteristic.value];
-    
-    // Log it
-    NSLog(@"Received: %@", stringFromData);
-}
 
 
 /** The peripheral letting us know whether our subscribe/unsubscribe happened or not
