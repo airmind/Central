@@ -123,7 +123,11 @@ public:
     //void didDiscoverBTLinks(QStringList* ids);
     //void disDiscoverServices(QStringList* svcids);
     //void disDiscoverPeripherals(QStringList* pids);
+    bool disconnectBLELink(LinkInterface* link);
     
+    //return matching ble link give specific ble configuration;
+    BTSerialLink* getBLELinkByConfiguration(BTSerialConfiguration* cfg);
+
     
 #endif
 
@@ -202,6 +206,11 @@ private:
     /// there are other objects that maintain copies of these links in other threads.
     /// The reference counting allows for orderly deletion.
     QList<SharedLinkInterface>  _links;
+    
+#ifdef __ios__
+    //BTSerialLink is not a Qthread, so need to be handled seperately.
+    QList<BTSerialLink> _blelinks;
+#endif
     
     QMutex                      _linkListMutex;         ///< Mutex for thread safe access to _links list
 

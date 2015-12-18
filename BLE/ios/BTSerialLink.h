@@ -29,6 +29,11 @@ typedef enum  {
 
 }BLE_LINK_STATUS;
 
+
+#define MAV_TRANSFER_SERVICE_UUID           @"E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
+#define MAV_TRANSFER_CHARACTERISTIC_UUID    @"08590F7E-DB05-467E-8757-72F6FAEB13D4"
+
+
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
@@ -36,8 +41,10 @@ class BLEHelperWrapper;
 
 /**
  1. the class will continously monitoring rssi to tell if device in range during scanning.
- 2. 
+ 2. after connected the scan will stop. The range of the device is still monitored. if out of range the device will be disconnected.
+ 3. after disconnected the class will try to reconnect.
  **/
+
 class BLEHelper {
 private:
     BLEHelperWrapper* ble_wrapper;

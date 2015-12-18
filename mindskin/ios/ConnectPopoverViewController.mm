@@ -116,7 +116,7 @@ void ConnectPopoverWrapper::presentPopover(QStringList connectionList) {
 }
 
 void ConnectPopoverWrapper::dismissPopover() {
-    
+    /*
     CGRect viewFrame = [popoverctrol.view frame];
     [UIView animateWithDuration:0.2
                           delay:0
@@ -131,7 +131,8 @@ void ConnectPopoverWrapper::dismissPopover() {
                          }
                          
                      }];
- 
+     */
+    [popoverctrol dismissPopoverView];
    
 }
 
@@ -544,12 +545,84 @@ void ConnectPopover::dismissPopover(){
 }
 
 
--(void)didConnectedBTLink{
+-(void)didConnectedBTLink:(CBPeripheral*)cbp result:(BOOL)yor {
+    if (yor) {
+         //connected, dismiss popover and update icon;
+        int idx = [btlinksarray indexOfObject:cbp];
+        [self dismissPopoverView];
+        
+    }
+    else {
+        //display alert;
+        NSString* errorTitle = NSLocalizedStringFromTable(@"Connect Error", @"InfoPlist",@"comment");
+        NSString* errorMsg = NSLocalizedStringFromTable(@"Can not connect to device, please retry.", @"InfoPlist",@"comment");
+        NSString* cancel=NSLocalizedStringFromTable(@"Cancel", @"InfoPlist",@"comment");
+        UIAlertView * errorwindow = [[UIAlertView alloc] initWithTitle:errorTitle message:errorMsg delegate:self cancelButtonTitle:cancel otherButtonTitles:@"OK",nil];
+        errorwindow.tag=3;
+        [errorwindow show];
+    }
+    
     
 }
 
--(void)didReadConnectedBTLinkRSSI : (BOOL)inrange {
+-(void)didReadConnectedBTLinkRSSI:(CBPeripheral*)cbp RSSI:(int)rssi inrange:(BOOL)inrange {
+    //find link from peripheral;
     
+    BTSerialConfiguration* btconfig = new BTSerialConfiguration(QString::fromNSString([cbp name]));
+    QString ident = QString::fromNSString([[cbp identifier] UUIDString]);
+    QString name = QString::fromNSString([cbp name]);
+
+    QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
+    QString cid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
+    
+    btconfig->configBLESerialLink(ident, name, sid, cid);
+
+    BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
+
+    
+    if (!blelink) {
+        //not found;
+        return;
+        
+    }
+    
+    else {
+        if (!inrange) {
+            //not in range, disconnect;
+            qgcApp()->toolbox()->linkManager()->disconnectBLELink(blelink);
+            
+            //update UI by disable connection icon;
+            
+            
+            
+            //reconnect to wait back in range;
+            qgcApp()->toolbox()->linkManager()->connectBLELink(blelink);
+            
+        }
+        else {
+            //read rssi and update UI;
+        }
+    }
+}
+
+-(void)dismissPopoverView {
+    //dismiss this popover;
+    CGRect viewFrame = [self.view frame];
+    [UIView animateWithDuration:0.2
+                          delay:0
+                        options:UIViewAnimationOptionBeginFromCurrentState
+                     animations:^{
+                         [self.view setFrame:CGRectMake(viewFrame.origin.x+200, 60, 200, viewFrame.size.width)];
+                         
+                     }
+                     completion:^(BOOL finished){
+                         if (finished) {
+                             [ self.view removeFromSuperview];
+                             presented=NO;
+                         }
+                         
+                     }];
+
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -642,6 +715,7 @@ void ConnectPopover::dismissPopover(){
                              completion:^(BOOL finished){
                                  if (finished) {
                                      [ self.view removeFromSuperview];
+                                     presented=NO;
                                  }
                                  
                              }];
@@ -655,9 +729,22 @@ void ConnectPopover::dismissPopover(){
 #endif
             
         }
+        
+        CBPeripheral* cbp = (CBPeripheral*)[btlinksarray objectAtIndex:idx];
+        
+        
+        QString ident = QString::fromNSString([cbp.identifier UUIDString]);
+        QString name = QString::fromNSString(cbp.name);
+
+        
+        BTSerialConfiguration* btconfig = new BTSerialConfiguration(name);
+        QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
+        QString cid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
+
+        btconfig->configBLESerialLink(ident, name, sid, cid);
+
         //create a physical link and connect;
-        NSString* ident = [((CBPeripheral*)[btlinksarray objectAtIndex:idx]).identifier UUIDString];
-        BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(QString::fromNSString(ident));
+        BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
         //[blelink _connect];
 
     }

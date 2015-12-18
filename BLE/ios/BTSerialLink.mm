@@ -24,11 +24,6 @@
 
 #import "ConnectPopoverViewController.h"
 
-
-#define TRANSFER_SERVICE_UUID           @"E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
-#define TRANSFER_CHARACTERISTIC_UUID    @"08590F7E-DB05-467E-8757-72F6FAEB13D4"
-
-
 static NSString * const kServiceUUID = @"FC00"; //mindstick
 static NSString * const kCharacteristicUUID = @"FC20";
 static NSString * const kCharacteristicInputstickUUID = @"FC21";  //inputstick
@@ -572,7 +567,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
     
     // Search only for services that match our UUID
-    [peripheral discoverServices:@[[CBUUID UUIDWithString:TRANSFER_SERVICE_UUID]]];
+    [peripheral discoverServices:@[[CBUUID UUIDWithString:MAV_TRANSFER_SERVICE_UUID]]];
 }
 
 
@@ -637,7 +632,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     // Loop through the newly filled peripheral.services array, just in case there's more than one.
     for (CBService *service in peripheral.services)
     {
-        [peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]] forService:service];
+        [peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:MAV_TRANSFER_CHARACTERISTIC_UUID]] forService:service];
     }
 }
 
@@ -659,7 +654,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     {
         
         // And check if it's the right one
-        if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]]) {
+        if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:MAV_TRANSFER_CHARACTERISTIC_UUID]]) {
             
             // If it is, subscribe to it
             [peripheral setNotifyValue:YES forCharacteristic:characteristic];
@@ -714,7 +709,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     }
     
     // Exit if it's not the transfer characteristic
-    if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]]) {
+    if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:MAV_TRANSFER_CHARACTERISTIC_UUID]]) {
         return;
     }
     
@@ -1550,7 +1545,7 @@ void BTSerialConfiguration::updateSettings()
     }
     
     // Exit if it's not the transfer characteristic
-    if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:TRANSFER_CHARACTERISTIC_UUID]]) {
+    if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:MAV_TRANSFER_CHARACTERISTIC_UUID]]) {
         return;
     }
     
