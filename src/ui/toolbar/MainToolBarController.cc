@@ -66,12 +66,14 @@ MainToolBarController::MainToolBarController(QObject* parent)
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConnected,            this, &MainToolBarController::_linkConnected);
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkDisconnected,         this, &MainToolBarController::_linkDisconnected);
 #else
-    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, &MainToolBarController::_linkConnected);
-    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected),         this, &MainToolBarController::_linkDisconnected);
-
-    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, &MainToolBarController::_linkConnected(BTSerialLink* link));
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkConnected));
     
-    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, &MainToolBarController::_linkConnected(BTSerialLink* link));
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected),         this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkDisconnected));
+
+    //for ble link;
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkConnected));
+    
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkDisconnected));
  
 #endif
     

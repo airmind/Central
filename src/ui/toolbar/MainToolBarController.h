@@ -37,6 +37,10 @@ This file is part of the QGROUNDCONTROL project
 
 #define __mindskin__ 1 //for the moment;
 
+#ifdef __ios__
+#include "BTSerialLink.h"
+#endif
+
 #ifdef __mindskin__
 #include "ConnectPopover.h"
 #endif
@@ -105,6 +109,11 @@ private slots:
     void _updateConfigurations          ();
     void _linkConnected                 (LinkInterface* link);
     void _linkDisconnected              (LinkInterface* link);
+#ifdef __ios__
+    void _linkConnected                 (BTSerialLink* link);
+    void _linkDisconnected              (BTSerialLink* link);
+    
+#endif
     void _leaveMessageView              ();
     void _setProgressBarValue           (float value);
     void _remoteControlRSSIChanged      (uint8_t rssi);
