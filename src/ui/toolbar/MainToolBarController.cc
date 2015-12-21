@@ -73,7 +73,7 @@ MainToolBarController::MainToolBarController(QObject* parent)
     //for ble link;
     connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkConnected));
     
-    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkDisconnected));
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkDisconnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkDisconnected));
  
 #endif
     
