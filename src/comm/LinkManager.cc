@@ -123,6 +123,16 @@ BTSerialLink* getBLELinkByConfiguration(BTSerialConfiguration* cfg) {
 }
 
 
+void LinkManager::didConnectedBLELink() {
+    emit linkConnected((BTSerialLink*)sender());
+
+}
+
+void LinkManager::didDisconnectedBLELink() {
+    emit linkDisconnected((BTSerialLink*)sender());
+}
+
+
 #endif
 
 LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)
@@ -205,6 +215,48 @@ void LinkManager::_addLink(LinkInterface* link)
     connect(link, &LinkInterface::connected,    this, &LinkManager::_linkConnected);
     connect(link, &LinkInterface::disconnected, this, &LinkManager::_linkDisconnected);
 }
+
+#ifdef __ios__
+void _deleteBLELink(BTSerialLink* link);
+void LinkManager::_addLink(BTSerialLink* link) {
+    Q_ASSERT(link);
+    
+    _bleLinkListMutex.lock();
+    
+    if (!containsLink(link)) {
+        // Find a mavlink channel to use for this link
+        for (int i=0; i<32; i++) {
+            if (!(_mavlinkChannelsUsedBitMask && 1 << i)) {
+                mavlink_reset_channel_status(i);
+                link->_setMavlinkChannel(i);
+                _mavlinkChannelsUsedBitMask |= i << i;
+                break;
+            }
+        }
+        
+        _links.append(QSharedPointer<LinkInterface>(link));
+        _bleLinkListMutex.unlock();
+        emit newLink(link);
+    } else {
+        _bleLinkListMutex.unlock();
+    }
+    
+    // MainWindow may be around when doing things like running unit tests
+    if (MainWindow::instance()) {
+        connect(link, &BTSerialLink::communicationError, _app, &QGCApplication::criticalMessageBoxOnMainThread);
+    }
+    
+    connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
+    connect(link, &LinkInterface::connected,        _mavlinkProtocol, &MAVLinkProtocol::linkConnected);
+    connect(link, &LinkInterface::disconnected,     _mavlinkProtocol, &MAVLinkProtocol::linkDisconnected);
+    _mavlinkProtocol->resetMetadataForLink(link);
+    
+    connect(link, &BTSerialLink::connected,    this, &LinkManager::_linkConnected);
+    connect(link, &BTSerialLink::disconnected, this, &LinkManager::_linkDisconnected);
+
+}
+
+#endif
 
 bool LinkManager::connectAll()
 {

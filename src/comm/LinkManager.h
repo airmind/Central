@@ -123,11 +123,20 @@ public:
     //void didDiscoverBTLinks(QStringList* ids);
     //void disDiscoverServices(QStringList* svcids);
     //void disDiscoverPeripherals(QStringList* pids);
-    bool disconnectBLELink(LinkInterface* link);
+    
+    /// Connect the specified link
+    bool connectBLELink(BTSerialLink* link);
+    bool disconnectBLELink(BTSerialLink* link);
     
     //return matching ble link give specific ble configuration;
     BTSerialLink* getBLELinkByConfiguration(BTSerialConfiguration* cfg);
 
+    /// BLE link use these call backs to notify other receivers about link status;
+    void didConnectedBLELink();
+    void didDisconnectedBLELink();
+    
+    /// use Qt signal instead ?
+    void registerLinkStatusNotification(void*);
     
 #endif
 
@@ -148,6 +157,10 @@ public:
 
     /// Returns true if the link manager is holding this link
     bool containsLink(LinkInterface* link);
+
+#ifdef __ios__
+    bool containsLink(BTSerialLink* link);
+#endif
     
     /// Returns the QSharedPointer for this link. You must use SharedLinkInterface if you are going to
     /// keep references to a link in a thread other than the main ui thread.
@@ -173,6 +186,11 @@ public:
     void _deleteLink(LinkInterface* link);
     void _addLink(LinkInterface* link);
 
+#ifdef __ios__
+    void _deleteLink(BTSerialLink* link);
+    void _addLink(BTSerialLink* link);
+#endif
+    
     // Override from QGCTool
     virtual void setToolbox(QGCToolbox *toolbox);
 
@@ -182,10 +200,25 @@ signals:
     void linkConnected(LinkInterface* link);
     void linkDisconnected(LinkInterface* link);
     void linkConfigurationChanged();
-
+    
+#ifdef __ios__
+    void newlink(BTSerialLink* link);
+    void linkDeleted(BTSerialLink* link);
+    void linkConnected(BTSerialLink* link);
+    void linkDisconnected(BTSerialLink* link);
+#endif
+    
 private slots:
+    
+    
     void _linkConnected(void);
     void _linkDisconnected(void);
+
+#ifdef __ios__
+    
+    void _bleLinkConnected(void);
+    void _bleLlinkDisconnected(void);
+#endif
 
 private:
     virtual void _shutdown(void);
@@ -210,6 +243,8 @@ private:
 #ifdef __ios__
     //BTSerialLink is not a Qthread, so need to be handled seperately.
     QList<BTSerialLink> _blelinks;
+    QMutex                      _bleLinkListMutex;         ///< Mutex for thread safe access to _blelinks list
+
 #endif
     
     QMutex                      _linkListMutex;         ///< Mutex for thread safe access to _links list

@@ -26,11 +26,15 @@ typedef enum {
     
     void* delegate;
     
-
+    UIViewController* rootviewcontroller;
+    
+    UIButton* mindstickiconbutton;
 }
 
+-(ConnectPopoverViewController*)initWithRootViewController:(UIViewController*)responder connections:(NSArray*)connectionarray;
+
 -(void)didDiscoverBTLinksInRange:(NSArray*)p_in outOfRange:(NSArray*)p_out;
--(void)didConnectedBTLink;
+-(void)didConnectedBTLink:(CBPeripheral*)cbp result:(BOOL)yor ;
 -(void)setConnectActionDelegate:(void*)delegate;
 -(void)dismissPopoverView;
 

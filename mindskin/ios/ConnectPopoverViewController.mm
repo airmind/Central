@@ -83,7 +83,7 @@ void ConnectPopoverWrapper::presentPopover(QStringList connectionList) {
         
     }
     
-    popoverctrol = [[ConnectPopoverViewController alloc] init:connectionarray];
+    popoverctrol = [[ConnectPopoverViewController alloc] initWithRootViewController:(UIViewController*)responder connections:connectionarray];
     CGRect viewFrame = ((UIViewController*)responder).view.frame;
     
     [popoverctrol.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height, 60, 200, viewFrame.size.width)];
@@ -163,12 +163,16 @@ void ConnectPopover::dismissPopover(){
 
 @implementation ConnectPopoverViewController
 
-- (ConnectPopoverViewController*)init:(NSArray*)array {
+-(ConnectPopoverViewController*)initWithRootViewController:(UIViewController*)responder connections:array {
+    
     self = [super init];
     conarray = array;
+    rootviewcontroller = responder;
+    
     conn_stage = CONN_ALLLINKS;
     presented = NO;
     btlinksarray = [[NSMutableArray alloc] initWithCapacity:0];
+    mindstickiconbutton = nil;
     return self;
 }
 
@@ -545,11 +549,44 @@ void ConnectPopover::dismissPopover(){
 }
 
 
+-(void)showMindStickStatusIcon {
+    if (mindstickiconbutton==nil) {
+        CGRect btnrect = CGRectMake(400, 300, 48, 48);
+        mindstickiconbutton = [[UIButton alloc] initWithFrame:btnrect];
+        mindstickiconbutton.tag=1200;
+        UIImage *buttonImageNormal= [UIImage imageNamed:@"refresh@2x.png"];
+        [mindstickiconbutton setBackgroundImage:buttonImageNormal	forState:UIControlStateNormal];
+        UIImage *buttonImageHighlight = [UIImage imageNamed:@"refreshgrey@2x.png"];
+        [mindstickiconbutton setBackgroundImage:buttonImageHighlight forState:UIControlStateHighlighted];
+        //[mindstickiconbutton addTarget:self action:@selector(resetButtonPressed:) forControlEvents:UIControlEventTouchUpInside];
+        [rootviewcontroller.view addSubview:mindstickiconbutton];
+        
+    }
+}
+
+-(void)enableMindStickStatusIcon {
+    mindstickiconbutton.enabled = YES;
+}
+
+-(void)disableMindStickStatusIcon {
+    mindstickiconbutton.enabled = NO;
+}
+
+-(void)dealloc {
+    [mindstickiconbutton release];
+    mindstickiconbutton = nil;
+    [super dealloc];
+}
+
+
 -(void)didConnectedBTLink:(CBPeripheral*)cbp result:(BOOL)yor {
     if (yor) {
-         //connected, dismiss popover and update icon;
+         //connected, dismiss popover;
         int idx = [btlinksarray indexOfObject:cbp];
         [self dismissPopoverView];
+        
+        //display ble connection status icon;
+        [self showMindStickStatusIcon];
         
     }
     else {
@@ -592,7 +629,7 @@ void ConnectPopover::dismissPopover(){
             qgcApp()->toolbox()->linkManager()->disconnectBLELink(blelink);
             
             //update UI by disable connection icon;
-            
+            [self disableMindStickStatusIcon];
             
             
             //reconnect to wait back in range;

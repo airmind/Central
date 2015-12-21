@@ -39,7 +39,9 @@ This file is part of the QGROUNDCONTROL project
 #include "MultiVehicleManager.h"
 #include "UAS.h"
 
-
+#ifdef __ios__
+#include "BTSerialLink.h"
+#endif
 
 MainToolBarController::MainToolBarController(QObject* parent)
     : QObject(parent)
@@ -60,8 +62,18 @@ MainToolBarController::MainToolBarController(QObject* parent)
     
     // Link signals
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConfigurationChanged, this, &MainToolBarController::_updateConfigurations);
+#ifndef __ios__
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConnected,            this, &MainToolBarController::_linkConnected);
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkDisconnected,         this, &MainToolBarController::_linkDisconnected);
+#else
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, &MainToolBarController::_linkConnected);
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected),         this, &MainToolBarController::_linkDisconnected);
+
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, &MainToolBarController::_linkConnected(BTSerialLink* link));
+    
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, &MainToolBarController::_linkConnected(BTSerialLink* link));
+ 
+#endif
     
     // RSSI (didn't like standard connection)
     connect(qgcApp()->toolbox()->mavlinkProtocol(),
@@ -146,7 +158,7 @@ void MainToolBarController::onConnect(QString conf)
 
 #ifdef __mindskin__
 /***
- for iOS
+ for iOS hook in MainToolBar.qml
  ****/
 void MainToolBarController::onConnectTapped(QString conf)
 {
