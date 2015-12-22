@@ -124,6 +124,7 @@ class BTSerialLink //: public LinkInterface
     //friend class TCPLinkUnitTest;
     friend class BTSerialConfiguration;
     friend class LinkManager;
+    friend class LinkInterface;
     
 private:
     
@@ -183,6 +184,16 @@ public:
     
     virtual bool isLogReplay(void) { return false; }
     
+    /// Sets the mavlink channel to use for this link
+    void _setMavlinkChannel(uint8_t channel) { Q_ASSERT(!_mavlinkChannelSet); _mavlinkChannelSet = true; _mavlinkChannel = channel; }
+
+    bool _mavlinkChannelSet;    ///< true: _mavlinkChannel has been set
+    uint8_t _mavlinkChannel;    ///< mavlink channel to use for this link, as used by mavlink_parse_char
+
+    /// mavlink channel to use for this link, as used by mavlink_parse_char. The mavlink channel is only
+    /// set into the link when it is added to LinkManager
+    uint8_t getMavlinkChannel(void) const { Q_ASSERT(_mavlinkChannelSet); return _mavlinkChannel; }
+
 protected:
     // From LinkInterface->QThread
     virtual void run(void);

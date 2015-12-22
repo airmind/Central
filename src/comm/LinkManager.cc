@@ -106,7 +106,14 @@ void LinkManager::setCallbackDelegate(void* delegate) {
 
 BTSerialLink* LinkManager::createConnectedBLELink(LinkConfiguration* config){
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config);
-    blelink->_connect();
+    
+    if(blelink) {
+        _addLink(blelink);
+    
+        blelink->_connect();
+    
+    }
+    
     return blelink;
 
 }
@@ -217,7 +224,47 @@ void LinkManager::_addLink(LinkInterface* link)
 }
 
 #ifdef __ios__
-void _deleteBLELink(BTSerialLink* link);
+
+
+bool LinkManager::containsLink(BTSerialLink* link) {
+    bool found = false;
+    foreach (BTSerialLink* blelink, _blelinks) {
+        if (blelink == link) {
+            found = true;
+            break;
+        }
+    }
+    return found;
+}
+
+
+void LinkManager::_deleteLink(BTSerialLink* link) {
+    Q_ASSERT(link);
+    
+    _bleLinkListMutex.lock();
+    
+    // Free up the mavlink channel associated with this link
+    _mavlinkChannelsUsedBitMask &= ~(1 << link->getMavlinkChannel());
+    
+    bool found = false;
+    for (int i=0; i<_blelinks.count(); i++) {
+        //no data member function as it is not a QSharedPointer object.
+        if (_blelinks[i] == link) {
+            _blelinks.removeAt(i);
+            found = true;
+            break;
+        }
+    }
+    Q_UNUSED(found);
+    Q_ASSERT(found);
+    
+    _bleLinkListMutex.unlock();
+    
+    // Emit removal of link
+    emit linkDeleted(link);
+
+}
+
 void LinkManager::_addLink(BTSerialLink* link) {
     Q_ASSERT(link);
     
@@ -234,8 +281,9 @@ void LinkManager::_addLink(BTSerialLink* link) {
             }
         }
         
-        _links.append(QSharedPointer<LinkInterface>(link));
+        _blelinks.append(link);
         _bleLinkListMutex.unlock();
+        //why we emit a newLink signal here but no receiving slot?
         emit newLink(link);
     } else {
         _bleLinkListMutex.unlock();
@@ -243,16 +291,19 @@ void LinkManager::_addLink(BTSerialLink* link) {
     
     // MainWindow may be around when doing things like running unit tests
     if (MainWindow::instance()) {
-        connect(link, &BTSerialLink::communicationError, _app, &QGCApplication::criticalMessageBoxOnMainThread);
+        //connect(link, &BTSerialLink::communicationError, _app, &QGCApplication::criticalMessageBoxOnMainThread);
     }
     
-    connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
-    connect(link, &LinkInterface::connected,        _mavlinkProtocol, &MAVLinkProtocol::linkConnected);
-    connect(link, &LinkInterface::disconnected,     _mavlinkProtocol, &MAVLinkProtocol::linkDisconnected);
-    _mavlinkProtocol->resetMetadataForLink(link);
+    ///We do not need signal here, use didConnected call back instead;
+    //connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
+    //connect(link, &BTSerialLink::connected,        _mavlinkProtocol, &MAVLinkProtocol::linkConnected);
+    //connect(link, &LinkInterface::disconnected,     _mavlinkProtocol, &MAVLinkProtocol::linkDisconnected);
     
-    connect(link, &BTSerialLink::connected,    this, &LinkManager::_linkConnected);
-    connect(link, &BTSerialLink::disconnected, this, &LinkManager::_linkDisconnected);
+    ///Clear bunch of link statistic counters;
+    //_mavlinkProtocol->resetMetadataForLink(link);
+    
+    //connect(link, &BTSerialLink::connected,    this, &LinkManager::_linkConnected);
+    //connect(link, &BTSerialLink::disconnected, this, &LinkManager::_linkDisconnected);
 
 }
 

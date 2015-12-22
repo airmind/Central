@@ -202,7 +202,7 @@ signals:
     void linkConfigurationChanged();
     
 #ifdef __ios__
-    void newlink(BTSerialLink* link);
+    void newLink(BTSerialLink* link);
     void linkDeleted(BTSerialLink* link);
     void linkConnected(BTSerialLink* link);
     void linkDisconnected(BTSerialLink* link);
@@ -242,7 +242,7 @@ private:
     
 #ifdef __ios__
     //BTSerialLink is not a Qthread, so need to be handled seperately.
-    QList<BTSerialLink> _blelinks;
+    QList<BTSerialLink*> _blelinks;
     QMutex                      _bleLinkListMutex;         ///< Mutex for thread safe access to _blelinks list
 
 #endif
