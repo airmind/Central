@@ -118,7 +118,7 @@ public:
     bool discoverServices(void*);
     bool discoverCharacteristics(void*);
     bool stopScanning();
-    BTSerialLink* createConnectedBLELink(LinkConfiguration* config);
+    BTSerialLink* createConnectedBLELink(BTSerialConfiguration* config);
     BTSerialLink* createConnectedBLELink(const QString& identifier);
     //void didDiscoverBTLinks(QStringList* ids);
     //void disDiscoverServices(QStringList* svcids);

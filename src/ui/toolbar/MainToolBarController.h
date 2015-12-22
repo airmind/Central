@@ -43,6 +43,7 @@ This file is part of the QGROUNDCONTROL project
 
 #ifdef __mindskin__
 #include "ConnectPopover.h"
+#include "MindStickButton.h"
 #endif
 
 #define TOOL_BAR_SETTINGS_GROUP "TOOLBAR_SETTINGS_GROUP"
@@ -144,6 +145,7 @@ private:
     
 #ifdef __mindskin__
     ConnectPopover* popover;
+    MindStickButton* mindstickButton;
     bool popoverpresented;
     
 #endif

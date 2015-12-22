@@ -41,6 +41,7 @@ This file is part of the QGROUNDCONTROL project
 
 #ifdef __ios__
 #include "BTSerialLink.h"
+
 #endif
 
 MainToolBarController::MainToolBarController(QObject* parent)
@@ -312,6 +313,32 @@ void MainToolBarController::_linkDisconnected(LinkInterface* link)
 {
     _updateConnection(link);
 }
+
+
+#ifdef __ios__
+void MainToolBarController::_linkConnected                 (BTSerialLink* link) {
+    _updateConnection();
+    
+    //show mindstick button;
+    mindstickButton = new MindStickButton();
+    mindstickButton->showButton();
+    
+}
+
+void MainToolBarController::_linkDisconnected              (BTSerialLink* link) {
+    _updateConnection();
+    
+    //delete mindstick button;
+    if (mindstickButton!=NULL) {
+        mindstickButton->removeButton();
+        delete mindstickButton;
+        mindstickButton = NULL;
+    }
+    
+    
+}
+
+#endif
 
 void MainToolBarController::_updateConnection(LinkInterface *disconnectedLink)
 {

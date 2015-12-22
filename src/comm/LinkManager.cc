@@ -104,7 +104,7 @@ void LinkManager::setCallbackDelegate(void* delegate) {
     blehelper->setCallbackDelegate(delegate);
 }
 
-BTSerialLink* LinkManager::createConnectedBLELink(LinkConfiguration* config){
+BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config){
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config);
     
     if(blelink) {
