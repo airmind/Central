@@ -549,6 +549,8 @@ void ConnectPopover::dismissPopover(){
 }
 
 
+
+/* moved to MindStickButton class;
 -(void)showMindStickStatusIcon {
     if (mindstickiconbutton==nil) {
         CGRect btnrect = CGRectMake(400, 300, 48, 48);
@@ -578,6 +580,7 @@ void ConnectPopover::dismissPopover(){
     [super dealloc];
 }
 
+*/
 
 -(void)didConnectedBTLink:(CBPeripheral*)cbp result:(BOOL)yor {
     if (yor) {
