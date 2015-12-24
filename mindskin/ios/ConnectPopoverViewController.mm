@@ -35,7 +35,8 @@ public:
     ~ConnectPopoverWrapper();
     void presentPopover(QStringList connectionlist);
     void dismissPopover();
-    
+    void peripheralsDiscovered(void* inrangelist, void* outrangelist);
+
 };
 
 
@@ -45,6 +46,11 @@ ConnectPopoverWrapper::ConnectPopoverWrapper() {
 
 ConnectPopoverWrapper::~ConnectPopoverWrapper() {
     
+}
+
+void ConnectPopoverWrapper::peripheralsDiscovered(void* inrangelist, void* outrangelist){
+    //we finally are here after a big circle through Qt:-)
+    [popoverctrol didDiscoverBTLinksInRange:(__bridge NSArray*)inrangelist outOfRange:(__bridge NSArray*)outrangelist];
 }
 
 

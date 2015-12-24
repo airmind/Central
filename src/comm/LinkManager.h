@@ -113,6 +113,7 @@ public:
 #ifdef __ios__
     //BTSerialLink* getlink();
     const QList<BTSerialLink*> getBTSerialLinks();
+    //for link operation call backs;
     void setCallbackDelegate(void*);
     bool discoverBTLinks(void * delegate);
     bool discoverServices(void*);
@@ -132,9 +133,11 @@ public:
     BTSerialLink* getBLELinkByConfiguration(BTSerialConfiguration* cfg);
 
     /// BLE link use these call backs to notify other receivers about link status;
-    void didConnectedBLELink();
-    void didDisconnectedBLELink();
+    void didConnectBLELink(BTSerialLink* blelink);
+    void didDisconnectBLELink(BTSerialLink* blelink);
     
+    //have a try;
+    void didDiscoverBLELinks(void* inrangelist, void* outrangelist);
     /// use Qt signal instead ?
     void registerLinkStatusNotification(void*);
     
@@ -206,6 +209,8 @@ signals:
     void linkDeleted(BTSerialLink* link);
     void linkConnected(BTSerialLink* link);
     void linkDisconnected(BTSerialLink* link);
+    //new signal for discovering;
+    void peripheralsDiscovered(void* inrangelist, void* outrangelist);
 #endif
     
 private slots:
@@ -217,7 +222,7 @@ private slots:
 #ifdef __ios__
     
     void _bleLinkConnected(void);
-    void _bleLlinkDisconnected(void);
+    void _bleLinkDisconnected(void);
 #endif
 
 private:

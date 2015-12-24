@@ -113,7 +113,9 @@ private slots:
 #ifdef __ios__
     void _linkConnected                 (BTSerialLink* link);
     void _linkDisconnected              (BTSerialLink* link);
-    
+
+    void _peripheralsDiscovered(void* inrangelist, void* outrangelist);
+
 #endif
     void _leaveMessageView              ();
     void _setProgressBarValue           (float value);

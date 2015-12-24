@@ -125,18 +125,25 @@ BTSerialLink* LinkManager::createConnectedBLELink(const QString& identifier){
     //blelink->_connect();
 }
 
-BTSerialLink* getBLELinkByConfiguration(BTSerialConfiguration* cfg) {
+BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg) {
     
 }
 
 
-void LinkManager::didConnectedBLELink() {
-    emit linkConnected((BTSerialLink*)sender());
+//mew signal - have a try;
+void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
+    //inrangelist/outrangelist have platform dependent types so can not use directly in implementation. needs type conversion.
+    emit peripheralsDiscovered(inrangelist, outrangelist);
+}
+
+
+void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
+    emit linkConnected(blelink);
 
 }
 
-void LinkManager::didDisconnectedBLELink() {
-    emit linkDisconnected((BTSerialLink*)sender());
+void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
+    emit linkDisconnected(blelink);
 }
 
 

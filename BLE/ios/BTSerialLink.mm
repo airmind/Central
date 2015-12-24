@@ -23,6 +23,7 @@
 #include "qt2ioshelper.h"
 
 #import "ConnectPopoverViewController.h"
+#include "QGCApplication.h"
 
 static NSString * const kServiceUUID = @"FC00"; //mindstick
 static NSString * const kCharacteristicUUID = @"FC20";
@@ -494,8 +495,9 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
             NSLog(@"in range, call display...");
             dispatch_async(dispatch_get_main_queue(), ^{
                 
-                
-                [(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinksInRange:p_in outOfRange:p_out];
+                qgcApp()->toolbox()->linkManager()->didDiscoverBLELinks((__bridge void*)p_in, (__bridge void*)p_out);
+
+                //[(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinksInRange:p_in outOfRange:p_out];
                 
                 
             });
@@ -880,7 +882,7 @@ public:
     bool _connect();
     bool _hardwareConnect();
     bool _disconnect();
-    void setCallbackDelegate (void*);
+    void setCallerLinkPointer (void*);
     
     //read/write;
     void writeBytes(QString characteristic, const char* data, qint64 size);
@@ -957,8 +959,8 @@ bool BTSerialLinkWrapper::_connect() {
 }
 
 
-void BTSerialLinkWrapper::setCallbackDelegate (void* delegate) {
-    [btl_objc setCallbackDelegate:(__bridge id)delegate];
+void BTSerialLinkWrapper::setCallerLinkPointer (void* delegate) {
+    [btl_objc setCallerLinkPointer:(__bridge id)delegate];
 }
 
 
@@ -975,6 +977,7 @@ BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
     Q_ASSERT(_config != NULL);
 
     btlwrapper = new BTSerialLinkWrapper(config);
+    btlwrapper -> setCallerLinkPointer(this);
     
     qDebug() << "Bluetooth serial comm Created " << _config->name();
     
@@ -1151,7 +1154,7 @@ bool BTSerialLink::_hardwareConnect()
 }
 
 void BTSerialLink::setCallbackDelegate(void* delegate) {
-    btlwrapper->setCallbackDelegate(delegate);
+    //btlwrapper->setCallbackDelegate(delegate);
 }
 
 
@@ -1400,8 +1403,10 @@ void BTSerialConfiguration::updateSettings()
     dispatch_async(dispatch_get_main_queue(), ^{
         
         
-        [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
-        
+        //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        //callback -> BTSerialLink -> LinkManager -> UI (MainToolBarController)
+        qgcApp()->toolbox()->linkManager()->didConnectBLELink();
+
         
     });
     
@@ -1417,8 +1422,9 @@ void BTSerialConfiguration::updateSettings()
 }
 
 
--(void)setCallbackDelegate:(NSObject*)delegate {
-    delegatecontroller = delegate;
+-(void)setCallerLinkPointer:(id)delegate {
+    //delegatecontroller = delegate;
+    caller_link_ptr = delegate;
 }
 
 
@@ -1449,7 +1455,8 @@ void BTSerialConfiguration::updateSettings()
         //connected and call back;
         dispatch_async(dispatch_get_main_queue(), ^{
             
-            [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+            //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+            qgcApp()->toolbox()->linkManager()->didConnectBLELink((__bridge BTSerialLink*)caller_link_ptr);
             
         });
         
@@ -1525,8 +1532,9 @@ void BTSerialConfiguration::updateSettings()
     dispatch_async(dispatch_get_main_queue(), ^{
         
         
-        [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
-        
+        //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        qgcApp()->toolbox()->linkManager()->didConnectBLELink((__bridge BTSerialLink*)caller_link_ptr);
+
         
     });
 

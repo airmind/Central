@@ -76,7 +76,9 @@ MainToolBarController::MainToolBarController(QObject* parent)
     connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkConnected));
     
     connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkDisconnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkDisconnected));
- 
+
+    connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::peripheralsDiscovered,      this, &MainToolBarController::_peripheralsDiscovered);
+
 #endif
     
     // RSSI (didn't like standard connection)
@@ -191,6 +193,11 @@ void MainToolBarController::onConnectTappedDismiss(QString conf)
     }
     
 }
+
+void MainToolBarController::_peripheralsDiscovered(void* inrangelist, void* outrangelist) {
+    popover->peripheralsDiscovered(inrangelist, outrangelist);
+}
+
 
 #endif
 

@@ -119,7 +119,7 @@ public:
 
 class BTSerialLink //: public LinkInterface
 {
-    //Q_OBJECT
+    //Q_OBJECT ??
     
     //friend class TCPLinkUnitTest;
     friend class BTSerialConfiguration;
@@ -133,7 +133,8 @@ private:
     
 public:
     
-    
+    //set link operation call backs;
+    void setLinkCallbackDelegte(void*);
     
     //QTcpSocket* getSocket(void) { return _socket; }
     BTSerialConfiguration* getLinkConfiguration() { return _config; }

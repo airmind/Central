@@ -12,6 +12,8 @@
 class ConnectPopoverWrapper;
 
 class ConnectPopover{
+    //Q_OBJECT
+
 private:
     ConnectPopoverWrapper* popoverwrapper;
     //bool presented;
@@ -22,6 +24,9 @@ public:
     void presentPopover(QStringList connectionlist);
     void dismissPopover();
     //NSString* QString2NSString (const QString* qstr);
+    
+
+    void peripheralsDiscovered(void* inrangelist, void* outrangelist);
 };
 
 

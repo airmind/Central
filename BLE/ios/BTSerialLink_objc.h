@@ -112,7 +112,9 @@ typedef enum {
     CBService* targetService;
     CBCharacteristic* targetCharacteristic;
     
-    id delegatecontroller;
+    //id delegatecontroller;
+    id caller_link_ptr;
+    
     BTSerialConfiguration_objc* config_objc;
     
     BLE_LINK_CONNECT_STAGE connectstage;
@@ -121,7 +123,7 @@ typedef enum {
 
 -(BTSerialLink_objc*)initWith:(BTSerialConfiguration_objc*)config;
 
--(void)setCallbackDelegate:(NSObject*)delegate;
+-(void)setCallerLinkPointer:(id)delegate;
 -(BOOL)connect:(NSString*) identifier;
 
 //read/write;
