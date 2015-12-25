@@ -161,6 +161,9 @@ void ConnectPopover::dismissPopover(){
     this->popoverwrapper->dismissPopover();
 }
 
+void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist) {
+    this->popoverwrapper->peripheralsDiscovered(inrangelist, outrangelist);
+}
 
 
 @interface ConnectPopoverViewController ()

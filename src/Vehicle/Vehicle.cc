@@ -299,7 +299,11 @@ void Vehicle::_addLink(LinkInterface* link)
     if (!_containsLink(link)) {
         _links += qgcApp()->toolbox()->linkManager()->sharedPointerForLink(link);
         qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
+#ifndef __ios__
         connect(qgcApp()->toolbox()->linkManager(), &LinkManager::linkDisconnected, this, &Vehicle::_linkDisconnected);
+#else
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected), this, &Vehicle::_linkDisconnected);
+#endif
     }
 }
 

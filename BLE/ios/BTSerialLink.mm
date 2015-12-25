@@ -1298,6 +1298,24 @@ void BTSerialConfiguration::updateSettings()
     }
 }
 
+QString BTSerialConfiguration::getBLEPeripheralIdentifier() {
+    
+}
+
+QString BTSerialConfiguration::getBLEPeripheralName() {
+    
+}
+
+QString BTSerialConfiguration::getBLEPeripheralServiceID() {
+    
+}
+
+QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
+    
+}
+
+
+
 /***************************
  Objective C implementation
  
@@ -1364,7 +1382,7 @@ void BTSerialConfiguration::updateSettings()
     dispatch_async(dispatch_get_main_queue(), ^{
         
         
-        [(ConnectPopoverViewController*)delegatecontroller didReadBytes:characteristic.value];
+        //[(ConnectPopoverViewController*)delegatecontroller didReadBytes:characteristic.value];
         
         
     });
@@ -1405,7 +1423,7 @@ void BTSerialConfiguration::updateSettings()
         
         //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
         //callback -> BTSerialLink -> LinkManager -> UI (MainToolBarController)
-        qgcApp()->toolbox()->linkManager()->didConnectBLELink();
+        //qgcApp()->toolbox()->linkManager()->didConnectBLELink();
 
         
     });

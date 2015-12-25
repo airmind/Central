@@ -210,9 +210,20 @@ MainWindow::MainWindow()
 #endif //QGC_MOUSE_ENABLED_LINUX
 
     // These also cause the screen to redraw so we need to update any OpenGL canvases in QML controls
+#ifndef __ios__
     connect(qgcApp()->toolbox()->linkManager(), &LinkManager::linkConnected,    this, &MainWindow::_linkStateChange);
     connect(qgcApp()->toolbox()->linkManager(), &LinkManager::linkDisconnected, this, &MainWindow::_linkStateChange);
+#else
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, static_cast<void (MainWindow::*)(LinkInterface*)>(&MainWindow::_linkStateChange));
+    
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected),         this, static_cast<void (MainWindow::*)(LinkInterface*)>(&MainWindow::_linkStateChange));
+    
+    //for ble link;
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, static_cast<void (MainWindow::*)(BTSerialLink*)>(&MainWindow::_linkStateChange));
+    
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkDisconnected),            this, static_cast<void (MainWindow::*)(BTSerialLink*)>(&MainWindow::_linkStateChange));
 
+#endif
     // Connect link
     if (_autoReconnect)
     {
@@ -654,6 +665,13 @@ void MainWindow::_linkStateChange(LinkInterface*)
 {
     emit repaintCanvas();
 }
+
+#ifdef __ios__
+void MainWindow::_linkStateChange(BTSerialLink*)
+{
+    emit repaintCanvas();
+}
+#endif
 
 #ifdef QGC_MOUSE_ENABLED_LINUX
 bool MainWindow::x11Event(XEvent *event)

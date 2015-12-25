@@ -129,6 +129,15 @@ BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg)
     
 }
 
+bool LinkManager::connectBLELink(BTSerialLink* link) {
+    
+}
+
+bool LinkManager::disconnectBLELink(BTSerialLink* link) {
+    
+}
+
+
 
 //mew signal - have a try;
 void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
@@ -311,8 +320,20 @@ void LinkManager::_addLink(BTSerialLink* link) {
     
     //connect(link, &BTSerialLink::connected,    this, &LinkManager::_linkConnected);
     //connect(link, &BTSerialLink::disconnected, this, &LinkManager::_linkDisconnected);
+    
+    ///TODO: need to add bytesReceived callback in BTSerialLink;
 
 }
+
+
+void LinkManager::_bleLinkConnected(void) {
+    
+}
+
+void LinkManager::_bleLinkDisconnected(void) {
+    
+}
+
 
 #endif
 

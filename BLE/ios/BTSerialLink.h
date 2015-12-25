@@ -15,8 +15,9 @@
 #include <QMap>
 #include <QMutex>
 #include <QHostAddress>
-#include <LinkInterface.h>
+//#include <LinkInterface.h>
 #include "QGCConfig.h"
+#include <LinkConfiguration.h>
 //#include "LinkManager.h"
 //#include "QGBTSerialManager.h"
 

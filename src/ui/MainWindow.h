@@ -214,6 +214,10 @@ protected:
 
 private slots:
     void _linkStateChange(LinkInterface*);
+#ifdef __ios__
+    void _linkStateChange(BTSerialLink*);
+    
+#endif
     void _closeWindow(void) { close(); }
     void _vehicleAdded(Vehicle* vehicle);
 
