@@ -76,8 +76,12 @@ typedef enum {
 -(NSArray*)getInRangePeripheralList;
 -(NSArray*)getOutOfRangePeripheralList;
 -(void)emptyList;
+-(NSArray*)getDiscoveredPeripheralList;
+-(NSUInteger)counts;
 
 @end
+
+
 
 @interface BLEHelper_objc: NSObject {
     int rp;
@@ -109,8 +113,8 @@ typedef enum {
     CBPeripheralManager* cbpmgr;
     
     CBPeripheral* cbp;
-    CBService* targetService;
-    CBCharacteristic* targetCharacteristic;
+    //CBService* targetService;
+    //CBCharacteristic* targetCharacteristic;
     
     //id delegatecontroller;
     id caller_link_ptr;
@@ -118,8 +122,14 @@ typedef enum {
     BTSerialConfiguration_objc* config_objc;
     
     BLE_LINK_CONNECT_STAGE connectstage;
+    
+    BLE_LowPassFilter_objc* lp_filter;
+
 
 }
+@property (assign, nonatomic) CBService*  targetService;
+@property (assign, nonatomic) CBCharacteristic*  targetCharacteristic;
+
 
 -(BTSerialLink_objc*)initWith:(BTSerialConfiguration_objc*)config;
 
@@ -136,9 +146,34 @@ typedef enum {
 
 -(void)writeBytes:(const char*)data characteristic:(CBCharacteristic*)cid size:(long long)size ;
 -(void)writeBytesNeedsAck:(const char *)data characteristic:(CBCharacteristic*)cid size:(long long)size ;
+-(CBPeripheral*)peripheralForLink;
+-(BLE_LINK_CONNECT_STAGE)connectStage;
+-(BTSerialConfiguration_objc*)configuration;
+
+//link rssi;
+-(void)startUpdateLinkRSSI:(int)currentRssi;
+-(int)getFilteredRssi:(int)rssi;
+
+-(id)getCallerLinkPointer;
 
 @end
 
 
+@interface BLE_Peripheral_Links : NSObject {
+    NSMutableArray* p_links;
+}
+
+-(BLE_Peripheral_Links*)init;
+
+-(void)addLink:(BTSerialLink_objc*) link;
+-(void)deleteLink:(BTSerialLink_objc*)link;
+
+-(NSArray*)connectedLinks;
+-(NSArray*)allLinks;
+-(BTSerialLink_objc*)linkForPeripheral:(CBPeripheral*)p;
+-(CBPeripheral*)peripheralForLink:(BTSerialLink_objc*)link;
+-(void)emptyList;
+
+@end
 
 #endif

@@ -70,6 +70,8 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     BLE_Discovered_Peripheral_List* connectedPeripheral;
     NSUInteger cr_polling_idx;
     id delegatecontroller;
+    
+    BLE_Peripheral_Links* peripherallinks;
 
 }
 +(BLEHelper_objc*)sharedInstance;
@@ -82,6 +84,13 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(BOOL) discoverCharacteristics:(NSObject*)delegate;
 -(void) stopScanning;
 -(CBPeripheral*)getCBPeripheralFromIdentifier:(NSString*)identifier;
+
+-(void)addLink:(BTSerialLink_objc*)link;
+-(void)deleteLink:(BTSerialLink_objc*)link;
+-(NSArray*)allLinks;
+-(NSArray*)connectedLinks;
+
+-(BTSerialLink_objc*)linkForPeripheral:(CBPeripheral*)p ;
 
 @end
 
@@ -220,6 +229,10 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 }
 
+-(NSUInteger)count{
+    return [p_list count];
+}
+
 -(BLE_Discovered_Peripheral*)containsPeripheral:(CBPeripheral*)p {
     //BOOL found = NO;
     for (BLE_Discovered_Peripheral* btp in p_list) {
@@ -281,6 +294,12 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 }
 
+
+-(NSArray*)getDiscoveredPeripheralList {
+    return p_list;
+}
+
+
 -(void)dealloc {
     
     
@@ -323,7 +342,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     centralmanager = [[CBCentralManager alloc] initWithDelegate:self queue:ble_q];
     discoveredPeripherals = [[BLE_Discovered_Peripheral_List alloc] init];
     connectedPeripheral = [[BLE_Discovered_Peripheral_List alloc] init];
-    
+    peripherallinks = [[BLE_Peripheral_Links alloc] init];
     
     //init timer;
     t1 = [NSTimer scheduledTimerWithTimeInterval:1.0f
@@ -334,6 +353,33 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     
     sync = NO;
     return self;
+}
+
+
+-(void)addLink:(BTSerialLink_objc*)link {
+    [peripherallinks addLink:link];
+}
+
+-(void)deleteLink:(BTSerialLink_objc*)link {
+    [peripherallinks deleteLink:link];
+    
+}
+
+-(NSArray*)allLinks {
+    return [peripherallinks allLinks];
+}
+
+-(NSArray*)connectedLinks {
+    return [peripherallinks connectedLinks];
+}
+
+-(BTSerialLink_objc*)linkForPeripheral:(CBPeripheral*)p {
+    return [peripherallinks linkForPeripheral:p];
+}
+
+
+-(CBCentralManager*)getBLECentralManager {
+    return centralmanager;
 }
 
 -(void)flipflag :(id)sender{
@@ -379,9 +425,11 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     
 }
 
+
 -(CBPeripheral*)getCBPeripheralFromIdentifier:(NSString*)identifier {
-    for (BLE_Discovered_Peripheral* bp in discoveredPeripherals) {
-        if ([[bp.peripheral.identifier UUIDString] isEqual:identifier]) {
+    NSArray* plist = [discoveredPeripherals getDiscoveredPeripheralList];
+    for (BLE_Discovered_Peripheral* bp in plist) {
+        if ([[bp.peripheral.identifier UUIDString] compare:identifier] == NSOrderedSame) {
             return bp.peripheral;
         }
     }
@@ -534,9 +582,12 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     // Make sure we get the discovery callbacks
     peripheral.delegate = self;
     
+    BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
+    assert(!link);
+    
     NSLog(@"connected device RSSI: %d", peripheral.RSSI.integerValue);
     //start update rssi of connected devices;
-    if ([connectedPeripheral counts]==0) {
+    if ([[peripherallinks allLinks] count]==1) {
         //first connected to this app;
         //init timer;
         t_connected = [NSTimer scheduledTimerWithTimeInterval:0.1f
@@ -545,31 +596,36 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
                                             userInfo:nil
                                              repeats:YES];
         //add into list;
-        BLE_Discovered_Peripheral* bp = [[BLE_Discovered_Peripheral alloc] initWithCurrentRSSI:peripheral.RSSI.integerValue];
-        bp.peripheral = peripheral;
-        [connectedPeripheral addPeripheral:bp];
+        //BLE_Discovered_Peripheral* bp = [[BLE_Discovered_Peripheral alloc] initWithCurrentRSSI:peripheral.RSSI.integerValue];
+        //bp.peripheral = peripheral;
+        //[connectedPeripheral addPeripheral:bp];
+        
     }
-    else {
-        if ([connectedPeripheral containsPeripheral:peripheral]==nil) {
-            BLE_Discovered_Peripheral* bp = [[BLE_Discovered_Peripheral alloc] initWithCurrentRSSI:peripheral.RSSI.integerValue];
-            bp.peripheral = peripheral;
-
-            [connectedPeripheral addPeripheral:bp];
-        }
-        //already connnectd;
-    }
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        
-        
-        [(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
-        
-        
-    });
+    [link startUpdateLinkRSSI:peripheral.RSSI.integerValue];
 
     
-    // Search only for services that match our UUID
-    [peripheral discoverServices:@[[CBUUID UUIDWithString:MAV_TRANSFER_SERVICE_UUID]]];
+    //check if should continue;
+    if ([link connectStage] == BLE_LINK_CONNECTED_PERIPHERAL) {
+        //connected and call back;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+            qgcApp()->toolbox()->linkManager()->didConnectBLELink((__bridge BTSerialLink*)[link getCallerLinkPointer]);
+            
+        });
+        
+        
+    }
+    else{
+        
+        //continue connect to services/characteristics;
+        
+        // Search only for services that match our UUID
+        NSString* sid = [[link configuration] getServiceId];
+        [peripheral discoverServices:@[[CBUUID UUIDWithString:sid]]];
+        
+        
+    }
 }
 
 
@@ -629,12 +685,18 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         return;
     }
     
+    BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
+
     // Discover the characteristic we want...
     
+    link.targetService = [peripheral.services objectAtIndex:0];
+    
     // Loop through the newly filled peripheral.services array, just in case there's more than one.
+    
+    NSString* cid = [[link configuration] getCharacteristicId];
     for (CBService *service in peripheral.services)
     {
-        [peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:MAV_TRANSFER_CHARACTERISTIC_UUID]] forService:service];
+        [peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:cid]] forService:service];
     }
 }
 
@@ -651,20 +713,61 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         return;
     }
     
+    BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
+
+    link.targetCharacteristic = [service.characteristics objectAtIndex:0];
+    
+    NSString* cid = [[link configuration] getCharacteristicId];
+    
     // Again, we loop through the array, just in case.
     for (CBCharacteristic *characteristic in service.characteristics)
     {
         
         // And check if it's the right one
-        if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:MAV_TRANSFER_CHARACTERISTIC_UUID]]) {
+        if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:cid]]) {
             
             // If it is, subscribe to it
             [peripheral setNotifyValue:YES forCharacteristic:characteristic];
         }
     }
     
-    // Once this is complete, we just need to wait for the data to come in.
+    //reached the end of connection, call back;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        
+        //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        qgcApp()->toolbox()->linkManager()->didConnectBLELink((__bridge BTSerialLink*)[link getCallerLinkPointer]);
+        
+        
+    });
+
 }
+
+- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
+             error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"Error discovering services: %@", [error localizedDescription]);
+        [self cleanup];
+        return;
+    }
+    
+    //did write and call back;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        
+        //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        //callback -> BTSerialLink -> LinkManager -> UI (MainToolBarController)
+        //qgcApp()->toolbox()->linkManager()->didConnectBLELink();
+        
+        
+    });
+    
+    
+    
+}
+
 
 
 /** This callback lets us know more data has arrived via notification on the characteristic
@@ -677,6 +780,16 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         return;
     }
     
+    //did write and call back;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        
+        //[(ConnectPopoverViewController*)delegatecontroller didReadBytes:characteristic.value];
+        
+        
+    });
+
+    /*
     NSString *stringFromData = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
     
     // Have we got everything we need?
@@ -698,6 +811,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     
     // Log it
     NSLog(@"Received: %@", stringFromData);
+     */
 }
 
 
@@ -709,6 +823,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     {
         NSLog(@"Error changing notification state: %@", error.localizedDescription);
     }
+    
     
     // Exit if it's not the transfer characteristic
     if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:MAV_TRANSFER_CHARACTERISTIC_UUID]]) {
@@ -727,6 +842,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         NSLog(@"Notification stopped on %@.  Disconnecting", characteristic);
         [centralmanager cancelPeripheralConnection:peripheral];
     }
+
 }
 
 
@@ -972,6 +1088,7 @@ void BTSerialLinkWrapper::setCallerLinkPointer (void* delegate) {
 BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
 //, _socket(NULL)
 //, _socketIsConnected(false)
+: _mavlinkChannelSet(false)
 {
     _config = config;
     Q_ASSERT(_config != NULL);
@@ -1299,19 +1416,19 @@ void BTSerialConfiguration::updateSettings()
 }
 
 QString BTSerialConfiguration::getBLEPeripheralIdentifier() {
-    
+    return identifier;
 }
 
 QString BTSerialConfiguration::getBLEPeripheralName() {
-    
+    return pname;
 }
 
 QString BTSerialConfiguration::getBLEPeripheralServiceID() {
-    
+    return serviceID;
 }
 
 QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
-    
+    return characteristicID;
 }
 
 
@@ -1326,8 +1443,8 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
     CBCharacteristic *writeCharacteristic;
     
 }
-@property (nonatomic, strong) CBCentralManager *manager;
-@property (nonatomic, strong) CBPeripheral *peripheral;
+//@property (nonatomic, strong) CBCentralManager *manager;
+//@property (nonatomic, strong) CBPeripheral *peripheral;
 @property (nonatomic, strong) NSObject* centraldelegate;
 @property (nonatomic, strong) NSObject* peripheraldelegate;
 
@@ -1336,6 +1453,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 
 
 @implementation BTSerialLink_objc
+@synthesize centraldelegate, peripheraldelegate, targetCharacteristic, targetService;
 
 -(BTSerialLink_objc*)init {
     [super init];
@@ -1344,8 +1462,9 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
         self.centraldelegate = self;
         self.peripheraldelegate = self;
         
+    
+        cbmgr = [[BLEHelper_objc sharedInstance] getBLECentralManager];
     }
-    cbmgr = [[BLEHelper_objc sharedInstance] getBLECentralManager];
     return self;
 }
 
@@ -1354,17 +1473,41 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
     [super init];
     if (self)
     {
-        self.centraldelegate = self;
-        self.peripheraldelegate = self;
+        centraldelegate = self;
+        peripheraldelegate = self;
         
+    
+        config_objc = config;
+        cbmgr = [[BLEHelper_objc sharedInstance] getBLECentralManager];
     }
-    config_objc = config;
-    cbmgr = [[BLEHelper_objc sharedInstance] getBLECentralManager];
     return self;
 }
 
+
+-(BTSerialConfiguration_objc*)configuration {
+    return config_objc;
+}
+
+
 -(void)readBytes {
     [cbp readValueForCharacteristic:targetCharacteristic];
+}
+
+
+
+//link rssi;
+-(void)startUpdateLinkRSSI:(int)currentRssi {
+    lp_filter = [[BLE_LowPassFilter_objc alloc] initWith:currentRssi];
+    
+    
+
+}
+
+-(int)getFilteredRssi:(int)rssi
+
+{
+    [lp_filter updateWindowWith:rssi];
+    return [lp_filter filteredRssi];
 }
 
 
@@ -1437,6 +1580,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 }
 
 -(void)writeBytesNeedsAck:(const char *)data characteristic:(CBCharacteristic*)cid size:(int)size {
+    
 }
 
 
@@ -1451,19 +1595,30 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
     NSString* identifier = [config_objc getLinkId];
     connectstage = BLE_LINK_CONNECTED_CHARACTERISTIC;
     
-    CBPeripheral* p =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
+    cbp  =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
     
-    [cbmgr connectPeripheral:p options:nil];
+    //add to connecting peripheral list;
+    [[BLEHelper_objc sharedInstance] addLink:self];
+    
+    [cbmgr connectPeripheral:cbp options:nil];
 }
 
 -(BOOL)hardwareConnect {
     NSString* identifier = [config_objc getLinkId];
     connectstage = BLE_LINK_CONNECTED_PERIPHERAL;
     
-    CBPeripheral* p =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
+    cbp =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
     
-    [cbmgr connectPeripheral:p options:nil];
+    [cbmgr connectPeripheral:cbp options:nil];
 
+}
+
+-(CBPeripheral*)peripheralForLink {
+    return cbp;
+}
+
+-(BLE_LINK_CONNECT_STAGE)connectStage {
+    return connectstage;
 }
 
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
@@ -1530,7 +1685,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
         return;
     }
     
-    targetCharacteristic = [service.characteristics objectAtIndex:0];
+    self.targetCharacteristic = [service.characteristics objectAtIndex:0];
     
     NSString* cid = [config_objc getCharacteristicId];
 
@@ -1585,7 +1740,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
     else {
         // so disconnect from the peripheral
         NSLog(@"Notification stopped on %@.  Disconnecting", characteristic);
-        [_manager cancelPeripheralConnection:peripheral];
+        [cbmgr cancelPeripheralConnection:peripheral];
     }
 }
 
@@ -1598,7 +1753,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
     {
         case CBCentralManagerStatePoweredOn:
         {
-            [self.manager scanForPeripheralsWithServices:@[ [CBUUID UUIDWithString:kServiceUUID]]
+            [central scanForPeripheralsWithServices:@[ [CBUUID UUIDWithString:kServiceUUID]]
                                                  options:@{CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
         }
             break;
@@ -1643,3 +1798,57 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 
 @end
 
+@implementation BLE_Peripheral_Links
+
+-(BLE_Peripheral_Links*)init {
+    [super init];
+    if (self) {
+        p_links = [[NSMutableArray alloc] initWithCapacity:0];
+    }
+    return self;
+}
+
+-(void)addLink:(BTSerialLink_objc*) link {
+    [p_links addObject:link];
+}
+
+-(void)deleteLink:(BTSerialLink_objc*)link {
+    if ([p_links indexOfObject:link] != NSNotFound) {
+        [p_links removeObject:link];
+    }
+}
+
+-(NSArray*)connectedLinks {
+    
+}
+
+-(NSArray*)allLinks {
+    return p_links;
+}
+
+-(BTSerialLink_objc*)linkForPeripheral:(CBPeripheral*)p {
+    for (BTSerialLink_objc* link in p_links) {
+        if ([[link peripheralForLink] isEqual: p]) {
+            return link;
+        }
+    }
+    return nil;
+}
+
+-(CBPeripheral*)peripheralForLink:(BTSerialLink_objc*)link {
+    return [link peripheralForLink];
+}
+
+-(void)emptyList{
+    
+}
+
+
+-(void)dealloc {
+    if (self) {
+        [self emptyList];
+    }
+    [p_links release];
+}
+
+@end

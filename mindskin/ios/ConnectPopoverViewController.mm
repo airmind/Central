@@ -333,7 +333,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
 
     }
     
-    
+    /*
     if (idx==0) {
         label.text = @"Searching ble ...";
     }
@@ -341,6 +341,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         label.text = @"back";
     }
     else {
+     */
         CBPeripheral* p = [btlinksarray objectAtIndex:idx];
         if (p.name==nil) {
             label.text = [p.identifier UUIDString];
@@ -348,7 +349,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         else {
             label.text = p.name;
         }
-    }
+    //}
     
     //NSString* btnTitle;
 
@@ -783,8 +784,13 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         
         
         QString ident = QString::fromNSString([cbp.identifier UUIDString]);
-        QString name = QString::fromNSString(cbp.name);
-
+        QString name;
+        if (cbp.name == nil || [cbp.name compare:@""]==NSOrderedSame) {
+            name = ident;
+        }
+        else {
+            name = QString::fromNSString(cbp.name);
+        }
         
         BTSerialConfiguration* btconfig = new BTSerialConfiguration(name);
         QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
