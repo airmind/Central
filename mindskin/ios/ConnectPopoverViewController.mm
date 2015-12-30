@@ -343,12 +343,15 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     else {
      */
         CBPeripheral* p = [btlinksarray objectAtIndex:idx];
+    
         if (p.name==nil) {
             label.text = [p.identifier UUIDString];
         }
         else {
             label.text = p.name;
         }
+    NSLog(@"Peripheral name: %@", p.name);
+    label.text = @"3333";
     //}
     
     //NSString* btnTitle;
@@ -623,7 +626,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     QString name = QString::fromNSString([cbp name]);
 
     QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
-    QString cid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
+    QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
     
     btconfig->configBLESerialLink(ident, name, sid, cid);
 
@@ -794,7 +797,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         
         BTSerialConfiguration* btconfig = new BTSerialConfiguration(name);
         QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
-        QString cid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
+        QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
 
         btconfig->configBLESerialLink(ident, name, sid, cid);
 

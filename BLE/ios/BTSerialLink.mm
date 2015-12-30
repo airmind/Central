@@ -407,7 +407,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     [t1 invalidate];
     
     //empty discovered list - but not connected list;
-    [discoveredPeripherals emptyList];
+    //[discoveredPeripherals emptyList];
     
 }
 
@@ -454,7 +454,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     {
         case CBCentralManagerStatePoweredOn:
         {
-            [centralmanager scanForPeripheralsWithServices:nil/*@[ [CBUUID UUIDWithString:kServiceUUID]]*/
+            [centralmanager scanForPeripheralsWithServices:@[ [CBUUID UUIDWithString:MAV_TRANSFER_SERVICE_UUID]]
                                                  options:@{CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
         }
             break;
@@ -583,7 +583,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     peripheral.delegate = self;
     
     BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
-    assert(!link);
+    assert(link);
     
     NSLog(@"connected device RSSI: %d", peripheral.RSSI.integerValue);
     //start update rssi of connected devices;
@@ -689,11 +689,15 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
     // Discover the characteristic we want...
     
+    NSArray* sarray = peripheral.services;
+    
     link.targetService = [peripheral.services objectAtIndex:0];
     
     // Loop through the newly filled peripheral.services array, just in case there's more than one.
     
     NSString* cid = [[link configuration] getCharacteristicId];
+    NSLog(@"Characteristic ID: %@", cid);
+    
     for (CBService *service in peripheral.services)
     {
         [peripheral discoverCharacteristics:@[[CBUUID UUIDWithString:cid]] forService:service];
@@ -712,6 +716,10 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         [self cleanup];
         return;
     }
+    
+    NSArray* carray = service.characteristics;
+    
+    NSLog(@"service contains %d characteristics.", [carray count]);
     
     BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
 
@@ -1589,6 +1597,9 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
     caller_link_ptr = delegate;
 }
 
+-(id)getCallerLinkPointer {
+    return caller_link_ptr;
+}
 
 -(BOOL)connect {
     
@@ -1772,10 +1783,10 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 @implementation BTSerialConfiguration_objc
 
 -(void)configLinkId:(NSString*)linkid linkname:(NSString*)name serviceid:(NSString*)sid characteristicid:(NSString*)cid{
-    link_identifier=linkid;
-    link_name=name;
-    link_service_id=sid;
-    link_characteristic_id=cid;
+    link_identifier=[linkid copy];
+    link_name=[name copy];
+    link_service_id=[sid copy];
+    link_characteristic_id=[cid copy];
 
 }
 
