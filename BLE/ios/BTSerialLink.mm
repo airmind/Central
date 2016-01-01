@@ -148,7 +148,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 @end
 
 @implementation BLE_Discovered_Peripheral
-@synthesize inrange, connected, peripheral;
+@synthesize inrange, connected, peripheral, advertisementdata;
 
 -(BLE_Discovered_Peripheral*)init {
     [super init];
@@ -156,7 +156,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     lp_filter = [[BLE_LowPassFilter_objc alloc] init];
     inrange = NO;
     connected = NO;
-    
+    advertisementdata= nil;
     return self;
 }
 
@@ -166,7 +166,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     lp_filter = [[BLE_LowPassFilter_objc alloc] initWith:rssi];
     inrange = NO;
     connected = NO;
-    
+    advertisementdata = nil;
     return self;
     
 }
@@ -277,7 +277,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     NSMutableArray* in_array = [[NSMutableArray alloc] initWithCapacity:0];
     for (BLE_Discovered_Peripheral* blep in p_list) {
         if (blep.inrange == YES) {
-            [in_array addObject:blep.peripheral];
+            [in_array addObject:blep];
         }
     }
     return in_array;
@@ -287,7 +287,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     NSMutableArray* out_array = [[NSMutableArray alloc] initWithCapacity:0];
     for (BLE_Discovered_Peripheral* blep in p_list) {
         if (blep.inrange == NO) {
-            [out_array addObject:blep.peripheral];
+            [out_array addObject:blep];
         }
     }
     return out_array;
@@ -407,7 +407,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     [t1 invalidate];
     
     //empty discovered list - but not connected list;
-    //[discoveredPeripherals emptyList];
+    [discoveredPeripherals emptyList];
     
 }
 
@@ -469,12 +469,17 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
 {
+    
     if (RSSI.integerValue > -15) {
         //not reasonable value, simply return;
         return;
     }
 
     BLE_Discovered_Peripheral* p = [discoveredPeripherals containsPeripheral:peripheral];
+    if (p.advertisementdata == nil) {
+        p.advertisementdata = advertisementData;
+    }
+    
     if (p == nil) {
         //newly discovered, initialize;
         NSLog(@"newly discovered *********%@", peripheral.identifier);
@@ -744,8 +749,11 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         
         
         //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        //call back to LinkManager to emit signal to update UI;
         qgcApp()->toolbox()->linkManager()->didConnectBLELink((__bridge BTSerialLink*)[link getCallerLinkPointer]);
         
+        //call back to mavlink protocol;
+        ((__bridge BTSerialLink*)[link getCallerLinkPointer])->didConnect();
         
     });
 
@@ -788,13 +796,15 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         return;
     }
     
+    BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
+
     //did write and call back;
     dispatch_async(dispatch_get_main_queue(), ^{
         
         
         //[(ConnectPopoverViewController*)delegatecontroller didReadBytes:characteristic.value];
         
-        
+        ((__bridge BTSerialLink*)([link getCallerLinkPointer]))->didReadBytes(characteristic.value, 10);
     });
 
     /*
@@ -1110,6 +1120,22 @@ BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
 
 }
 
+BTSerialLink::BTSerialLink(BTSerialConfiguration* config, MAVLinkProtocol* handler)
+:mavhandler(handler)
+,_mavlinkChannelSet(false)
+
+{
+    _config = config;
+    Q_ASSERT(_config != NULL);
+    Q_ASSERT(mavhandler != NULL);
+    
+    btlwrapper = new BTSerialLinkWrapper(config);
+    btlwrapper -> setCallerLinkPointer(this);
+    
+    qDebug() << "Bluetooth serial comm Created " << _config->name();
+
+}
+
 BTSerialLink::~BTSerialLink()
 {
     _disconnect();
@@ -1117,6 +1143,23 @@ BTSerialLink::~BTSerialLink()
     //quit();
     // Wait for it to exit
     //wait();
+}
+
+void BTSerialLink::setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler) {
+    mavhandler = protocolhandler;
+}
+
+
+void BTSerialLink::didReadBytes(const char* data, qint64 size) {
+    mavhandler->receiveBytes(this, data);
+}
+
+void BTSerialLink::didConnect() {
+    mavhandler->linkConnected(this);
+}
+
+void BTSerialLink::didDisconnect() {
+    mavhandler->linkDisconnected(this);
 }
 
 void BTSerialLink::run()

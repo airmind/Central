@@ -187,6 +187,271 @@ void MAVLinkProtocol::linkDisconnected(void)
     _linkStatusChanged(link, false);
 }
 
+#ifdef __ios__
+void linkConnected(BTSerialLink* link) {
+    
+}
+
+
+void linkDisconnected(BTSerialLink* link) {
+    
+}
+
+void MAVLinkProtocol::resetMetadataForLink(const BTSerialLink *link) {
+    
+}
+
+
+void MAVLinkProtocol::_linkStatusChanged(BTSerialLink* link, bool connected)
+{
+    qCDebug(MAVLinkProtocolLog) << "_linkStatusChanged" << QString("%1").arg((long)link, 0, 16) << connected;
+    Q_ASSERT(link);
+    
+    if (connected) {
+        foreach (SharedLinkInterface sharedLink, _connectedLinks) {
+            Q_ASSERT(sharedLink.data() != link);
+        }
+        
+        // Use the same shared pointer as LinkManager
+        _connectedLinks.append(_linkMgr->sharedPointerForLink(link));
+        
+        if (link->requiresUSBMavlinkStart()) {
+            // Send command to start MAVLink
+            // XXX hacky but safe
+            // Start NSH
+            const char init[] = {0x0d, 0x0d, 0x0d, 0x0d};
+            link->writeBytes(init, sizeof(init));
+            const char* cmd = "sh /etc/init.d/rc.usb\n";
+            link->writeBytes(cmd, strlen(cmd));
+            link->writeBytes(init, 4);
+        }
+    } else {
+        bool found = false;
+        for (int i=0; i<_connectedLinks.count(); i++) {
+            if (_connectedLinks[i].data() == link) {
+                found = true;
+                _connectedLinks.removeAt(i);
+                break;
+            }
+        }
+        Q_UNUSED(found);
+        Q_ASSERT(found);
+    }
+}
+
+
+/**
+ * This method parses all incoming bytes and constructs a MAVLink packet.
+ * It can handle multiple links in parallel, as each link has it's own buffer/
+ * parsing state machine.
+ * @param link The interface to read from
+ * @see LinkInterface
+ **/
+void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
+{
+    // Since receiveBytes signals cross threads we can end up with signals in the queue
+    // that come through after the link is disconnected. For these we just drop the data
+    // since the link is closed.
+    if (!_linkMgr->containsLink(link)) {
+        return;
+    }
+    
+    //    receiveMutex.lock();
+    mavlink_message_t message;
+    mavlink_status_t status;
+    
+    int mavlinkChannel = link->getMavlinkChannel();
+    
+    static int mavlink09Count = 0;
+    static int nonmavlinkCount = 0;
+    static bool decodedFirstPacket = false;
+    static bool warnedUser = false;
+    static bool checkedUserNonMavlink = false;
+    static bool warnedUserNonMavlink = false;
+    
+    for (int position = 0; position < b.size(); position++) {
+        unsigned int decodeState = mavlink_parse_char(mavlinkChannel, (uint8_t)(b[position]), &message, &status);
+        
+        if ((uint8_t)b[position] == 0x55) mavlink09Count++;
+        if ((mavlink09Count > 100) && !decodedFirstPacket && !warnedUser)
+        {
+            warnedUser = true;
+            // Obviously the user tries to use a 0.9 autopilot
+            // with QGroundControl built for version 1.0
+            emit protocolStatusMessage(tr("MAVLink Protocol"), tr("There is a MAVLink Version or Baud Rate Mismatch. "
+                                                                  "Your MAVLink device seems to use the deprecated version 0.9, while QGroundControl only supports version 1.0+. "
+                                                                  "Please upgrade the MAVLink version of your autopilot. "
+                                                                  "If your autopilot is using version 1.0, check if the baud rates of QGroundControl and your autopilot are the same."));
+        }
+        
+        if (decodeState == 0 && !decodedFirstPacket)
+        {
+            nonmavlinkCount++;
+            if (nonmavlinkCount > 2000 && !warnedUserNonMavlink)
+            {
+                //2000 bytes with no mavlink message. Are we connected to a mavlink capable device?
+                if (!checkedUserNonMavlink)
+                {
+                    link->requestReset();
+                    checkedUserNonMavlink = true;
+                }
+                else
+                {
+                    warnedUserNonMavlink = true;
+                    emit protocolStatusMessage(tr("MAVLink Protocol"), tr("There is a MAVLink Version or Baud Rate Mismatch. "
+                                                                          "Please check if the baud rates of QGroundControl and your autopilot are the same."));
+                }
+            }
+        }
+        if (decodeState == 1)
+        {
+            decodedFirstPacket = true;
+            
+            if(message.msgid == MAVLINK_MSG_ID_PING)
+            {
+                // process ping requests (tgt_system and tgt_comp must be zero)
+                mavlink_ping_t ping;
+                mavlink_msg_ping_decode(&message, &ping);
+                if(!ping.target_system && !ping.target_component)
+                {
+                    mavlink_message_t msg;
+                    mavlink_msg_ping_pack(getSystemId(), getComponentId(), &msg, ping.time_usec, ping.seq, message.sysid, message.compid);
+                    sendMessage(msg);
+                }
+            }
+            
+            if(message.msgid == MAVLINK_MSG_ID_RADIO_STATUS)
+            {
+                // process telemetry status message
+                mavlink_radio_status_t rstatus;
+                mavlink_msg_radio_status_decode(&message, &rstatus);
+                
+                emit radioStatusChanged(link, rstatus.rxerrors, rstatus.fixed, rstatus.rssi, rstatus.remrssi,
+                                        rstatus.txbuf, rstatus.noise, rstatus.remnoise);
+            }
+            
+#ifndef __mobile__
+            // Log data
+            
+            if (!_logSuspendError && !_logSuspendReplay && _tempLogFile.isOpen()) {
+                uint8_t buf[MAVLINK_MAX_PACKET_LEN+sizeof(quint64)];
+                
+                // Write the uint64 time in microseconds in big endian format before the message.
+                // This timestamp is saved in UTC time. We are only saving in ms precision because
+                // getting more than this isn't possible with Qt without a ton of extra code.
+                quint64 time = (quint64)QDateTime::currentMSecsSinceEpoch() * 1000;
+                qToBigEndian(time, buf);
+                
+                // Then write the message to the buffer
+                int len = mavlink_msg_to_send_buffer(buf + sizeof(quint64), &message);
+                
+                // Determine how many bytes were written by adding the timestamp size to the message size
+                len += sizeof(quint64);
+                
+                // Now write this timestamp/message pair to the log.
+                QByteArray b((const char*)buf, len);
+                if(_tempLogFile.write(b) != len)
+                {
+                    // If there's an error logging data, raise an alert and stop logging.
+                    emit protocolStatusMessage(tr("MAVLink Protocol"), tr("MAVLink Logging failed. Could not write to file %1, logging disabled.").arg(_tempLogFile.fileName()));
+                    _stopLogging();
+                    _logSuspendError = true;
+                }
+                
+                // Check for the vehicle arming going by. This is used to trigger log save.
+                if (!_logWasArmed && message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
+                    mavlink_heartbeat_t state;
+                    mavlink_msg_heartbeat_decode(&message, &state);
+                    if (state.base_mode & MAV_MODE_FLAG_DECODE_POSITION_SAFETY) {
+                        _logWasArmed = true;
+                    }
+                }
+            }
+#endif
+            
+            if (message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
+#ifndef __mobile__
+                // Start loggin on first heartbeat
+                _startLogging();
+#endif
+                
+                // Notify the vehicle manager of the heartbeat. This will create/update vehicles as needed.
+                mavlink_heartbeat_t heartbeat;
+                mavlink_msg_heartbeat_decode(&message, &heartbeat);
+                if (!_multiVehicleManager->notifyHeartbeatInfo(link, message.sysid, heartbeat)) {
+                    continue;
+                }
+            }
+            
+            // Increase receive counter
+            totalReceiveCounter[mavlinkChannel]++;
+            currReceiveCounter[mavlinkChannel]++;
+            
+            // Determine what the next expected sequence number is, accounting for
+            // never having seen a message for this system/component pair.
+            int lastSeq = lastIndex[message.sysid][message.compid];
+            int expectedSeq = (lastSeq == -1) ? message.seq : (lastSeq + 1);
+            
+            // And if we didn't encounter that sequence number, record the error
+            if (message.seq != expectedSeq)
+            {
+                
+                // Determine how many messages were skipped
+                int lostMessages = message.seq - expectedSeq;
+                
+                // Out of order messages or wraparound can cause this, but we just ignore these conditions for simplicity
+                if (lostMessages < 0)
+                {
+                    lostMessages = 0;
+                }
+                
+                // And log how many were lost for all time and just this timestep
+                totalLossCounter[mavlinkChannel] += lostMessages;
+                currLossCounter[mavlinkChannel] += lostMessages;
+            }
+            
+            // And update the last sequence number for this system/component pair
+            lastIndex[message.sysid][message.compid] = expectedSeq;
+            
+            // Update on every 32th packet
+            if ((totalReceiveCounter[mavlinkChannel] & 0x1F) == 0)
+            {
+                // Calculate new loss ratio
+                // Receive loss
+                float receiveLoss = (double)currLossCounter[mavlinkChannel]/(double)(currReceiveCounter[mavlinkChannel]+currLossCounter[mavlinkChannel]);
+                receiveLoss *= 100.0f;
+                currLossCounter[mavlinkChannel] = 0;
+                currReceiveCounter[mavlinkChannel] = 0;
+                emit receiveLossChanged(message.sysid, receiveLoss);
+            }
+            
+            // The packet is emitted as a whole, as it is only 255 - 261 bytes short
+            // kind of inefficient, but no issue for a groundstation pc.
+            // It buys as reentrancy for the whole code over all threads
+            emit messageReceived(link, message);
+            
+            // Multiplex message if enabled
+            if (m_multiplexingEnabled)
+            {
+                // Get all links connected to this unit
+                QList<LinkInterface*> links = _linkMgr->getLinks();
+                
+                // Emit message on all links that are currently connected
+                foreach (LinkInterface* currLink, links)
+                {
+                    // Only forward this message to the other links,
+                    // not the link the message was received on
+                    if (currLink != link) sendMessage(currLink, message, message.sysid, message.compid);
+                }
+            }
+        }
+    }
+}
+
+
+#endif
+
+
 void MAVLinkProtocol::_linkStatusChanged(LinkInterface* link, bool connected)
 {
     qCDebug(MAVLinkProtocolLog) << "_linkStatusChanged" << QString("%1").arg((long)link, 0, 16) << connected;
@@ -223,6 +488,10 @@ void MAVLinkProtocol::_linkStatusChanged(LinkInterface* link, bool connected)
         Q_ASSERT(found);
     }
 }
+
+
+
+
 
 /**
  * This method parses all incoming bytes and constructs a MAVLink packet.

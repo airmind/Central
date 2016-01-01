@@ -105,7 +105,7 @@ void LinkManager::setCallbackDelegate(void* delegate) {
 }
 
 BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config){
-    BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config);
+    BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
     if(blelink) {
         _addLink(blelink);
@@ -312,7 +312,7 @@ void LinkManager::_addLink(BTSerialLink* link) {
     
     ///We do not need signal here, use didConnected call back instead;
     //connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
-    //connect(link, &BTSerialLink::connected,        _mavlinkProtocol, &MAVLinkProtocol::linkConnected);
+    //connect(link, static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),        _mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*)>(&MAVLinkProtocol::linkConnected));
     //connect(link, &LinkInterface::disconnected,     _mavlinkProtocol, &MAVLinkProtocol::linkDisconnected);
     
     ///Clear bunch of link statistic counters;

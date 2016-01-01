@@ -12,6 +12,7 @@
 #include "qt2ioshelper.h"
 #include "ConnectPopover.h"
 #include "QGCApplication.h"
+#import "BTSerialLink_objc.h"
 
 NSString* qt2ioshelper::QString2NSString (const QString* qstr) {
     
@@ -470,13 +471,13 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     
     //update discovered list;
     //check in list first;
-    CBPeripheral* p;
+    BLE_Discovered_Peripheral* p;
     for (p in p_in) {
         BOOL found=NO;
         int idx=0;
-        for (CBPeripheral* pt in btlinksarray) {
+        for (BLE_Discovered_Peripheral* pt in btlinksarray) {
             
-            if (pt.identifier == p.identifier) {
+            if (pt.peripheral.identifier == p.peripheral.identifier) {
                 found = YES;
                 break;
             }
@@ -500,8 +501,8 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     for (p in p_out) {
         //BOOL found = NO;
         int idx = 0;
-        for (CBPeripheral* pt in btlinksarray) {
-            if (pt.identifier == p.identifier) {
+        for (BLE_Discovered_Peripheral* pt in btlinksarray) {
+            if (pt.peripheral.identifier == p.peripheral.identifier) {
                 [btlinksarray removeObjectAtIndex:idx];
                 [self.tableView beginUpdates];
                 
@@ -783,18 +784,39 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
             
         }
         
-        CBPeripheral* cbp = (CBPeripheral*)[btlinksarray objectAtIndex:idx];
+        BLE_Discovered_Peripheral* cbp = (BLE_Discovered_Peripheral*)[btlinksarray objectAtIndex:idx];
         
-        
-        QString ident = QString::fromNSString([cbp.identifier UUIDString]);
+        //get the best display name of this device;
+        QString ident = QString::fromNSString([cbp.peripheral.identifier UUIDString]);
         QString name;
-        if (cbp.name == nil || [cbp.name compare:@""]==NSOrderedSame) {
-            name = ident;
+        
+        NSString* blename;
+        if (cbp.advertisementdata==nil) {
+
+            if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+                name = ident;
+            }
+            else {
+                name = QString::fromNSString(cbp.peripheral.name);
+            }
+
         }
         else {
-            name = QString::fromNSString(cbp.name);
+            blename = [(NSDictionary*)cbp.advertisementdata valueForKey:CBAdvertisementDataLocalNameKey];
+            if (blename != nil && [blename compare:@""]!=NSOrderedSame) {
+                name = QString::fromNSString(blename);
+            }
+            else {
+                if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+                    name = ident;
+                }
+                else {
+                    name = QString::fromNSString(cbp.peripheral.name);
+                }
+
+            }
         }
-        
+    
         BTSerialConfiguration* btconfig = new BTSerialConfiguration(name);
         QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
         QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);

@@ -45,6 +45,10 @@ This file is part of the QGROUNDCONTROL project
 #include "QGCTemporaryFile.h"
 #include "QGCToolbox.h"
 
+#ifdef __ios__
+#include "BTSerialLink.h"
+#endif
+
 class LinkManager;
 class MultiVehicleManager;
 class QGCApplication;
@@ -145,6 +149,13 @@ public:
      */
     virtual void resetMetadataForLink(const LinkInterface *link);
     
+#ifdef __ios__
+    void resetMetadataForLink(const BTSerialLink *link);
+    
+    void linkConnected(BTSerialLink* link);
+    void linkDisconnected(BTSerialLink* link);
+    
+#endif
     /// Suspend/Restart logging during replay.
     void suspendLogForReplay(bool suspend);
 
@@ -154,9 +165,16 @@ public:
 public slots:
     /** @brief Receive bytes from a communication interface */
     void receiveBytes(LinkInterface* link, QByteArray b);
+#ifdef __ios__
+    void receiveBytes(BTSerialLink* link, QByteArray b);
+#endif
     
     void linkConnected(void);
     void linkDisconnected(void);
+
+
+ 
+
     
     /** @brief Send MAVLink message through serial interface */
     void sendMessage(mavlink_message_t message);
@@ -289,6 +307,9 @@ private slots:
     
 private:
     void _linkStatusChanged(LinkInterface* link, bool connected);
+#ifdef __ios__
+    void _linkStatusChanged(BTSerialLink* link, bool connected);
+#endif
 
 #ifndef __mobile__
     bool _closeLogFile(void);

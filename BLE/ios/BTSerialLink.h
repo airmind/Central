@@ -130,12 +130,16 @@ class BTSerialLink //: public LinkInterface
 private:
     
     BTSerialLinkWrapper* btlwrapper;
+    
+    MAVLinkProtocol* mavhandler;
    
     
 public:
     
     //set link operation call backs;
     void setLinkCallbackDelegte(void*);
+    void setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler);
+    
     
     //QTcpSocket* getSocket(void) { return _socket; }
     BTSerialConfiguration* getLinkConfiguration() { return _config; }
@@ -177,6 +181,10 @@ public:
     void readMAVDataBytes();
     void readBytes(QString characteristic);
     
+//call back interfaces;
+    void didReadBytes(const char* data, qint64 size);
+    void didConnect();
+    void didDisconnect();
     
     protected slots:
     void _socketError(QAbstractSocket::SocketError socketError);
@@ -203,6 +211,8 @@ protected:
 private:
     // Links are only created/destroyed by LinkManager so constructor/destructor is not public
     BTSerialLink(BTSerialConfiguration* config);
+    BTSerialLink(BTSerialConfiguration* config, MAVLinkProtocol* handler);
+
     ~BTSerialLink();
     
     // From LinkInterface

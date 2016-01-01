@@ -138,6 +138,7 @@ public:
     
     //have a try;
     void didDiscoverBLELinks(void* inrangelist, void* outrangelist);
+    
     /// use Qt signal instead ?
     void registerLinkStatusNotification(void*);
     

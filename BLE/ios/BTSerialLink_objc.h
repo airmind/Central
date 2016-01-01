@@ -45,6 +45,10 @@ typedef enum {
 }
 
 @property (assign, nonatomic) CBPeripheral*  peripheral;
+
+//for the moment; define platform independent advertisement data object for discovering stage in BTSerialLink class;
+@property (assign, nonatomic) NSDictionary*  advertisementdata;
+
 @property (assign, nonatomic) BOOL inrange;
 @property (assign, nonatomic) BOOL connected;
 
