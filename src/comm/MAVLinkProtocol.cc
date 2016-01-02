@@ -208,12 +208,12 @@ void MAVLinkProtocol::_linkStatusChanged(BTSerialLink* link, bool connected)
     Q_ASSERT(link);
     
     if (connected) {
-        foreach (SharedLinkInterface sharedLink, _connectedLinks) {
-            Q_ASSERT(sharedLink.data() != link);
+        foreach (BTSerialLink* alink, _connectedBLELinks) {
+            Q_ASSERT(alink != link);
         }
         
         // Use the same shared pointer as LinkManager
-        _connectedLinks.append(_linkMgr->sharedPointerForLink(link));
+        _connectedBLELinks.append(link);
         
         if (link->requiresUSBMavlinkStart()) {
             // Send command to start MAVLink
@@ -228,7 +228,7 @@ void MAVLinkProtocol::_linkStatusChanged(BTSerialLink* link, bool connected)
     } else {
         bool found = false;
         for (int i=0; i<_connectedLinks.count(); i++) {
-            if (_connectedLinks[i].data() == link) {
+            if (_connectedBLELinks[i] == link) {
                 found = true;
                 _connectedLinks.removeAt(i);
                 break;
@@ -434,10 +434,10 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
             if (m_multiplexingEnabled)
             {
                 // Get all links connected to this unit
-                QList<LinkInterface*> links = _linkMgr->getLinks();
+                QList<BTSerialLink*> links = _linkMgr->getBTSerialLinks();
                 
                 // Emit message on all links that are currently connected
-                foreach (LinkInterface* currLink, links)
+                foreach (BTSerialLink* currLink, links)
                 {
                     // Only forward this message to the other links,
                     // not the link the message was received on
@@ -731,11 +731,18 @@ int MAVLinkProtocol::getComponentId()
  */
 void MAVLinkProtocol::sendMessage(mavlink_message_t message)
 {
+#ifndef __ios__
     // Get all links connected to this unit
     QList<LinkInterface*> links = _linkMgr->getLinks();
 
     // Emit message on all links that are currently connected
     QList<LinkInterface*>::iterator i;
+#else
+    QList<BTSerialLink*> links = _linkMgr->getBTSerialLinks();
+    
+    QList<BTSerialLink*>::iterator i;
+#endif
+    
     for (i = links.begin(); i != links.end(); ++i)
     {
         sendMessage(*i, message);
@@ -787,6 +794,54 @@ void MAVLinkProtocol::sendMessage(LinkInterface* link, mavlink_message_t message
     }
 }
 
+
+
+#ifdef __ios__
+/**
+ * @param link the link to send the message over
+ * @param message message to send
+ */
+void MAVLinkProtocol::sendMessage(BTSerialLink* link, mavlink_message_t message)
+{
+    // Create buffer
+    static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+    // Rewriting header to ensure correct link ID is set
+    static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
+    mavlink_finalize_message_chan(&message, this->getSystemId(), this->getComponentId(), link->getMavlinkChannel(), message.len, messageKeys[message.msgid]);
+    // Write message into buffer, prepending start sign
+    int len = mavlink_msg_to_send_buffer(buffer, &message);
+    // If link is connected
+    if (link->isConnected())
+    {
+        // Send the portion of the buffer now occupied by the message
+        link->writeBytes((const char*)buffer, len);
+    }
+}
+
+/**
+ * @param link the link to send the message over
+ * @param message message to send
+ * @param systemid id of the system the message is originating from
+ * @param componentid id of the component the message is originating from
+ */
+void MAVLinkProtocol::sendMessage(BTSerialLink* link, mavlink_message_t message, quint8 systemid, quint8 componentid)
+{
+    // Create buffer
+    static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+    // Rewriting header to ensure correct link ID is set
+    static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
+    mavlink_finalize_message_chan(&message, systemid, componentid, link->getMavlinkChannel(), message.len, messageKeys[message.msgid]);
+    // Write message into buffer, prepending start sign
+    int len = mavlink_msg_to_send_buffer(buffer, &message);
+    // If link is connected
+    if (link->isConnected())
+    {
+        // Send the portion of the buffer now occupied by the message
+        link->writeBytes((const char*)buffer, len);
+    }
+}
+
+#endif
 /**
  * The heartbeat is sent out of order and does not reset the
  * periodic heartbeat emission. It will be just sent in addition.

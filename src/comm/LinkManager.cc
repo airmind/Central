@@ -155,6 +155,11 @@ void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
     emit linkDisconnected(blelink);
 }
 
+void LinkManager::didUpdateConnectedBLELinkRSSI(void* peripheral_link_list) {
+    emit bleLinkRSSIUpdated (peripheral_link_list);
+}
+
+
 
 #endif
 
@@ -230,6 +235,7 @@ void LinkManager::_addLink(LinkInterface* link)
         connect(link, &LinkInterface::communicationError, _app, &QGCApplication::criticalMessageBoxOnMainThread);
     }
 
+#ifndef __ios__
     connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
     connect(link, &LinkInterface::connected,        _mavlinkProtocol, &MAVLinkProtocol::linkConnected);
     connect(link, &LinkInterface::disconnected,     _mavlinkProtocol, &MAVLinkProtocol::linkDisconnected);
@@ -237,9 +243,16 @@ void LinkManager::_addLink(LinkInterface* link)
 
     connect(link, &LinkInterface::connected,    this, &LinkManager::_linkConnected);
     connect(link, &LinkInterface::disconnected, this, &LinkManager::_linkDisconnected);
+    
+#endif
+    
 }
 
 #ifdef __ios__
+
+const QList<BTSerialLink*> LinkManager::getBTSerialLinks() {
+    return _blelinks;
+}
 
 
 bool LinkManager::containsLink(BTSerialLink* link) {

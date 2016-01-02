@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "BTSerialLink_objc.h"
 
 @interface MindStickButtonViewController : UIViewController {
     UIButton* statusButton;
@@ -16,6 +17,6 @@
 -(void)removeStatusButton;
 -(void)enable;
 -(void)disable;
-
+-(void)updateLinkRSSI:(BLE_Peripheral_Links*) list;
 
 @end

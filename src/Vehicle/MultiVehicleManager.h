@@ -33,6 +33,10 @@
 #include "QGCToolbox.h"
 #include "QGCLoggingCategory.h"
 
+#ifdef __ios__
+#include "BTSerialLink.h"
+#endif
+
 class FirmwarePluginManager;
 class AutoPilotPluginManager;
 class JoystickManager;
@@ -65,7 +69,11 @@ public:
     ///     @param heartbeat Mavlink heartbeat message
     /// @return true: continue further processing of this message, false: disregard this message
     bool notifyHeartbeatInfo(LinkInterface* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
+#ifdef __ios__
+    bool MultiVehicleManager::notifyHeartbeatInfo(BTSerialLink* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
 
+#endif
+    
     Q_INVOKABLE Vehicle* getVehicleById(int vehicleId);
 
     UAS* activeUas(void) { return _activeVehicle ? _activeVehicle->uas() : NULL; }

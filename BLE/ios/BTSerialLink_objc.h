@@ -133,6 +133,7 @@ typedef enum {
 }
 @property (assign, nonatomic) CBService*  targetService;
 @property (assign, nonatomic) CBCharacteristic*  targetCharacteristic;
+@property (assign, nonatomic) BOOL isInRange;
 
 
 -(BTSerialLink_objc*)initWith:(BTSerialConfiguration_objc*)config;

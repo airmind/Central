@@ -133,6 +133,8 @@ private:
     
     MAVLinkProtocol* mavhandler;
    
+    //for connected link;
+    int filteredLinkRSSI;
     
 public:
     
@@ -160,6 +162,14 @@ public:
     // connect/disconnect on link directly. All connect/disconnect calls should be made through LinkManager.
     bool connect(void);
     bool disconnect(void);
+    
+    /// @return true: "sh /etc/init.d/rc.usb" must be sent on link to start mavlink
+    bool requiresUSBMavlinkStart(void) const { return false; }
+    
+    /// mavlink channel to use for this link, as used by mavlink_parse_char. The mavlink channel is only
+    /// set into the link when it is added to LinkManager
+    uint8_t getMavlinkChannel(void) const { Q_ASSERT(_mavlinkChannelSet); return _mavlinkChannel; }
+
     
     public slots:
     
@@ -200,9 +210,7 @@ public:
     bool _mavlinkChannelSet;    ///< true: _mavlinkChannel has been set
     uint8_t _mavlinkChannel;    ///< mavlink channel to use for this link, as used by mavlink_parse_char
 
-    /// mavlink channel to use for this link, as used by mavlink_parse_char. The mavlink channel is only
-    /// set into the link when it is added to LinkManager
-    uint8_t getMavlinkChannel(void) const { Q_ASSERT(_mavlinkChannelSet); return _mavlinkChannel; }
+    
 
 protected:
     // From LinkInterface->QThread

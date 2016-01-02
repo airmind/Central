@@ -115,7 +115,7 @@ private slots:
     void _linkDisconnected              (BTSerialLink* link);
 
     void _peripheralsDiscovered(void* inrangelist, void* outrangelist);
-
+    void _bleLinkRSSIUpdated (void* peripheral_link_list);
 #endif
     void _leaveMessageView              ();
     void _setProgressBarValue           (float value);

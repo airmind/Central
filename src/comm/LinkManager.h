@@ -140,7 +140,8 @@ public:
     void didDiscoverBLELinks(void* inrangelist, void* outrangelist);
     
     /// use Qt signal instead ?
-    void registerLinkStatusNotification(void*);
+    void didUpdateConnectedBLELinkRSSI(void* peripheral_link_list);
+
     
 #endif
 
@@ -212,6 +213,7 @@ signals:
     void linkDisconnected(BTSerialLink* link);
     //new signal for discovering;
     void peripheralsDiscovered(void* inrangelist, void* outrangelist);
+    void bleLinkRSSIUpdated (void* peripheral_link_list);
 #endif
     
 private slots:

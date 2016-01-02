@@ -29,7 +29,8 @@ public:
     void removeStatusButton();
     void enable();
     void disable();
-    
+    void linkRSSIUpdated(void* list);
+
 };
 
 
@@ -109,6 +110,9 @@ void MindStickButtonWrapper::disable() {
     [buttonController disable];
 }
 
+void MindStickButtonWrapper::linkRSSIUpdated(void* list) {
+    [buttonController updateLinkRSSI:(__bridge BLE_Peripheral_Links*)list];
+}
 
 
 /**
@@ -144,6 +148,9 @@ void MindStickButton::updateStatus() {
     
 }
 
+void MindStickButton::linkRSSIUpdated(void* list) {
+    mswrapper->linkRSSIUpdated(list);
+}
 
 /**
  MindStickButtonViewController - Objective - C implementation;
@@ -201,6 +208,12 @@ void MindStickButton::updateStatus() {
 -(void)disable {
     statusButton.enabled = NO;
 }
+
+
+-(void)updateLinkRSSI:(BLE_Peripheral_Links*) list {
+    
+}
+
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];

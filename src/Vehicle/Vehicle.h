@@ -60,6 +60,17 @@ public:
             FirmwarePluginManager*  firmwarePluginManager,
             AutoPilotPluginManager* autopilotPluginManager,
             JoystickManager*        joystickManager);
+    
+#ifdef __ios__
+    Vehicle(BTSerialLink*          link,
+            int                     vehicleId,
+            MAV_AUTOPILOT           firmwareType,
+            MAV_TYPE                vehicleType,
+            FirmwarePluginManager*  firmwarePluginManager,
+            AutoPilotPluginManager* autopilotPluginManager,
+            JoystickManager*        joystickManager);
+    
+#endif
     ~Vehicle();
 
     Q_PROPERTY(int                  id                      READ id                                     CONSTANT)
@@ -325,6 +336,13 @@ private slots:
 private:
     bool _containsLink(LinkInterface* link);
     void _addLink(LinkInterface* link);
+    
+#ifdef __ios__
+    bool _containsLink(BTSerialLink* link);
+    void _addLink(BTSerialLink* link);
+    
+#endif
+    
     void _loadSettings(void);
     void _saveSettings(void);
     void _startJoystick(bool start);
@@ -351,6 +369,11 @@ private:
     /// which are QSharedPointer's in order to maintain reference counts across threads.
     /// This way Link deletion works correctly.
     QList<SharedLinkInterface> _links;
+    
+#ifdef __ios__
+    QList<BTSerialLink*> _blelinks;
+    
+#endif
 
     JoystickMode_t  _joystickMode;
     bool            _joystickEnabled;

@@ -182,6 +182,16 @@ public slots:
     void sendMessage(LinkInterface* link, mavlink_message_t message);
     /** @brief Send MAVLink message with correct system / component ID */
     void sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
+    
+    
+#ifdef __ios__
+    /** @brief Send MAVLink message */
+    void sendMessage(BTSerialLink* link, mavlink_message_t message);
+    /** @brief Send MAVLink message with correct system / component ID */
+    void sendMessage(BTSerialLink* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
+  
+#endif
+    
     /** @brief Set the rate at which heartbeats are emitted */
     void setHeartbeatRate(int rate);
     /** @brief Set the system id of this application */
@@ -298,6 +308,13 @@ signals:
      */
     void radioStatusChanged(LinkInterface* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
     unsigned txbuf, unsigned noise, unsigned remnoise);
+#ifdef __ios__
+    void radioStatusChanged(BTSerialLink* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
+                            unsigned txbuf, unsigned noise, unsigned remnoise);
+    
+    void messageReceived(BTSerialLink* link, mavlink_message_t message);
+    
+#endif
     
     /// @brief Emitted when a temporary log file is ready for saving
     void saveTempFlightDataLog(QString tempLogfile);
@@ -329,6 +346,9 @@ private:
     /// which are QSharedPointer's in order to maintain reference counts across threads.
     /// This way Link deletion works correctly.
     QList<SharedLinkInterface> _connectedLinks;
+#ifdef __ios__
+    QList<BTSerialLink*> _connectedBLELinks;
+#endif
     
     QTimer  _heartbeatTimer;    ///< Timer to emit heartbeats
     int     _heartbeatRate;     ///< Heartbeat rate, controls the timer interval

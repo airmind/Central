@@ -78,6 +78,7 @@ MainToolBarController::MainToolBarController(QObject* parent)
     connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkDisconnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkDisconnected));
 
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::peripheralsDiscovered,      this, &MainToolBarController::_peripheralsDiscovered);
+    connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::bleLinkRSSIUpdated,      this, &MainToolBarController::_bleLinkRSSIUpdated);
 
 #endif
     
@@ -196,6 +197,11 @@ void MainToolBarController::onConnectTappedDismiss(QString conf)
 
 void MainToolBarController::_peripheralsDiscovered(void* inrangelist, void* outrangelist) {
     popover->peripheralsDiscovered(inrangelist, outrangelist);
+}
+
+
+void _bleLinkRSSIUpdated (void* peripheral_link_list) {
+    
 }
 
 
@@ -325,6 +331,9 @@ void MainToolBarController::_linkDisconnected(LinkInterface* link)
 #ifdef __ios__
 void MainToolBarController::_linkConnected                 (BTSerialLink* link) {
     _updateConnection();
+    
+    //dismiss popover;
+    popover->dismissPopover();
     
     //show mindstick button;
     mindstickButton = new MindStickButton();

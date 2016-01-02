@@ -26,6 +26,7 @@ public:
     void enable();
     void disable();
     void updateStatus();
+    void linkRSSIUpdated(void* list);
     
 };
 

@@ -184,6 +184,146 @@ Vehicle::Vehicle(LinkInterface*             link,
     _communicationInactivityTimer.start();
 }
 
+#ifdef __ios__
+
+Vehicle::Vehicle(BTSerialLink*             link,
+                 int                        vehicleId,
+                 MAV_AUTOPILOT              firmwareType,
+                 MAV_TYPE                   vehicleType,
+                 FirmwarePluginManager*     firmwarePluginManager,
+                 AutoPilotPluginManager*    autopilotPluginManager,
+                 JoystickManager*           joystickManager)
+: _id(vehicleId)
+, _active(false)
+, _firmwareType(firmwareType)
+, _vehicleType(vehicleType)
+, _firmwarePlugin(NULL)
+, _autopilotPlugin(NULL)
+, _joystickMode(JoystickModeRC)
+, _joystickEnabled(false)
+, _uas(NULL)
+, _coordinate(37.803784, -122.462276)
+, _coordinateValid(false)
+, _homePositionAvailable(false)
+, _mav(NULL)
+, _currentMessageCount(0)
+, _messageCount(0)
+, _currentErrorCount(0)
+, _currentWarningCount(0)
+, _currentNormalCount(0)
+, _currentMessageType(MessageNone)
+, _roll(0.0f)
+, _pitch(0.0f)
+, _heading(0.0f)
+, _altitudeAMSL(0.0f)
+, _altitudeWGS84(0.0f)
+, _altitudeRelative(0.0f)
+, _groundSpeed(0.0f)
+, _airSpeed(0.0f)
+, _climbRate(0.0f)
+, _navigationAltitudeError(0.0f)
+, _navigationSpeedError(0.0f)
+, _navigationCrosstrackError(0.0f)
+, _navigationTargetBearing(0.0f)
+, _refreshTimer(new QTimer(this))
+, _batteryVoltage(-1.0f)
+, _batteryPercent(0.0)
+, _batteryConsumed(-1.0)
+, _currentHeartbeatTimeout(0)
+, _satelliteCount(-1)
+, _satelliteLock(0)
+, _updateCount(0)
+, _missionManager(NULL)
+, _missionManagerInitialRequestComplete(false)
+, _parameterLoader(NULL)
+, _armed(false)
+, _base_mode(0)
+, _custom_mode(0)
+, _nextSendMessageMultipleIndex(0)
+, _communicationInactivityTimeoutMSecs(_communicationInactivityTimeoutMSecsDefault)
+, _firmwarePluginManager(firmwarePluginManager)
+, _autopilotPluginManager(autopilotPluginManager)
+, _joystickManager(joystickManager)
+, _flowImageIndex(0)
+{
+    _addLink(link);
+    
+    _mavlink = qgcApp()->toolbox()->mavlinkProtocol();
+    
+    connect(_mavlink, &MAVLinkProtocol::messageReceived, this, &Vehicle::_mavlinkMessageReceived);
+    connect(this, &Vehicle::_sendMessageOnThread, this, &Vehicle::_sendMessage, Qt::QueuedConnection);
+    
+    _uas = new UAS(_mavlink, this, _firmwarePluginManager);
+    
+    setLatitude(_uas->getLatitude());
+    setLongitude(_uas->getLongitude());
+    
+    connect(_uas, &UAS::latitudeChanged,    this, &Vehicle::setLatitude);
+    connect(_uas, &UAS::longitudeChanged,   this, &Vehicle::setLongitude);
+    connect(_uas, &UAS::imageReady,         this, &Vehicle::_imageReady);
+    
+    _firmwarePlugin     = _firmwarePluginManager->firmwarePluginForAutopilot(_firmwareType, _vehicleType);
+    _autopilotPlugin    = _autopilotPluginManager->newAutopilotPluginForVehicle(this);
+    
+    connect(_autopilotPlugin, &AutoPilotPlugin::parametersReadyChanged,     this, &Vehicle::_parametersReady);
+    connect(_autopilotPlugin, &AutoPilotPlugin::missingParametersChanged,   this, &Vehicle::missingParametersChanged);
+    
+    // Refresh timer
+    connect(_refreshTimer, SIGNAL(timeout()), this, SLOT(_checkUpdate()));
+    _refreshTimer->setInterval(UPDATE_TIMER);
+    _refreshTimer->start(UPDATE_TIMER);
+    emit heartbeatTimeoutChanged();
+    
+    _mav = uas();
+    // Reset satellite count (no GPS)
+    _satelliteCount = -1;
+    emit satelliteCountChanged();
+    // Reset connection lost (if any)
+    _currentHeartbeatTimeout = 0;
+    emit heartbeatTimeoutChanged();
+    // Listen for system messages
+    connect(qgcApp()->toolbox()->uasMessageHandler(), &UASMessageHandler::textMessageCountChanged, this, &Vehicle::_handleTextMessage);
+    // Now connect the new UAS
+    connect(_mav, SIGNAL(attitudeChanged                    (UASInterface*,double,double,double,quint64)),              this, SLOT(_updateAttitude(UASInterface*, double, double, double, quint64)));
+    connect(_mav, SIGNAL(attitudeChanged                    (UASInterface*,int,double,double,double,quint64)),          this, SLOT(_updateAttitude(UASInterface*,int,double, double, double, quint64)));
+    connect(_mav, SIGNAL(speedChanged                       (UASInterface*, double, double, quint64)),                  this, SLOT(_updateSpeed(UASInterface*, double, double, quint64)));
+    connect(_mav, SIGNAL(altitudeChanged                    (UASInterface*, double, double, double, double, quint64)),  this, SLOT(_updateAltitude(UASInterface*, double, double, double, double, quint64)));
+    connect(_mav, SIGNAL(navigationControllerErrorsChanged  (UASInterface*, double, double, double)),                   this, SLOT(_updateNavigationControllerErrors(UASInterface*, double, double, double)));
+    connect(_mav, SIGNAL(statusChanged                      (UASInterface*,QString,QString)),                           this, SLOT(_updateState(UASInterface*, QString,QString)));
+    connect(_mav, &UASInterface::NavigationControllerDataChanged,   this, &Vehicle::_updateNavigationControllerData);
+    connect(_mav, &UASInterface::heartbeatTimeout,                  this, &Vehicle::_heartbeatTimeout);
+    connect(_mav, &UASInterface::batteryChanged,                    this, &Vehicle::_updateBatteryRemaining);
+    connect(_mav, &UASInterface::batteryConsumedChanged,            this, &Vehicle::_updateBatteryConsumedChanged);
+    connect(_mav, &UASInterface::localizationChanged,               this, &Vehicle::_setSatLoc);
+    UAS* pUas = dynamic_cast<UAS*>(_mav);
+    if(pUas) {
+        _setSatelliteCount(pUas->getSatelliteCount(), QString(""));
+        connect(pUas, &UAS::satelliteCountChanged, this, &Vehicle::_setSatelliteCount);
+    }
+    
+    _loadSettings();
+    
+    _missionManager = new MissionManager(this);
+    connect(_missionManager, &MissionManager::error, this, &Vehicle::_missionManagerError);
+    
+    _parameterLoader = new ParameterLoader(_autopilotPlugin, this /* Vehicle */, this /* parent */);
+    connect(_parameterLoader, SIGNAL(parametersReady(bool)),        _autopilotPlugin, SLOT(_parametersReadyPreChecks(bool)));
+    connect(_parameterLoader, SIGNAL(parameterListProgress(float)), _autopilotPlugin, SIGNAL(parameterListProgress(float)));
+    
+    _firmwarePlugin->initializeVehicle(this);
+    
+    _sendMultipleTimer.start(_sendMessageMultipleIntraMessageDelay);
+    connect(&_sendMultipleTimer, &QTimer::timeout, this, &Vehicle::_sendMessageMultipleNext);
+    
+    _mapTrajectoryTimer.setInterval(_mapTrajectoryMsecsBetweenPoints);
+    connect(&_mapTrajectoryTimer, &QTimer::timeout, this, &Vehicle::_addNewMapTrajectoryPoint);
+    
+    _communicationInactivityTimer.setInterval(_communicationInactivityTimeoutMSecs);
+    connect(&_communicationInactivityTimer, &QTimer::timeout, this, &Vehicle::_communicationInactivityTimedOut);
+    _communicationInactivityTimer.start();
+}
+#endif
+
 Vehicle::~Vehicle()
 {
     delete _missionManager;
@@ -306,6 +446,30 @@ void Vehicle::_addLink(LinkInterface* link)
 #endif
     }
 }
+
+
+#ifdef __ios__
+bool Vehicle::_containsLink(BTSerialLink* link)
+{
+    foreach (BTSerialLink* alink, _blelinks) {
+        if (alink == link) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+void Vehicle::_addLink(BTSerialLink* link)
+{
+    if (!_containsLink(link)) {
+        _blelinks += link;
+        qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected), this, &Vehicle::_linkDisconnected);
+    }
+}
+
+#endif
 
 void Vehicle::_linkDisconnected(LinkInterface* link)
 {
