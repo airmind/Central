@@ -354,6 +354,11 @@ void MainToolBarController::_linkDisconnected              (BTSerialLink* link) 
     
 }
 
+void MainToolBarController::_bleLinkRSSIUpdated (void* peripheral_link_list) {
+    //update RSSI value in UI;
+}
+
+
 #endif
 
 void MainToolBarController::_updateConnection(LinkInterface *disconnectedLink)

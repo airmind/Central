@@ -21,7 +21,7 @@
 //#include "LinkManager.h"
 //#include "QGBTSerialManager.h"
 
-
+//#include "MAVLinkProtocol.h"
 
 typedef enum  {
     BLE_LINK_NOT_CONNECTED,
@@ -38,7 +38,7 @@ typedef enum  {
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
-
+class MAVLinkProtocol;
 
 /**
  1. the class will continously monitoring rssi to tell if device in range during scanning.

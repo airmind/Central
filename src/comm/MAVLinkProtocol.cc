@@ -188,13 +188,19 @@ void MAVLinkProtocol::linkDisconnected(void)
 }
 
 #ifdef __ios__
-void linkConnected(BTSerialLink* link) {
+void MAVLinkProtocol::linkConnected(BTSerialLink* link) {
+    Q_ASSERT(link);
     
+    _linkStatusChanged(link, true);
+
 }
 
 
-void linkDisconnected(BTSerialLink* link) {
+void MAVLinkProtocol::linkDisconnected(BTSerialLink* link) {
+    Q_ASSERT(link);
     
+    _linkStatusChanged(link, false);
+
 }
 
 void MAVLinkProtocol::resetMetadataForLink(const BTSerialLink *link) {

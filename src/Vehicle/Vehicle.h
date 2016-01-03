@@ -307,6 +307,9 @@ signals:
 
 private slots:
     void _mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message);
+#ifdef __ios__
+    void _mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message);
+#endif
     void _linkDisconnected(LinkInterface* link);
     void _sendMessage(mavlink_message_t message);
     void _sendMessageMultipleNext(void);

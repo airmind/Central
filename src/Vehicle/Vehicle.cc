@@ -110,8 +110,12 @@ Vehicle::Vehicle(LinkInterface*             link,
     _addLink(link);
 
     _mavlink = qgcApp()->toolbox()->mavlinkProtocol();
-
+#ifndef __ios__
     connect(_mavlink, &MAVLinkProtocol::messageReceived, this, &Vehicle::_mavlinkMessageReceived);
+#else
+    connect(_mavlink, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this, static_cast<void (Vehicle::*)(LinkInterface*, mavlink_message_t)>(&Vehicle::_mavlinkMessageReceived));
+#endif
+    
     connect(this, &Vehicle::_sendMessageOnThread, this, &Vehicle::_sendMessage, Qt::QueuedConnection);
 
     _uas = new UAS(_mavlink, this, _firmwarePluginManager);
@@ -250,7 +254,7 @@ Vehicle::Vehicle(BTSerialLink*             link,
     
     _mavlink = qgcApp()->toolbox()->mavlinkProtocol();
     
-    connect(_mavlink, &MAVLinkProtocol::messageReceived, this, &Vehicle::_mavlinkMessageReceived);
+    connect(_mavlink, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this, static_cast<void (Vehicle::*)(BTSerialLink*, mavlink_message_t)>(&Vehicle::_mavlinkMessageReceived));
     connect(this, &Vehicle::_sendMessageOnThread, this, &Vehicle::_sendMessage, Qt::QueuedConnection);
     
     _uas = new UAS(_mavlink, this, _firmwarePluginManager);
@@ -365,6 +369,39 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 
     _uas->receiveMessage(message);
 }
+
+#ifdef __ios__
+void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message) {
+    if (message.sysid != _id && message.sysid != 0) {
+        return;
+    }
+    
+    _communicationInactivityTimer.start();
+    
+    if (!_containsLink(link)) {
+        _addLink(link);
+    }
+    
+    // Give the plugin a change to adjust the message contents
+    _firmwarePlugin->adjustMavlinkMessage(&message);
+    
+    switch (message.msgid) {
+        case MAVLINK_MSG_ID_HOME_POSITION:
+            _handleHomePosition(message);
+            break;
+        case MAVLINK_MSG_ID_HEARTBEAT:
+            _handleHeartbeat(message);
+            break;
+    }
+    
+    emit mavlinkMessageReceived(message);
+    
+    _uas->receiveMessage(message);
+    
+}
+
+#endif
+
 
 void Vehicle::_handleHomePosition(mavlink_message_t& message)
 {

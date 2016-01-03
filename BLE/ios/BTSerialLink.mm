@@ -887,9 +887,9 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 
 /// @file
-///     @brief TCP link type for SITL support
+///     @brief BLEHelperWrapper
 ///
-///     @author Don Gagne <don@thegagnes.com>
+///     @author
 
 class BLEHelperWrapper {
     BLEHelper_objc* ble_objc;

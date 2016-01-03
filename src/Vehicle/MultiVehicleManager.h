@@ -70,7 +70,7 @@ public:
     /// @return true: continue further processing of this message, false: disregard this message
     bool notifyHeartbeatInfo(LinkInterface* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
 #ifdef __ios__
-    bool MultiVehicleManager::notifyHeartbeatInfo(BTSerialLink* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
+    bool notifyHeartbeatInfo(BTSerialLink* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
 
 #endif
     
