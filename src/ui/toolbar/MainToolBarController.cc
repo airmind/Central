@@ -331,7 +331,6 @@ void MainToolBarController::_linkDisconnected(LinkInterface* link)
 #ifdef __ios__
 void MainToolBarController::_linkConnected                 (BTSerialLink* link) {
     _updateConnection();
-    
     //dismiss popover;
     popover->dismissPopover();
     

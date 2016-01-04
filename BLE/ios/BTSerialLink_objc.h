@@ -9,6 +9,7 @@
 #ifndef qgroundcontrol_BTSerialLink_objc_h
 #define qgroundcontrol_BTSerialLink_objc_h
 
+#include "BTSerialLink.h"
 #import <CoreBluetooth/CoreBluetooth.h>
 
 //class BTSerialConfigurationWrapper;
@@ -16,12 +17,6 @@
 
 #define LP_RSSI_WINDOW_LENGTH 10
 
-typedef enum {
-    BLE_LINK_CONNECTED_PERIPHERAL,
-    BLE_LINK_CONNECTED_SERVICE,
-    BLE_LINK_CONNECTED_CHARACTERISTIC
-    
-}BLE_LINK_CONNECT_STAGE ;
 
 @interface BLE_LowPassFilter_objc : NSObject {
     int lp_win[LP_RSSI_WINDOW_LENGTH]; //ring buffer
@@ -101,13 +96,15 @@ typedef enum {
     NSString* link_name; //display name;
     NSString* link_service_id; //service id;
     NSString* link_characteristic_id; //characteristic id;
+    BLE_LINK_CONNECT_STAGE connectstage;
 }
 
--(void)configLinkId:(NSString*)linkid linkname:(NSString*)name serviceid:(NSString*)sid characteristicid:(NSString*)cid;
+-(void)configLinkId:(NSString*)linkid linkname:(NSString*)name serviceid:(NSString*)sid characteristicid:(NSString*)cid stage:(BLE_LINK_CONNECT_STAGE)stage;
 -(NSString*)getLinkId;
 -(NSString*)getServiceId;
 -(NSString*)getCharacteristicId;
 -(NSString*)getName;
+-(BLE_LINK_CONNECT_STAGE)connectStage;
 
 @end
 
@@ -125,7 +122,7 @@ typedef enum {
     
     BTSerialConfiguration_objc* config_objc;
     
-    BLE_LINK_CONNECT_STAGE connectstage;
+    //BLE_LINK_CONNECT_STAGE connectstage;
     
     BLE_LowPassFilter_objc* lp_filter;
 
@@ -151,6 +148,8 @@ typedef enum {
 
 -(void)writeBytes:(const char*)data characteristic:(CBCharacteristic*)cid size:(long long)size ;
 -(void)writeBytesNeedsAck:(const char *)data characteristic:(CBCharacteristic*)cid size:(long long)size ;
+
+
 -(CBPeripheral*)peripheralForLink;
 -(BLE_LINK_CONNECT_STAGE)connectStage;
 -(BTSerialConfiguration_objc*)configuration;

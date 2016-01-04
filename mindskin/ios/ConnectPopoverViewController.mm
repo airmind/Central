@@ -343,16 +343,39 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     }
     else {
      */
-        CBPeripheral* p = [btlinksarray objectAtIndex:idx];
     
-        if (p.name==nil) {
-            label.text = [p.identifier UUIDString];
+    BLE_Discovered_Peripheral* cbp = [btlinksarray objectAtIndex:idx];
+
+    //get the best display name of this device;
+    NSString* ident = [cbp.peripheral.identifier UUIDString];
+    //QString name;
+    
+    NSString* blename;
+    if (cbp.advertisementdata==nil) {
+        
+        if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+            blename = ident;
         }
         else {
-            label.text = p.name;
+            blename = cbp.peripheral.name;
         }
-    NSLog(@"Peripheral name: %@", p.name);
-    label.text = @"3333";
+        
+    }
+    else {
+        blename = [(NSDictionary*)(cbp.advertisementdata) valueForKey:CBAdvertisementDataLocalNameKey];
+        if (blename == nil || [blename compare:@""]==NSOrderedSame) {
+            if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+                blename = ident;
+            }
+            else {
+                blename = cbp.peripheral.name;
+            }
+            
+        }
+    }
+    label.text = blename;
+    
+    NSLog(@"Peripheral name: %@", blename);
     //}
     
     //NSString* btnTitle;
@@ -629,7 +652,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
     QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
     
-    btconfig->configBLESerialLink(ident, name, sid, cid);
+    btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
 
     BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
 
@@ -802,7 +825,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
 
         }
         else {
-            blename = [(NSDictionary*)cbp.advertisementdata valueForKey:CBAdvertisementDataLocalNameKey];
+            blename = [(NSDictionary*)(cbp.advertisementdata) valueForKey:CBAdvertisementDataLocalNameKey];
             if (blename != nil && [blename compare:@""]!=NSOrderedSame) {
                 name = QString::fromNSString(blename);
             }
@@ -821,7 +844,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
         QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
 
-        btconfig->configBLESerialLink(ident, name, sid, cid);
+        btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
 
         //create a physical link and connect;
         BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);

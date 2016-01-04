@@ -147,11 +147,21 @@ void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
 
 
 void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
+    //set blelink status;
+    if ((blelink->getLinkConfiguration())->getBLELinkConnectStage()==BLE_LINK_CONNECTED_CHARACTERISTIC) {
+        blelink->setLinkConnectedStatus(BLE_LINK_ENDPOINT_CONNECTED);
+    }
+    else {
+        blelink->setLinkConnectedStatus(BLE_LINK_HARDWARE_CONNECTED);
+        
+    }
     emit linkConnected(blelink);
 
 }
 
 void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
+    blelink->setLinkConnectedStatus(BLE_LINK_NOT_CONNECTED);
+    
     emit linkDisconnected(blelink);
 }
 

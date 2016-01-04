@@ -204,7 +204,9 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 }
 
 -(void)dealloc {
-    
+    if (advertisementdata!=nil) {
+        [advertisementdata release];
+    }
     [lp_filter release];
     [super dealloc];
 }
@@ -477,7 +479,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
     BLE_Discovered_Peripheral* p = [discoveredPeripherals containsPeripheral:peripheral];
     if (p.advertisementdata == nil) {
-        p.advertisementdata = advertisementData;
+        p.advertisementdata = [advertisementData copy];
     }
     
     if (p == nil) {
@@ -982,7 +984,7 @@ class BTSerialConfigurationWrapper {
 public:
     BTSerialConfigurationWrapper();
     ~BTSerialConfigurationWrapper();
-    void configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid);
+    void configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid, BLE_LINK_CONNECT_STAGE stage);
     
 };
 
@@ -998,13 +1000,13 @@ BTSerialConfigurationWrapper::~BTSerialConfigurationWrapper() {
     }
 }
 
-void BTSerialConfigurationWrapper::configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid) {
+void BTSerialConfigurationWrapper::configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid, BLE_LINK_CONNECT_STAGE stage) {
     NSString* identifier = qt2ioshelper::QString2NSString(&linkid);
     NSString* name = qt2ioshelper::QString2NSString(&linkname);
     NSString* serviceid = qt2ioshelper::QString2NSString(&sid);
     NSString* characteristicid = qt2ioshelper::QString2NSString(&cid);
     
-    [btc_objc configLinkId:identifier linkname:name serviceid:serviceid characteristicid:characteristicid];
+    [btc_objc configLinkId:identifier linkname:name serviceid:serviceid characteristicid:characteristicid stage:stage];
 }
 
 /**
@@ -1083,8 +1085,9 @@ BTSerialConfiguration_objc* BTSerialLinkWrapper::createObjCConfigObjectFromQObje
     NSString* characteristicid = qt2ioshelper::QString2NSString(&qcharacteristicid);
 
     BTSerialConfiguration_objc* config_obj = [[BTSerialConfiguration_objc alloc] init];
+    BLE_LINK_CONNECT_STAGE linkstage = config->getBLELinkConnectStage();
 
-    [config_obj configLinkId:identifier linkname:name serviceid:serviceid characteristicid:characteristicid];
+    [config_obj configLinkId:identifier linkname:name serviceid:serviceid characteristicid:characteristicid stage:linkstage];
 
     //configBLESerialLink(identifier, name, serviceid, characteristicid);
     return config_obj;
@@ -1116,6 +1119,7 @@ BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
 //, _socket(NULL)
 //, _socketIsConnected(false)
 : _mavlinkChannelSet(false)
+, _linkstatus(BLE_LINK_NOT_CONNECTED)
 {
     _config = config;
     Q_ASSERT(_config != NULL);
@@ -1132,6 +1136,7 @@ BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
 BTSerialLink::BTSerialLink(BTSerialConfiguration* config, MAVLinkProtocol* handler)
 :mavhandler(handler)
 ,_mavlinkChannelSet(false)
+, _linkstatus(BLE_LINK_NOT_CONNECTED)
 
 {
     _config = config;
@@ -1153,6 +1158,11 @@ BTSerialLink::~BTSerialLink()
     // Wait for it to exit
     //wait();
 }
+
+void BTSerialLink::setLinkConnectedStatus(BLE_LINK_STATUS status) {
+    _linkstatus = status;
+}
+
 
 void BTSerialLink::setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler) {
     mavhandler = protocolhandler;
@@ -1320,6 +1330,7 @@ bool BTSerialLink::_connect()
     //QString cid = _config->getBLEPeripheralCharacteristicID();
 
     btlwrapper->_connect();
+    
     return true;
     
 }
@@ -1400,30 +1411,35 @@ void BTSerialLink::_restartConnection()
 //--------------------------------------------------------------------------
 //-- BTSerialConfiguration
 
-BTSerialConfiguration::BTSerialConfiguration(const QString& name) : LinkConfiguration(name)
+BTSerialConfiguration::BTSerialConfiguration(const QString& name) : LinkConfiguration(name), connstage(BLE_LINK_CONNECTED_CHARACTERISTIC)
 {
     //_port    = QGC_TCP_PORT;
     //_address = QHostAddress::Any;
     btcwrapper =  new BTSerialConfigurationWrapper();
 }
 
-BTSerialConfiguration::BTSerialConfiguration(BTSerialConfiguration* source) : LinkConfiguration(source)
+BTSerialConfiguration::BTSerialConfiguration(BTSerialConfiguration* source) : LinkConfiguration(source), connstage(BLE_LINK_CONNECTED_CHARACTERISTIC)
 {
     //_port    = source->port();
     //_address = source->address();
+
+}
+
+BTSerialConfiguration:: ~BTSerialConfiguration() {
     if (btcwrapper!=NULL) {
         delete btcwrapper;
     }
 }
 
-void BTSerialConfiguration::configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid) {
+void BTSerialConfiguration::configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid, BLE_LINK_CONNECT_STAGE stage) {
 
     identifier = linkid;
     pname = linkname;
     serviceID = sid;
     characteristicID = cid;
+    connstage = stage;
     
-    btcwrapper -> configBLESerialLink (identifier, pname, serviceID, characteristicID);
+    btcwrapper -> configBLESerialLink (identifier, pname, serviceID, characteristicID, stage);
 }
 
 
@@ -1493,6 +1509,9 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
     return characteristicID;
 }
 
+BLE_LINK_CONNECT_STAGE BTSerialConfiguration::getBLELinkConnectStage() {
+    return connstage;
+}
 
 
 /***************************
@@ -1598,6 +1617,8 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 -(void)writeBytes:(const char*)data size:(int)size {
     
     //NSString* cid = [config_objc getCharacteristicId];
+    assert(targetCharacteristic!=nil);
+    
     NSData *ndata = [NSData dataWithBytes: data  length:size];
     [cbp writeValue:ndata forCharacteristic:targetCharacteristic type:CBCharacteristicWriteWithoutResponse];
 }
@@ -1605,8 +1626,10 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 
 -(void)writeBytesNeedsAck:(const char*)data size:(int)size {
     //NSString* cid = [config_objc getCharacteristicId];
+    
+    assert(targetCharacteristic!=nil);
+    
     NSData *ndata = [NSData dataWithBytes: data  length:size];
-
     [cbp writeValue:ndata forCharacteristic:targetCharacteristic type:CBCharacteristicWriteWithResponse];
     
 }
@@ -1658,7 +1681,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 -(BOOL)connect {
     
     NSString* identifier = [config_objc getLinkId];
-    connectstage = BLE_LINK_CONNECTED_CHARACTERISTIC;
+    //connectstage = BLE_LINK_CONNECTED_CHARACTERISTIC;
     
     cbp  =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
     
@@ -1670,7 +1693,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 
 -(BOOL)hardwareConnect {
     NSString* identifier = [config_objc getLinkId];
-    connectstage = BLE_LINK_CONNECTED_PERIPHERAL;
+    //connectstage = BLE_LINK_CONNECTED_PERIPHERAL;
     
     cbp =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
     
@@ -1680,7 +1703,7 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 
 -(BOOL)disconnect {
     NSString* identifier = [config_objc getLinkId];
-    connectstage = BLE_LINK_CONNECTED_CHARACTERISTIC;
+    //connectstage = BLE_LINK_CONNECTED_CHARACTERISTIC;
     
     cbp  =  [[BLEHelper_objc sharedInstance] getCBPeripheralFromIdentifier:(NSString*)identifier];
     
@@ -1696,11 +1719,11 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 }
 
 -(BLE_LINK_CONNECT_STAGE)connectStage {
-    return connectstage;
+    return [config_objc connectStage];
 }
 
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
-    if (connectstage == BLE_LINK_CONNECTED_PERIPHERAL) {
+    if ([config_objc connectStage] == BLE_LINK_CONNECTED_PERIPHERAL) {
         
         cbp = peripheral;
         //connected and call back;
@@ -1849,11 +1872,14 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 
 @implementation BTSerialConfiguration_objc
 
--(void)configLinkId:(NSString*)linkid linkname:(NSString*)name serviceid:(NSString*)sid characteristicid:(NSString*)cid{
+-(void)configLinkId:(NSString*)linkid linkname:(NSString*)name serviceid:(NSString*)sid characteristicid:(NSString*)cid stage:(BLE_LINK_CONNECT_STAGE)stage
+{
+    
     link_identifier=[linkid copy];
     link_name=[name copy];
     link_service_id=[sid copy];
     link_characteristic_id=[cid copy];
+    connectstage = stage;
 
 }
 
@@ -1871,6 +1897,10 @@ QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
 
 -(NSString*)getCharacteristicId {
     return link_characteristic_id;
+}
+
+-(BLE_LINK_CONNECT_STAGE)connectStage {
+    return connectstage;
 }
 
 

@@ -31,6 +31,14 @@ typedef enum  {
 }BLE_LINK_STATUS;
 
 
+typedef enum {
+    BLE_LINK_CONNECTED_PERIPHERAL,
+    BLE_LINK_CONNECTED_SERVICE,
+    BLE_LINK_CONNECTED_CHARACTERISTIC
+    
+}BLE_LINK_CONNECT_STAGE ;
+
+
 #define MAV_TRANSFER_SERVICE_UUID           @"E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
 #define MAV_TRANSFER_CHARACTERISTIC_UUID    @"08590F7E-DB05-467E-8757-72F6FAEB13D4"
 
@@ -73,6 +81,7 @@ private:
     QString pname;
     QString serviceID;
     QString characteristicID;
+    BLE_LINK_CONNECT_STAGE connstage;
     
 public:
     
@@ -93,6 +102,7 @@ public:
      * @param[in] source Original configuration
      */
     BTSerialConfiguration(BTSerialConfiguration* source);
+    ~BTSerialConfiguration();
     
     /// From LinkConfiguration
     int  type() { return LinkConfiguration::TypeBLESerial; }
@@ -101,12 +111,14 @@ public:
     void saveSettings(QSettings& settings, const QString& root);
     void updateSettings();
     
-    void configBLESerialLink(QString&, QString&, QString&, QString&);
+    void configBLESerialLink(QString&, QString&, QString&, QString&, BLE_LINK_CONNECT_STAGE);
     void setBLEPeripheralIdentifier(QString*);
     QString getBLEPeripheralIdentifier();
     QString getBLEPeripheralName();
     QString getBLEPeripheralServiceID();
     QString getBLEPeripheralCharacteristicID();
+    
+    BLE_LINK_CONNECT_STAGE getBLELinkConnectStage();
 
 
 };
@@ -215,6 +227,7 @@ public:
 protected:
     // From LinkInterface->QThread
     virtual void run(void);
+    void setLinkConnectedStatus(BLE_LINK_STATUS status);
     
 private:
     // Links are only created/destroyed by LinkManager so constructor/destructor is not public
