@@ -815,6 +815,8 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         ((__bridge BTSerialLink*)([link getCallerLinkPointer]))->didReadBytes((const char*)[data bytes], [data length]);
     });
 
+    NSString* aStr= [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
+    NSLog(@"%@, %d", aStr, [characteristic.value length]);
     /*
     NSString *stringFromData = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
     
@@ -1170,7 +1172,7 @@ void BTSerialLink::setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler) {
 
 
 void BTSerialLink::didReadBytes(const char* data, qint64 size) {
-    mavhandler->receiveBytes(this, data);
+    mavhandler->receiveBytes(this, QByteArray::QByteArray(data, size));
 }
 
 void BTSerialLink::didConnect() {
