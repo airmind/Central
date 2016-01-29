@@ -360,6 +360,20 @@ void LinkManager::_bleLinkDisconnected(void) {
 
 #endif
 
+#ifdef _BLE_DEBUG_
+BLEDebugTextView* openDebugView(){
+    if (bledebugview==NULL) {
+        
+    
+        bledebugview = new BLEDebugTextView();
+    }
+    
+    return bledebugview;
+
+}
+#endif
+
+
 bool LinkManager::connectAll()
 {
     if (_connectionsSuspendedMsg()) {

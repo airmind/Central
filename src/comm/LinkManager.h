@@ -45,6 +45,9 @@ This file is part of the PIXHAWK project
 #include "BTSerialLink.h"
 #endif
 
+#ifdef _BLE_DEBUG_
+#include "BLEDebugTextView.h"
+#endif
 
 #include "UDPLink.h"
 #include "TCPLink.h"
@@ -145,6 +148,9 @@ public:
     
 #endif
 
+#ifdef _BLE_DEBUG_
+    BLEDebugTextView* openDebugView();
+#endif
     
     /// Sets the flag to suspend the all new connections
     ///     @param reason User visible reason to suspend connections
@@ -264,6 +270,12 @@ private:
 #ifndef __ios__
     QTimer  _portListTimer;
 #endif
+
+#ifdef _BLE_DEBUG_
+    BLEDebugTextView* bledebugview=NULL;
+#endif
+
+    
     uint32_t _mavlinkChannelsUsedBitMask;
     
     SharedLinkInterface _nullSharedLink;

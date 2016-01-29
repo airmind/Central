@@ -69,7 +69,8 @@ void MindStickButtonWrapper::showStatusButton() {
     
     CGRect viewFrame = ((UIViewController*)responder).view.frame;
     
-    [buttonController.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height, 60, 60, viewFrame.size.width)];
+    //76@2x;
+    [buttonController.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height, viewFrame.origin.y+viewFrame.size.width-152, 152, 152)];
     //[popoverctrol.view setFrame:CGRectMake(0, 0, 100, 100)];
     
     //[responder presentViewController:popoverctrol animated:YES completion:^{
@@ -83,7 +84,7 @@ void MindStickButtonWrapper::showStatusButton() {
                           delay:0
                         options:UIViewAnimationOptionBeginFromCurrentState
                      animations:^{
-                         [buttonController.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height-200, 60, 200, viewFrame.size.width)];
+                         [buttonController.view setFrame:CGRectMake(viewFrame.origin.x+viewFrame.size.height-162, viewFrame.origin.y+viewFrame.size.width-152, 152, 152)];
                          
                      }
                      completion:^(BOOL finished){
@@ -179,12 +180,13 @@ void MindStickButton::linkRSSIUpdated(void* list) {
         return;
     }
     
-    CGRect btnrect = CGRectMake(400, 300, 48, 48);
-    statusButton = [[UIButton alloc] initWithFrame:btnrect];
+    CGRect btnrect = CGRectMake(0, 0, 152, 152);
+    statusButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [statusButton setFrame:btnrect];
     statusButton.tag=1200;
-    UIImage *buttonImageNormal= [UIImage imageNamed:@"refresh@2x.png"];
+    UIImage *buttonImageNormal= [UIImage imageNamed:@"AppIcon76x76@2x~ipad.png"];
     [statusButton setBackgroundImage:buttonImageNormal	forState:UIControlStateNormal];
-    UIImage *buttonImageHighlight = [UIImage imageNamed:@"refreshgrey@2x.png"];
+    UIImage *buttonImageHighlight = [UIImage imageNamed:@"AppIcon76x76@2x~ipad.png"];
     [statusButton setBackgroundImage:buttonImageHighlight forState:UIControlStateHighlighted];
     //[mindstickiconbutton addTarget:self action:@selector(resetButtonPressed:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:statusButton];

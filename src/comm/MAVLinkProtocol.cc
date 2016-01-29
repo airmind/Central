@@ -29,6 +29,11 @@
 #include "QGCLoggingCategory.h"
 #include "MultiVehicleManager.h"
 
+#ifdef _BLE_DEBUG_
+#include "BLEDebugTextView.h"
+#endif
+
+
 Q_DECLARE_METATYPE(mavlink_message_t)
 
 QGC_LOGGING_CATEGORY(MAVLinkProtocolLog, "MAVLinkProtocolLog")
@@ -821,6 +826,15 @@ void MAVLinkProtocol::sendMessage(BTSerialLink* link, mavlink_message_t message)
     {
         // Send the portion of the buffer now occupied by the message
         link->writeBytes((const char*)buffer, len);
+#ifdef _BLE_DEBUG_
+        //pop up debug view;
+        BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
+        debugview->presentDebugView();
+        QString seq = QString::number(message.seq,16);
+        debugview->addline(seq);
+        
+#endif
+
     }
 }
 

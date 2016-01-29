@@ -38,6 +38,7 @@ This file is part of the QGROUNDCONTROL project
 #include "QGCApplication.h"
 #include "MultiVehicleManager.h"
 #include "UAS.h"
+#include "BLEDebugTextView.h"
 
 #ifdef __ios__
 #include "BTSerialLink.h"
@@ -337,6 +338,15 @@ void MainToolBarController::_linkConnected                 (BTSerialLink* link) 
     //show mindstick button;
     mindstickButton = new MindStickButton();
     mindstickButton->showButton();
+    
+#ifdef _BLE_DEBUG_
+    //pop up debug view;
+    BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
+    debugview->presentDebugView();
+    debugview->addline("BLE link connected.");
+    
+#endif
+
     
 }
 
