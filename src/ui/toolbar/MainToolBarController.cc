@@ -343,7 +343,8 @@ void MainToolBarController::_linkConnected                 (BTSerialLink* link) 
     //pop up debug view;
     BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
     debugview->presentDebugView();
-    debugview->addline("BLE link connected.");
+    QString line ="BLE link connected.";
+    debugview->addline(line);
     
 #endif
 

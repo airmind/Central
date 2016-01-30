@@ -141,6 +141,16 @@ bool BLEDebugTextView::isPresented() {
 }
 
 
+void BLEDebugTextView::addline(QString & msg) {
+    //NSString* message = qt2ioshelper::QString2NSString(&msg);
+    debugwrapper->addline(msg);
+}
+
+void BLEDebugTextView::clearview() {
+    debugwrapper->clearview();
+}
+
+
 @interface BLEDebugTextViewController ()
 
 @end
@@ -155,6 +165,13 @@ bool BLEDebugTextView::isPresented() {
     }
     [textview setFrame:[self.view frame]];
     textview.layoutManager.allowsNonContiguousLayout = NO;
+    textview.backgroundColor = [UIColor darkGrayColor];
+    
+    textview.textColor = [UIColor greenColor];
+
+    //textview.font = [UIFont fontWithName:@"Arial" size:18.0];
+    
+    //textview.scrollEnabled = YES;
     
     [self.view addSubview:textview];
     
@@ -185,6 +202,8 @@ bool BLEDebugTextView::isPresented() {
     str = [str stringByAppendingString:@"\n"];
     str = [str stringByAppendingString: msg];
     textview.text = str;
+    [textview scrollRangeToVisible:NSMakeRange([str length], 0)];
+    
 
 
 }

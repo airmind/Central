@@ -9,6 +9,8 @@
 #ifndef qgroundcontrol_BLEDebugTextView_h
 #define qgroundcontrol_BLEDebugTextView_h
 
+#include <QString>
+
 class BLEDebugTextViewWrapper;
 
 class BLEDebugTextView {
@@ -16,7 +18,7 @@ class BLEDebugTextView {
     
 private:
     BLEDebugTextViewWrapper* debugwrapper;
-    bool presented;
+    bool presented=false;
     
 public:
     BLEDebugTextView();

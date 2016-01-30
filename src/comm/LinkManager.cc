@@ -361,7 +361,7 @@ void LinkManager::_bleLinkDisconnected(void) {
 #endif
 
 #ifdef _BLE_DEBUG_
-BLEDebugTextView* openDebugView(){
+BLEDebugTextView* LinkManager::openDebugView(){
     if (bledebugview==NULL) {
         
     

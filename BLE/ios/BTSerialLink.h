@@ -23,6 +23,8 @@
 
 //#include "MAVLinkProtocol.h"
 
+#define _BLE_DEBUG_ 1 //for the moment;
+
 typedef enum  {
     BLE_LINK_NOT_CONNECTED,
     BLE_LINK_HARDWARE_CONNECTED,

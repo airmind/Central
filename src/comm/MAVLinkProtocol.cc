@@ -29,6 +29,7 @@
 #include "QGCLoggingCategory.h"
 #include "MultiVehicleManager.h"
 
+
 #ifdef _BLE_DEBUG_
 #include "BLEDebugTextView.h"
 #endif
