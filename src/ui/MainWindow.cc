@@ -269,6 +269,7 @@ MainWindow::MainWindow()
     connect(_ui.actionNormal,     &QAction::triggered, this, &MainWindow::normalActionItemCallback);
 #endif
 
+    
     connect(_ui.actionStatusBar,  &QAction::triggered, this, &MainWindow::showStatusBarCallback);
 
     // Set OS dependent keyboard shortcuts for the main window, non OS dependent shortcuts are set in MainWindow.ui
