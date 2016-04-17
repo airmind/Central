@@ -38,10 +38,11 @@ This file is part of the QGROUNDCONTROL project
 #include "QGCApplication.h"
 #include "MultiVehicleManager.h"
 #include "UAS.h"
-#include "BLEDebugTextView.h"
 
 #ifdef __ios__
 #include "BTSerialLink.h"
+#include "BLEDebugTextView.h"
+
 
 #endif
 

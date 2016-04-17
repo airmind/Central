@@ -35,7 +35,7 @@ This file is part of the QGROUNDCONTROL project
 #include "Vehicle.h"
 #include "UASMessageView.h"
 
-#define __mindskin__ 1 //for the moment;
+#define __mindskin__ 1 //for the moment; //move to "custom compiler flags" - "other C flags"
 
 #ifdef __ios__
 #include "BTSerialLink.h"

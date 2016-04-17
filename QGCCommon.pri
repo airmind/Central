@@ -57,7 +57,7 @@ linux {
         CONFIG += x86_64
         CONFIG -= x86
         QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.6
-        QMAKE_MAC_SDK = macosx10.11
+        QMAKE_MAC_SDK = macosx10.10
         QMAKE_CXXFLAGS += -fvisibility=hidden
     } else {
         error("Unsupported Mac toolchain, only 64-bit LLVM+clang is supported")
