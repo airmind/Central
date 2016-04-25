@@ -1,24 +1,24 @@
 /*=====================================================================
- 
+
  QGroundControl Open Source Ground Control Station
- 
+
  (c) 2009 - 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
- 
+
  This file is part of the QGROUNDCONTROL project
- 
+
  QGROUNDCONTROL is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  QGROUNDCONTROL is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
- 
+
  ======================================================================*/
 
 #include <QTimer>
@@ -46,7 +46,7 @@ TCPLink::TCPLink(TCPConfiguration *config)
     // We're doing it wrong - because the Qt folks got the API wrong:
     // http://blog.qt.digia.com/blog/2010/06/17/youre-doing-it-wrong/
     moveToThread(this);
-    qDebug() << "TCP Created " << _config->name();
+    //qDebug() << "TCP Created " << _config->name();
 }
 
 TCPLink::~TCPLink()
@@ -61,15 +61,15 @@ TCPLink::~TCPLink()
 void TCPLink::run()
 {
     _hardwareConnect();
-	exec();
+    exec();
 }
 
 #ifdef TCPLINK_READWRITE_DEBUG
-void TCPLink::_writeDebugBytes(const char *data, qint16 size)
+void TCPLink::_writeDebugBytes(const QByteArray data)
 {
     QString bytes;
     QString ascii;
-    for (int i=0; i<size; i++)
+    for (int i=0, size = data.size(); i<size; i++)
     {
         unsigned char v = data[i];
         bytes.append(QString().sprintf("%02x ", v));
@@ -88,13 +88,16 @@ void TCPLink::_writeDebugBytes(const char *data, qint16 size)
 }
 #endif
 
-void TCPLink::writeBytes(const char* data, qint64 size)
+void TCPLink::_writeBytes(const QByteArray data)
 {
 #ifdef TCPLINK_READWRITE_DEBUG
-    _writeDebugBytes(data, size);
+    _writeDebugBytes(data);
 #endif
-    _socket->write(data, size);
-    _logOutputDataRate(size, QDateTime::currentMSecsSinceEpoch());
+    if (!_socket)
+        return;
+
+    _socket->write(data);
+    _logOutputDataRate(data.size(), QDateTime::currentMSecsSinceEpoch());
 }
 
 /**
@@ -124,18 +127,16 @@ void TCPLink::readBytes()
  *
  * @return True if connection has been disconnected, false if connection couldn't be disconnected.
  **/
-bool TCPLink::_disconnect(void)
+void TCPLink::_disconnect(void)
 {
-	quit();
-	wait();
-    if (_socket)
-	{
+    quit();
+    wait();
+    if (_socket) {
         _socketIsConnected = false;
-		_socket->deleteLater(); // Make sure delete happens on correct thread
-		_socket = NULL;
+        _socket->deleteLater(); // Make sure delete happens on correct thread
+        _socket = NULL;
         emit disconnected();
-	}
-    return true;
+    }
 }
 
 /**
@@ -145,11 +146,11 @@ bool TCPLink::_disconnect(void)
  **/
 bool TCPLink::_connect(void)
 {
-	if (isRunning())
-	{
-		quit();
-		wait();
-	}
+    if (isRunning())
+    {
+        quit();
+        wait();
+    }
     start(HighPriority);
     return true;
 }
@@ -157,11 +158,15 @@ bool TCPLink::_connect(void)
 bool TCPLink::_hardwareConnect()
 {
     Q_ASSERT(_socket == NULL);
-	_socket = new QTcpSocket();
-    QSignalSpy errorSpy(_socket, SIGNAL(error(QAbstractSocket::SocketError)));
+    _socket = new QTcpSocket();
+
+    QSignalSpy errorSpy(_socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error));
     _socket->connectToHost(_config->address(), _config->port());
-    QObject::connect(_socket, SIGNAL(readyRead()), this, SLOT(readBytes()));
-    QObject::connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(_socketError(QAbstractSocket::SocketError)));
+    QObject::connect(_socket, &QTcpSocket::readyRead, this, &TCPLink::readBytes);
+
+    QObject::connect(_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),
+                     this, &TCPLink::_socketError);
+
     // Give the socket a second to connect to the other side otherwise error out
     if (!_socket->waitForConnected(1000))
     {
@@ -239,6 +244,39 @@ void TCPLink::_restartConnection()
 //--------------------------------------------------------------------------
 //-- TCPConfiguration
 
+static bool is_ip(const QString& address)
+{
+    int a,b,c,d;
+    if (sscanf(address.toStdString().c_str(), "%d.%d.%d.%d", &a, &b, &c, &d) != 4
+            && strcmp("::1", address.toStdString().c_str())) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+static QString get_ip_address(const QString& address)
+{
+    if(is_ip(address))
+        return address;
+    // Need to look it up
+    QHostInfo info = QHostInfo::fromName(address);
+    if (info.error() == QHostInfo::NoError)
+    {
+        QList<QHostAddress> hostAddresses = info.addresses();
+        QHostAddress address;
+        for (int i = 0; i < hostAddresses.size(); i++)
+        {
+            // Exclude all IPv6 addresses
+            if (!hostAddresses.at(i).toString().contains(":"))
+            {
+                return hostAddresses.at(i).toString();
+            }
+        }
+    }
+    return QString("");
+}
+
 TCPConfiguration::TCPConfiguration(const QString& name) : LinkConfiguration(name)
 {
     _port    = QGC_TCP_PORT;
@@ -268,6 +306,16 @@ void TCPConfiguration::setPort(quint16 port)
 void TCPConfiguration::setAddress(const QHostAddress& address)
 {
     _address = address;
+}
+
+void TCPConfiguration::setHost(const QString host)
+{
+    QString ipAdd = get_ip_address(host);
+    if(ipAdd.isEmpty()) {
+        qWarning() << "TCP:" << "Could not resolve host:" << host;
+    } else {
+        _address = ipAdd;
+    }
 }
 
 void TCPConfiguration::saveSettings(QSettings& settings, const QString& root)

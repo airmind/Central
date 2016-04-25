@@ -33,18 +33,8 @@ struct SwitchListItem {
     const char* name;
 };
 
-/// @brief Used to translate from RC_MAP_* parameters name to user string
-static const SwitchListItem switchList[] = {
-    { "RC_MAP_MODE_SW",     "Mode Switch:" },                // First entry must be mode switch
-    { "RC_MAP_POSCTL_SW",   "Position Control Switch:" },
-    { "RC_MAP_LOITER_SW",   "Loiter Switch:" },
-    { "RC_MAP_RETURN_SW",   "Return Switch:" },
-    { "RC_MAP_ACRO_SW",     "Acro Switch:" },
-};
-static const size_t cSwitchList = sizeof(switchList) / sizeof(switchList[0]);
-
 FlightModesComponent::FlightModesComponent(Vehicle* vehicle, AutoPilotPlugin* autopilot, QObject* parent) :
-    PX4Component(vehicle, autopilot, parent),
+    VehicleComponent(vehicle, autopilot, parent),
     _name(tr("Flight Modes"))
 {
 }
@@ -68,46 +58,35 @@ QString FlightModesComponent::iconResource(void) const
 
 bool FlightModesComponent::requiresSetup(void) const
 {
-    return _autopilot->getParameterFact(-1, "COM_RC_IN_MODE")->value().toInt() == 1 ? false : true;
+    return _autopilot->getParameterFact(-1, "COM_RC_IN_MODE")->rawValue().toInt() == 1 ? false : true;
 }
 
 bool FlightModesComponent::setupComplete(void) const
 {
-    return _autopilot->getParameterFact(-1, "COM_RC_IN_MODE")->value().toInt() == 1 ||
-            _autopilot->getParameterFact(FactSystem::defaultComponentId, "RC_MAP_MODE_SW")->value().toInt() != 0;
-}
-
-QString FlightModesComponent::setupStateDescription(void) const
-{
-    const char* stateDescription;
-    
-    if (requiresSetup()) {
-        stateDescription = "Requires calibration";
-    } else {
-        stateDescription = "Calibrated";
+    if (_autopilot->getParameterFact(-1, "COM_RC_IN_MODE")->rawValue().toInt() == 1) {
+        return true;
     }
-    return QString(stateDescription);
+
+    if (_autopilot->getParameterFact(FactSystem::defaultComponentId, "RC_MAP_MODE_SW")->rawValue().toInt() != 0 ||
+            (_autopilot->parameterExists(FactSystem::defaultComponentId, "RC_MAP_FLTMODE") && _autopilot->getParameterFact(FactSystem::defaultComponentId, "RC_MAP_FLTMODE")->rawValue().toInt() != 0)) {
+        return true;
+    }
+
+    return false;
 }
 
 QStringList FlightModesComponent::setupCompleteChangedTriggerList(void) const
 {
-    return QStringList("RC_MAP_MODE_SW");
-}
-
-QStringList FlightModesComponent::paramFilterList(void) const
-{
     QStringList list;
-    
-    for (size_t i=0; i<cSwitchList; i++) {
-        list << switchList[i].param;
-    }
+
+    list << QStringLiteral("RC_MAP_MODE_SW") << QStringLiteral("RC_MAP_FLTMODE");
 
     return list;
 }
 
 QUrl FlightModesComponent::setupSource(void) const
 {
-    return QUrl::fromUserInput("qrc:/qml/FlightModesComponent.qml");
+    return QUrl::fromUserInput("qrc:/qml/PX4FlightModes.qml");
 }
 
 QUrl FlightModesComponent::summaryQmlSource(void) const
@@ -117,7 +96,7 @@ QUrl FlightModesComponent::summaryQmlSource(void) const
 
 QString FlightModesComponent::prerequisiteSetup(void) const
 {
-    if (_autopilot->getParameterFact(-1, "COM_RC_IN_MODE")->value().toInt() == 1) {
+    if (_autopilot->getParameterFact(-1, "COM_RC_IN_MODE")->rawValue().toInt() == 1) {
         // No RC input
         return QString();
     } else {

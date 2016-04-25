@@ -13,6 +13,8 @@ Item {
     readonly property real defaultFontPixelHeight:  defaultFontPixelSize
     readonly property real defaultFontPixelWidth:   _textMeasure.fontWidth
     readonly property real smallFontPixelSize:      defaultFontPixelSize * ScreenToolsController.smallFontPixelSizeRatio
+    readonly property real smallFontPixelHeight:    smallFontPixelSize
+    readonly property real smallFontPixelWidth:     defaultFontPixelWidth * ScreenToolsController.smallFontPixelSizeRatio
 
     // To proportionally scale fonts
 
@@ -46,10 +48,5 @@ Item {
         text:   "X"
         property real fontWidth:    contentWidth  * (ScreenToolsController.testHighDPI ? 2 : 1)
         property real fontHeight:   contentHeight * (ScreenToolsController.testHighDPI ? 2 : 1)
-    }
-
-    Connections {
-        target: ScreenToolsController
-        onRepaintRequested: repaintRequested()
     }
 }

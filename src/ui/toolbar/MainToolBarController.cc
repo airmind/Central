@@ -32,7 +32,6 @@ This file is part of the QGROUNDCONTROL project
 
 #include "MainToolBarController.h"
 #include "ScreenToolsController.h"
-#include "MainWindow.h"
 #include "UASMessageView.h"
 #include "UASMessageHandler.h"
 #include "QGCApplication.h"
@@ -50,18 +49,12 @@ MainToolBarController::MainToolBarController(QObject* parent)
     : QObject(parent)
     , _vehicle(NULL)
     , _mav(NULL)
-    , _connectionCount(0)
     , _progressBarValue(0.0f)
-    , _remoteRSSI(0)
-    , _remoteRSSIstore(100.0)
     , _telemetryRRSSI(0)
     , _telemetryLRSSI(0)
-    , _rollDownMessages(0)
-    , _toolbarMessageVisible(false)
 {
-    emit configListChanged();
-    emit connectionCountChanged(_connectionCount);
     _activeVehicleChanged(qgcApp()->toolbox()->multiVehicleManager()->activeVehicle());
+<<<<<<< HEAD
     
     // Link signals
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConfigurationChanged, this, &MainToolBarController::_updateConfigurations);
@@ -89,6 +82,9 @@ MainToolBarController::MainToolBarController(QObject* parent)
         SIGNAL(radioStatusChanged(LinkInterface*, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)), this,
         SLOT(_telemetryChanged(LinkInterface*, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)));
     
+=======
+    connect(qgcApp()->toolbox()->mavlinkProtocol(),     &MAVLinkProtocol::radioStatusChanged, this, &MainToolBarController::_telemetryChanged);
+>>>>>>> upstream/master
     connect(qgcApp()->toolbox()->multiVehicleManager(), &MultiVehicleManager::activeVehicleChanged, this, &MainToolBarController::_activeVehicleChanged);
     
 #ifdef __mindskin__
@@ -102,6 +98,7 @@ MainToolBarController::~MainToolBarController()
 
 }
 
+<<<<<<< HEAD
 void MainToolBarController::onSetupView()
 {
     MainWindow::instance()->showSetupView();
@@ -245,78 +242,33 @@ void MainToolBarController::_leaveMessageView()
     _rollDownMessages = NULL;
 }
 
+=======
+>>>>>>> upstream/master
 void MainToolBarController::_activeVehicleChanged(Vehicle* vehicle)
 {
     // Disconnect the previous one (if any)
     if (_vehicle) {
-        disconnect(_mav, &UASInterface::remoteControlRSSIChanged, this, &MainToolBarController::_remoteControlRSSIChanged);
         disconnect(_vehicle->autopilotPlugin(), &AutoPilotPlugin::parameterListProgress, this, &MainToolBarController::_setProgressBarValue);
         _mav = NULL;
         _vehicle = NULL;
     }
-    
+
     // Connect new system
     if (vehicle)
     {
         _vehicle = vehicle;
         _mav = vehicle->uas();
-        connect(_mav, &UASInterface::remoteControlRSSIChanged, this, &MainToolBarController::_remoteControlRSSIChanged);
         connect(_vehicle->autopilotPlugin(), &AutoPilotPlugin::parameterListProgress, this, &MainToolBarController::_setProgressBarValue);
     }
 }
 
-void MainToolBarController::_updateConfigurations()
+void MainToolBarController::_telemetryChanged(LinkInterface*, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise)
 {
-    QStringList tmpList;
-    QList<LinkConfiguration*> configs = qgcApp()->toolbox()->linkManager()->getLinkConfigurationList();
-    foreach(LinkConfiguration* conf, configs) {
-        if(conf) {
-            if(conf->isPreferred()) {
-                tmpList.insert(0,conf->name());
-            } else {
-                tmpList << conf->name();
-            }
-        }
+    if(_telemetryLRSSI != rssi) {
+        _telemetryLRSSI = rssi;
+        emit telemetryLRSSIChanged(_telemetryLRSSI);
     }
-    // Any changes?
-    if(tmpList != _linkConfigurations) {
-        _linkConfigurations = tmpList;
-        emit configListChanged();
-    }
-}
-
-void MainToolBarController::_telemetryChanged(LinkInterface*, unsigned, unsigned, unsigned rssi, unsigned remrssi, unsigned, unsigned, unsigned)
-{
-    // We only care if we haveone single connection
-    if(_connectionCount == 1) {
-        if((unsigned)_telemetryLRSSI != rssi) {
-            // According to the Silabs data sheet, the RSSI value is 0.5db per bit
-            _telemetryLRSSI = rssi >> 1;
-            emit telemetryLRSSIChanged(_telemetryLRSSI);
-        }
-        if((unsigned)_telemetryRRSSI != remrssi) {
-            // According to the Silabs data sheet, the RSSI value is 0.5db per bit
-            _telemetryRRSSI = remrssi >> 1;
-            emit telemetryRRSSIChanged(_telemetryRRSSI);
-        }
-    }
-}
-
-void MainToolBarController::_remoteControlRSSIChanged(uint8_t rssi)
-{
-    // We only care if we have one single connection
-    if(_connectionCount == 1) {
-        // Low pass to git rid of jitter
-        _remoteRSSIstore = (_remoteRSSIstore * 0.9f) + ((float)rssi * 0.1);
-        uint8_t filteredRSSI = (uint8_t)ceil(_remoteRSSIstore);
-        if(_remoteRSSIstore < 0.1) {
-            filteredRSSI = 0;
-        }
-        if(_remoteRSSI != filteredRSSI) {
-            _remoteRSSI = filteredRSSI;
-            emit remoteRSSIChanged(_remoteRSSI);
-        }
-    }
+<<<<<<< HEAD
 }
 
 void MainToolBarController::_linkConnected(LinkInterface*)
@@ -386,26 +338,31 @@ void MainToolBarController::_updateConnection(LinkInterface *disconnectedLink)
                 connList << link->getLinkConfiguration()->name();
             }
         }
-    }
-    if(oldCount != _connectionCount) {
-        emit connectionCountChanged(_connectionCount);
-    }
-    if(connList != _connectedList) {
-        _connectedList = connList;
-        emit connectedListChanged(_connectedList);
-    }
-    // Update telemetry RSSI display
-    if(_connectionCount != 1 && _telemetryRRSSI > 0) {
-        _telemetryRRSSI = 0;
+=======
+    if(_telemetryRRSSI != remrssi) {
+        _telemetryRRSSI = remrssi;
         emit telemetryRRSSIChanged(_telemetryRRSSI);
+>>>>>>> upstream/master
     }
-    if(_connectionCount != 1 && _telemetryLRSSI > 0) {
-        _telemetryLRSSI = 0;
-        emit telemetryLRSSIChanged(_telemetryLRSSI);
+    if(_telemetryRXErrors != rxerrors) {
+        _telemetryRXErrors = rxerrors;
+        emit telemetryRXErrorsChanged(_telemetryRXErrors);
     }
-    if(_connectionCount != 1 && _remoteRSSI > 0) {
-        _remoteRSSI = 0;
-        emit remoteRSSIChanged(_remoteRSSI);
+    if(_telemetryFixed != fixed) {
+        _telemetryFixed = fixed;
+        emit telemetryFixedChanged(_telemetryFixed);
+    }
+    if(_telemetryTXBuffer != txbuf) {
+        _telemetryTXBuffer = txbuf;
+        emit telemetryTXBufferChanged(_telemetryTXBuffer);
+    }
+    if(_telemetryLNoise != noise) {
+        _telemetryLNoise = noise;
+        emit telemetryLNoiseChanged(_telemetryLNoise);
+    }
+    if(_telemetryRNoise != remnoise) {
+        _telemetryRNoise = remnoise;
+        emit telemetryRNoiseChanged(_telemetryRNoise);
     }
 }
 
@@ -413,49 +370,4 @@ void MainToolBarController::_setProgressBarValue(float value)
 {
     _progressBarValue = value;
     emit progressBarValueChanged(value);
-}
-
-void MainToolBarController::showToolBarMessage(const QString& message)
-{
-    _toolbarMessageQueueMutex.lock();
-    
-    if (_toolbarMessageQueue.count() == 0 && !_toolbarMessageVisible) {
-        QTimer::singleShot(500, this, &MainToolBarController::_delayedShowToolBarMessage);
-    }
-    
-    _toolbarMessageQueue += message;
-    
-    _toolbarMessageQueueMutex.unlock();
-}
-
-void MainToolBarController::_delayedShowToolBarMessage(void)
-{
-    QString messages;
-    
-    if (!_toolbarMessageVisible) {
-        _toolbarMessageQueueMutex.lock();
-        
-        foreach (QString message, _toolbarMessageQueue) {
-            messages += message + "\n";
-        }
-        _toolbarMessageQueue.clear();
-        
-        _toolbarMessageQueueMutex.unlock();
-        
-        if (!messages.isEmpty()) {
-            _toolbarMessageVisible = true;
-            emit showMessage(messages);
-        }
-    }
-}
-
-void MainToolBarController::onToolBarMessageClosed(void)
-{
-    _toolbarMessageVisible = false;
-    _delayedShowToolBarMessage();
-}
-
-void MainToolBarController::showSettings(void)
-{
-    MainWindow::instance()->showSettings();
 }

@@ -29,6 +29,8 @@ This file is part of the QGROUNDCONTROL project
 #include "QmlObjectListModel.h"
 #include "Vehicle.h"
 #include "QGCLoggingCategory.h"
+#include "MavlinkQmlSingleton.h"
+#include "VisualMissionItem.h"
 
 Q_DECLARE_LOGGING_CATEGORY(MissionControllerLog)
 
@@ -40,79 +42,101 @@ public:
     MissionController(QObject* parent = NULL);
     ~MissionController();
 
-    Q_PROPERTY(QmlObjectListModel*  missionItems                READ missionItems                   NOTIFY missionItemsChanged)
-    Q_PROPERTY(QmlObjectListModel*  waypointLines               READ waypointLines                  NOTIFY waypointLinesChanged)
-    Q_PROPERTY(bool                 canEdit                     READ canEdit                        NOTIFY canEditChanged)
-    Q_PROPERTY(bool                 liveHomePositionAvailable   READ liveHomePositionAvailable      NOTIFY liveHomePositionAvailableChanged)
-    Q_PROPERTY(QGeoCoordinate       liveHomePosition            READ liveHomePosition               NOTIFY liveHomePositionChanged)
-    Q_PROPERTY(bool                 autoSync                    READ autoSync   WRITE setAutoSync   NOTIFY autoSyncChanged)
+    Q_PROPERTY(QmlObjectListModel*  visualItems         READ visualItems                                NOTIFY visualItemsChanged)
+    Q_PROPERTY(QmlObjectListModel*  complexVisualItems  READ complexVisualItems                         NOTIFY complexVisualItemsChanged)
+    Q_PROPERTY(QmlObjectListModel*  waypointLines       READ waypointLines                              NOTIFY waypointLinesChanged)
+    Q_PROPERTY(bool                 autoSync            READ autoSync               WRITE setAutoSync   NOTIFY autoSyncChanged)
+    Q_PROPERTY(bool                 syncInProgress      READ syncInProgress                             NOTIFY syncInProgressChanged)
 
-    Q_INVOKABLE void start(bool editMode)    ;
-    Q_INVOKABLE int addMissionItem(QGeoCoordinate coordinate);
+    Q_INVOKABLE void start(bool editMode);
     Q_INVOKABLE void getMissionItems(void);
     Q_INVOKABLE void sendMissionItems(void);
-    Q_INVOKABLE void loadMissionFromFile(void);
-    Q_INVOKABLE void saveMissionToFile(void);
+    Q_INVOKABLE void loadMissionFromFilePicker(void);
+    Q_INVOKABLE void loadMissionFromFile(const QString& filename);
+    Q_INVOKABLE void saveMissionToFilePicker(void);
+    Q_INVOKABLE void saveMissionToFile(const QString& filename);
     Q_INVOKABLE void removeMissionItem(int index);
-    Q_INVOKABLE void deleteCurrentMissionItem(void);
+    Q_INVOKABLE void removeAllMissionItems(void);
+
+    /// Add a new simple mission item to the list
+    ///     @param i: index to insert at
+    /// @return Sequence number for new item
+    Q_INVOKABLE int insertSimpleMissionItem(QGeoCoordinate coordinate, int i);
+
+    /// Add a new complex mission item to the list
+    ///     @param i: index to insert at
+    /// @return Sequence number for new item
+    Q_INVOKABLE int insertComplexMissionItem(QGeoCoordinate coordinate, int i);
 
     // Property accessors
 
-    QmlObjectListModel* missionItems(void);
-    QmlObjectListModel* waypointLines(void) { return &_waypointLines; }
-    bool canEdit(void) { return _canEdit; }
-    bool liveHomePositionAvailable(void) { return _liveHomePositionAvailable; }
-    QGeoCoordinate liveHomePosition(void) { return _liveHomePosition; }
+    QmlObjectListModel* visualItems         (void) { return _visualItems; }
+    QmlObjectListModel* complexVisualItems  (void) { return _complexItems; }
+    QmlObjectListModel* waypointLines       (void) { return &_waypointLines; }
+
     bool autoSync(void) { return _autoSync; }
     void setAutoSync(bool autoSync);
+    bool syncInProgress(void);
+
+    static const char* jsonSimpleItemsKey;  ///< Key for simple items in a json file
 
 signals:
-    void missionItemsChanged(void);
-    void canEditChanged(bool canEdit);
+    void visualItemsChanged(void);
+    void complexVisualItemsChanged(void);
     void waypointLinesChanged(void);
-    void liveHomePositionAvailableChanged(bool homePositionAvailable);
-    void liveHomePositionChanged(const QGeoCoordinate& homePosition);
     void autoSyncChanged(bool autoSync);
+    void newItemsFromVehicle(void);
+    void syncInProgressChanged(bool syncInProgress);
 
 private slots:
     void _newMissionItemsAvailableFromVehicle();
     void _itemCoordinateChanged(const QGeoCoordinate& coordinate);
-    void _itemFrameChanged(int frame);
-    void _itemCommandChanged(MavlinkQmlSingleton::Qml_MAV_CMD command);
+    void _itemCommandChanged(void);
     void _activeVehicleChanged(Vehicle* activeVehicle);
     void _activeVehicleHomePositionAvailableChanged(bool homePositionAvailable);
     void _activeVehicleHomePositionChanged(const QGeoCoordinate& homePosition);
     void _dirtyChanged(bool dirty);
     void _inProgressChanged(bool inProgress);
+    void _currentMissionItemChanged(int sequenceNumber);
+    void _recalcWaypointLines(void);
 
 private:
     void _recalcSequence(void);
-    void _recalcWaypointLines(void);
     void _recalcChildItems(void);
     void _recalcAll(void);
-    void _initAllMissionItems(void);
-    void _deinitAllMissionItems(void);
-    void _initMissionItem(MissionItem* item);
-    void _deinitMissionItem(MissionItem* item);
+    void _initAllVisualItems(void);
+    void _deinitAllVisualItems(void);
+    void _initVisualItem(VisualMissionItem* item);
+    void _deinitVisualItem(VisualMissionItem* item);
     void _autoSyncSend(void);
-    void _setupMissionItems(bool loadFromVehicle, bool forceLoad);
     void _setupActiveVehicle(Vehicle* activeVehicle, bool forceLoadFromVehicle);
-    double _calcDistance(bool homePositionValid, double homeAlt, MissionItem* item1, MissionItem* item2);
+    void _calcPrevWaypointValues(double homeAlt, VisualMissionItem* currentItem, VisualMissionItem* prevItem, double* azimuth, double* distance, double* altDifference);
+    bool _findLastAltitude(double* lastAltitude);
+    bool _findLastAcceptanceRadius(double* lastAcceptanceRadius);
+    void _addPlannedHomePosition(QmlObjectListModel* visualItems, bool addToCenter);
+    double _normalizeLat(double lat);
+    double _normalizeLon(double lon);
+    bool _loadJsonMissionFile(const QByteArray& bytes, QmlObjectListModel* visualItems, QmlObjectListModel* complexItems, QString& errorString);
+    bool _loadTextMissionFile(QTextStream& stream, QmlObjectListModel* visualItems, QString& errorString);
+    int _nextSequenceNumber(void);
 
 private:
     bool                _editMode;
-    QmlObjectListModel* _missionItems;
+    QmlObjectListModel* _visualItems;
+    QmlObjectListModel* _complexItems;
     QmlObjectListModel  _waypointLines;
-    bool                _canEdit;           ///< true: UI can edit these items, false: can't edit, can only send to vehicle or save
     Vehicle*            _activeVehicle;
-    bool                _liveHomePositionAvailable;
-    QGeoCoordinate      _liveHomePosition;
     bool                _autoSync;
     bool                _firstItemsFromVehicle;
     bool                _missionItemsRequested;
     bool                _queuedSend;
 
-    static const char* _settingsGroup;
+    static const char*  _settingsGroup;
+    static const char*  _jsonVersionKey;
+    static const char*  _jsonGroundStationKey;
+    static const char*  _jsonMavAutopilotKey;
+    static const char*  _jsonComplexItemsKey;
+    static const char*  _jsonPlannedHomePositionKey;
 };
 
 #endif

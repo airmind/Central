@@ -25,11 +25,10 @@
 ///     @author Don Gagne <don@thegagnes.com>
 
 #include "SafetyComponent.h"
-#include "QGCQmlWidgetHolder.h"
 #include "PX4AutoPilotPlugin.h"
 
 SafetyComponent::SafetyComponent(Vehicle* vehicle, AutoPilotPlugin* autopilot, QObject* parent) :
-    PX4Component(vehicle, autopilot, parent),
+    VehicleComponent(vehicle, autopilot, parent),
     _name(tr("Safety"))
 {
 }
@@ -60,28 +59,9 @@ bool SafetyComponent::setupComplete(void) const
     return true;
 }
 
-QString SafetyComponent::setupStateDescription(void) const
-{
-    const char* stateDescription;
-
-    if (requiresSetup()) {
-        stateDescription = "Requires setup";
-    } else {
-        stateDescription = "Setup complete";
-    }
-    return QString(stateDescription);
-}
-
 QStringList SafetyComponent::setupCompleteChangedTriggerList(void) const
 {
     return QStringList();
-}
-
-QStringList SafetyComponent::paramFilterList(void) const
-{
-    QStringList list;
-
-    return list;
 }
 
 QUrl SafetyComponent::setupSource(void) const

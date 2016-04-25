@@ -30,6 +30,7 @@
 #include "MultiSignalSpy.h"
 #include "MissionControllerManagerTest.h"
 #include "MissionController.h"
+#include "SimpleMissionItem.h"
 
 #include <QGeoCoordinate>
 
@@ -55,37 +56,31 @@ private:
     void _testEmptyVehicleWorker(MAV_AUTOPILOT firmwareType);
     void _testAddWaypointWorker(MAV_AUTOPILOT firmwareType);
     void _testOfflineToOnlineWorker(MAV_AUTOPILOT firmwareType);
-    void _setupMissionItemSignals(MissionItem* item);
+    void _setupMissionItemSignals(SimpleMissionItem* item);
 
     // MissiomItems signals
 
     enum {
         coordinateChangedSignalIndex = 0,
-        homePositionValidChangedSignalIndex,
         missionItemMaxSignalIndex
     };
 
     enum {
         coordinateChangedSignalMask =           1 << coordinateChangedSignalIndex,
-        homePositionValidChangedSignalMask =    1 << homePositionValidChangedSignalIndex,
         missionItemMaxSignalMask =              1 << missionItemMaxSignalIndex,
     };
 
     // MissionController signals
 
     enum {
-        missionItemsChangedSignalIndex = 0,
+        visualItemsChangedSignalIndex = 0,
         waypointLinesChangedSignalIndex,
-        liveHomePositionAvailableChangedSignalIndex,
-        liveHomePositionChangedSignalIndex,
         missionControllerMaxSignalIndex
     };
 
     enum {
-        missionItemsChangedSignalMask =                 1 << missionItemsChangedSignalIndex,
+        visualItemsChangedSignalMask =                 1 << visualItemsChangedSignalIndex,
         waypointLinesChangedSignalMask =                1 << waypointLinesChangedSignalIndex,
-        liveHomePositionAvailableChangedSignalMask =    1 << liveHomePositionAvailableChangedSignalIndex,
-        liveHomePositionChangedSignalMask =             1 << liveHomePositionChangedSignalIndex,
     };
 
     MultiSignalSpy*     _multiSpyMissionController;

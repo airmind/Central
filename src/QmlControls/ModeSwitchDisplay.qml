@@ -64,15 +64,17 @@ Rectangle {
 
                 Rectangle {
                     width:  modeLabel.width
-                    height: modeLabel.contentHeight
+                    height: channelCombo.height
                     color:  modeSelected ? _qgcPal.buttonHighlight : _qgcPal.button
 
                     QGCLabel {
                         id:                     modeLabel
                         width:                  ScreenTools.defaultFontPixelWidth * 18
+                        anchors.top:            parent.top
+                        anchors.bottom:         parent.bottom
                         color:                  modeSelected ? _qgcPal.buttonHighlightText : _qgcPal.text
                         horizontalAlignment:    Text.AlignHCenter
-                        font.pixelSize:         ScreenTools.mediumFontPixelSize
+                        verticalAlignment:      Text.AlignVCenter
                         text:                   flightModeName
                     }
                 }
@@ -102,7 +104,7 @@ Rectangle {
                     width:              ScreenTools.defaultFontPixelWidth * monitorThresholdCharWidth
                     height:             ScreenTools.defaultFontPixelHeight
                     verticalAlignment:  Text.AlignVCenter
-                    text:               "Monitor:"
+                    text:               qsTr("Monitor:")
                 }
 
                 Item {
@@ -142,7 +144,7 @@ Rectangle {
                     width:              ScreenTools.defaultFontPixelWidth * monitorThresholdCharWidth
                     height:             ScreenTools.defaultFontPixelHeight
                     verticalAlignment:  Text.AlignVCenter
-                    text:               "Threshold:"
+                    text:               qsTr("Threshold:")
                 }
 
 

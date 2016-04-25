@@ -37,6 +37,7 @@ MAVLinkDecoder::MAVLinkDecoder(MAVLinkProtocol* protocol, QObject *parent) :
     messageFilter.insert(MAVLINK_MSG_ID_DATA_STREAM, false);
     messageFilter.insert(MAVLINK_MSG_ID_GPS_STATUS, false);
     messageFilter.insert(MAVLINK_MSG_ID_RC_CHANNELS_RAW, false);
+    messageFilter.insert(MAVLINK_MSG_ID_LOG_DATA, false);
     #ifdef MAVLINK_MSG_ID_ENCAPSULATED_DATA
     messageFilter.insert(MAVLINK_MSG_ID_ENCAPSULATED_DATA, false);
     #endif
@@ -52,7 +53,7 @@ MAVLinkDecoder::MAVLinkDecoder(MAVLinkProtocol* protocol, QObject *parent) :
     textMessageFilter.insert(MAVLINK_MSG_ID_NAMED_VALUE_INT, false);
 //    textMessageFilter.insert(MAVLINK_MSG_ID_HIGHRES_IMU, false);
 
-    connect(protocol, SIGNAL(messageReceived(LinkInterface*,mavlink_message_t)), this, SLOT(receiveMessage(LinkInterface*,mavlink_message_t)));
+    connect(protocol, &MAVLinkProtocol::messageReceived, this, &MAVLinkDecoder::receiveMessage);
 
     start(LowPriority);
 }

@@ -64,6 +64,10 @@ class QGCPalette : public QObject
     //      textFieldText -         Text color for TextFields
     //      mapButton -             Background color for map buttons
     //      mapButtonHighlight -    Background color for map button in selected or hover state
+    //      mapWidgetBorderLight -  Widget border color which will stand out against light map tiles
+    //      mapWidgetBorderDark -   Widget border color which will stand out against dark map tiles
+    //      brandingPurple -        Purple color from branding guidelines
+    //      brandingBlue -          Blue color from branding guidelines
 
     Q_PROPERTY(QColor window                READ window                 WRITE setWindow                 NOTIFY paletteChanged)
     Q_PROPERTY(QColor windowShade           READ windowShade            WRITE setWindowShade            NOTIFY paletteChanged)
@@ -80,6 +84,10 @@ class QGCPalette : public QObject
     Q_PROPERTY(QColor textFieldText         READ textFieldText          WRITE setTextFieldText          NOTIFY paletteChanged)
     Q_PROPERTY(QColor mapButton             READ mapButton              WRITE setMapButton              NOTIFY paletteChanged)
     Q_PROPERTY(QColor mapButtonHighlight    READ mapButtonHighlight     WRITE setMapButtonHighlight     NOTIFY paletteChanged)
+    Q_PROPERTY(QColor mapWidgetBorderLight  READ mapWidgetBorderLight   WRITE setMapWidgetBorderLight   NOTIFY paletteChanged)
+    Q_PROPERTY(QColor mapWidgetBorderDark   READ mapWidgetBorderDark    WRITE setMapWidgetBorderDark    NOTIFY paletteChanged)
+    Q_PROPERTY(QColor brandingPurple        READ brandingPurple                                         NOTIFY paletteChanged)
+    Q_PROPERTY(QColor brandingBlue          READ brandingBlue                                           NOTIFY paletteChanged)
 
 public:
     enum ColorGroup {
@@ -113,6 +121,10 @@ public:
     QColor textFieldText(void)          const { return _textFieldText[_theme][_colorGroupEnabled ? 1 : 0]; }
     QColor mapButton(void)              const { return _mapButton[_theme][_colorGroupEnabled ? 1 : 0]; }
     QColor mapButtonHighlight(void)     const { return _mapButtonHighlight[_theme][_colorGroupEnabled ? 1 : 0]; }
+    QColor mapWidgetBorderLight(void)   const { return _mapWidgetBorderLight[_theme][_colorGroupEnabled ? 1 : 0]; }
+    QColor mapWidgetBorderDark(void)    const { return _mapWidgetBorderDark[_theme][_colorGroupEnabled ? 1 : 0]; }
+    QColor brandingPurple(void)         const { return _brandingPurple[_theme][_colorGroupEnabled ? 1 : 0]; }
+    QColor brandingBlue(void)           const { return _brandingBlue[_theme][_colorGroupEnabled ? 1 : 0]; }
 
     void setWindow(QColor& color)               { _window[_theme][_colorGroupEnabled ? 1 : 0] = color; _signalPaletteChangeToAll(); }
     void setWindowShade(QColor& color)          { _windowShade[_theme][_colorGroupEnabled ? 1 : 0] = color; _signalPaletteChangeToAll(); }
@@ -129,6 +141,8 @@ public:
     void setTextFieldText(QColor& color)        { _textFieldText[_theme][_colorGroupEnabled ? 1 : 0] = color; _signalPaletteChangeToAll(); }
     void setMapButton(QColor& color)            { _mapButton[_theme][_colorGroupEnabled ? 1 : 0] = color; _signalPaletteChangeToAll(); }
     void setMapButtonHighlight(QColor& color)   { _mapButtonHighlight[_theme][_colorGroupEnabled ? 1 : 0] = color; _signalPaletteChangeToAll(); }
+    void setMapWidgetBorderLight(QColor& color) { _mapWidgetBorderLight[_theme][_colorGroupEnabled ? 1 : 0] = color; _signalPaletteChangeToAll(); }
+    void setMapWidgetBorderDark(QColor& color)  { _mapWidgetBorderDark[_theme][_colorGroupEnabled ? 1 : 0] = color; _signalPaletteChangeToAll(); }
 
     static Theme globalTheme(void) { return _theme; }
     static void setGlobalTheme(Theme newTheme);
@@ -168,6 +182,11 @@ private:
     
     static QColor _mapButton[_cThemes][_cColorGroups];
     static QColor _mapButtonHighlight[_cThemes][_cColorGroups];
+    static QColor _mapWidgetBorderLight[_cThemes][_cColorGroups];
+    static QColor _mapWidgetBorderDark[_cThemes][_cColorGroups];
+
+    static QColor _brandingPurple[_cThemes][_cColorGroups];
+    static QColor _brandingBlue[_cThemes][_cColorGroups];
 
     void _themeChanged(void);
     

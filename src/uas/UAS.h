@@ -36,11 +36,11 @@ This file is part of the QGROUNDCONTROL project
 #include <MAVLinkProtocol.h>
 #include <QVector3D>
 #include "QGCMAVLink.h"
-#include "FileManager.h"
 #include "Vehicle.h"
 #include "FirmwarePluginManager.h"
 
 #ifndef __mobile__
+#include "FileManager.h"
 #include "QGCHilLink.h"
 #include "QGCFlightGearLink.h"
 #include "QGCJSBSimLink.h"
@@ -64,7 +64,6 @@ class UAS : public UASInterface
     Q_OBJECT
 public:
     UAS(MAVLinkProtocol* protocol, Vehicle* vehicle, FirmwarePluginManager * firmwarePluginManager);
-    ~UAS();
 
     float lipoFull;  ///< 100% charged voltage
     float lipoEmpty; ///< Discharged voltage
@@ -78,27 +77,28 @@ public:
 
     /** @brief The time interval the robot is switched on */
     quint64 getUptime() const;
-    /** @brief Add one measurement and get low-passed voltage */
-    float filterVoltage(float value);
 
-    Q_PROPERTY(double latitude READ getLatitude WRITE setLatitude NOTIFY latitudeChanged)
-    Q_PROPERTY(double longitude READ getLongitude WRITE setLongitude NOTIFY longitudeChanged)
-    Q_PROPERTY(double satelliteCount READ getSatelliteCount WRITE setSatelliteCount NOTIFY satelliteCountChanged)
-    Q_PROPERTY(bool isGlobalPositionKnown READ globalPositionKnown)
-    Q_PROPERTY(double roll READ getRoll WRITE setRoll NOTIFY rollChanged)
-    Q_PROPERTY(double pitch READ getPitch WRITE setPitch NOTIFY pitchChanged)
-    Q_PROPERTY(double yaw READ getYaw WRITE setYaw NOTIFY yawChanged)
-    Q_PROPERTY(double distToWaypoint READ getDistToWaypoint WRITE setDistToWaypoint NOTIFY distToWaypointChanged)
-    Q_PROPERTY(double airSpeed READ getGroundSpeed WRITE setGroundSpeed NOTIFY airSpeedChanged)
-    Q_PROPERTY(double groundSpeed READ getGroundSpeed WRITE setGroundSpeed NOTIFY groundSpeedChanged)
-    Q_PROPERTY(double bearingToWaypoint READ getBearingToWaypoint WRITE setBearingToWaypoint NOTIFY bearingToWaypointChanged)
-    Q_PROPERTY(double altitudeAMSL READ getAltitudeAMSL WRITE setAltitudeAMSL NOTIFY altitudeAMSLChanged)
-    Q_PROPERTY(double altitudeAMSLFT READ getAltitudeAMSLFT NOTIFY altitudeAMSLFTChanged)
-    Q_PROPERTY(double altitudeWGS84 READ getAltitudeWGS84 WRITE setAltitudeWGS84 NOTIFY altitudeWGS84Changed)
-    Q_PROPERTY(double altitudeRelative READ getAltitudeRelative WRITE setAltitudeRelative NOTIFY altitudeRelativeChanged)
+    Q_PROPERTY(double   latitude                READ getLatitude            WRITE setLatitude           NOTIFY latitudeChanged)
+    Q_PROPERTY(double   longitude               READ getLongitude           WRITE setLongitude          NOTIFY longitudeChanged)
+    Q_PROPERTY(double   satelliteCount          READ getSatelliteCount      WRITE setSatelliteCount     NOTIFY satelliteCountChanged)
+    Q_PROPERTY(bool     isGlobalPositionKnown   READ globalPositionKnown)
+    Q_PROPERTY(double   roll                    READ getRoll                WRITE setRoll               NOTIFY rollChanged)
+    Q_PROPERTY(double   pitch                   READ getPitch               WRITE setPitch              NOTIFY pitchChanged)
+    Q_PROPERTY(double   yaw                     READ getYaw                 WRITE setYaw                NOTIFY yawChanged)
+    Q_PROPERTY(double   distToWaypoint          READ getDistToWaypoint      WRITE setDistToWaypoint     NOTIFY distToWaypointChanged)
+    Q_PROPERTY(double   airSpeed                READ getGroundSpeed         WRITE setGroundSpeed        NOTIFY airSpeedChanged)
+    Q_PROPERTY(double   groundSpeed             READ getGroundSpeed         WRITE setGroundSpeed        NOTIFY groundSpeedChanged)
+    Q_PROPERTY(double   bearingToWaypoint       READ getBearingToWaypoint   WRITE setBearingToWaypoint  NOTIFY bearingToWaypointChanged)
+    Q_PROPERTY(double   altitudeAMSL            READ getAltitudeAMSL        WRITE setAltitudeAMSL       NOTIFY altitudeAMSLChanged)
+    Q_PROPERTY(double   altitudeAMSLFT          READ getAltitudeAMSLFT                                  NOTIFY altitudeAMSLFTChanged)
+    Q_PROPERTY(double   altitudeRelative        READ getAltitudeRelative    WRITE setAltitudeRelative   NOTIFY altitudeRelativeChanged)
+    Q_PROPERTY(double   satRawHDOP              READ getSatRawHDOP                                      NOTIFY satRawHDOPChanged)
+    Q_PROPERTY(double   satRawVDOP              READ getSatRawVDOP                                      NOTIFY satRawVDOPChanged)
+    Q_PROPERTY(double   satRawCOG               READ getSatRawCOG                                       NOTIFY satRawCOGChanged)
 
-    void clearVehicle(void) { _vehicle = NULL; }
-    
+    /// Vehicle is about to go away
+    void shutdownVehicle(void);
+
     void setGroundSpeed(double val)
     {
         groundSpeed = val;
@@ -200,19 +200,6 @@ public:
         return altitudeAMSLFT;
     }
 
-    void setAltitudeWGS84(double val)
-    {
-        altitudeWGS84 = val;
-        emit altitudeWGS84Changed(val, "altitudeWGS84");
-        emit valueChanged(this->uasId,"altitudeWGS84","m",QVariant(val),getUnixTime());
-    }
-
-    double getAltitudeWGS84() const
-    {
-        return altitudeWGS84;
-    }
-
-
     void setAltitudeRelative(double val)
     {
         altitudeRelative = val;
@@ -223,6 +210,21 @@ public:
     double getAltitudeRelative() const
     {
         return altitudeRelative;
+    }
+
+    double getSatRawHDOP() const
+    {
+        return satRawHDOP;
+    }
+
+    double getSatRawVDOP() const
+    {
+        return satRawVDOP;
+    }
+
+    double getSatRawCOG() const
+    {
+        return satRawCOG;
     }
 
     void setSatelliteCount(double val)
@@ -353,39 +355,22 @@ public:
         temperature_var = var;
     }
 
+#ifndef __mobile__
     friend class FileManager;
+#endif
 
 protected: //COMMENTS FOR TEST UNIT
     /// LINK ID AND STATUS
     int uasId;                    ///< Unique system ID
     QMap<int, QString> components;///< IDs and names of all detected onboard components
-    
+
     QList<int> unknownPackets;    ///< Packet IDs which are unknown and have been received
     MAVLinkProtocol* mavlink;     ///< Reference to the MAVLink instance
     float receiveDropRate;        ///< Percentage of packets that were dropped on the MAV's receiving link (from GCS and other MAVs)
     float sendDropRate;           ///< Percentage of packets that were not received from the MAV by the GCS
-    quint64 lastHeartbeat;        ///< Time of the last heartbeat message
-    QTimer statusTimeout;       ///< Timer for various status timeouts
 
     /// BASIC UAS TYPE, NAME AND STATE
-    uint8_t base_mode;                 ///< The current mode of the MAV
-    uint32_t custom_mode;         ///< The current mode of the MAV
     int status;                   ///< The current status of the MAV
-
-    // dongfang: This looks like a candidate for being moved off to a separate class.
-    /// BATTERY / ENERGY
-    float startVoltage;         ///< Voltage at system start
-    float tickVoltage;          ///< Voltage where 0.1 V ticks are told
-    float lastTickVoltageValue; ///< The last voltage where a tick was announced
-    float tickLowpassVoltage;   ///< Lowpass-filtered voltage for the tick announcement
-    float warnLevelPercent;     ///< Warning level, in percent
-    double currentVoltage;      ///< Voltage currently measured
-    float lpVoltage;            ///< Low-pass filtered voltage
-    double currentCurrent;      ///< Battery current currently measured
-    bool batteryRemainingEstimateEnabled; ///< If the estimate is enabled, QGC will try to estimate the remaining battery life
-    float chargeLevel;          ///< Charge level of battery, in percent
-    bool lowBattAlarm;          ///< Switch if battery is low
-
 
     /// TIMEKEEPING
     quint64 startTime;            ///< The time the UAS was switched on
@@ -403,7 +388,6 @@ protected: //COMMENTS FOR TEST UNIT
     double manualThrust;        ///< Thrust set by human pilot (radians)
 
     /// POSITION
-    bool positionLock;          ///< Status if position information is available or not
     bool isGlobalPositionKnown; ///< If the global position has been received for this MAV
 
     double localX;
@@ -413,9 +397,12 @@ protected: //COMMENTS FOR TEST UNIT
     double latitude;            ///< Global latitude as estimated by position estimator
     double longitude;           ///< Global longitude as estimated by position estimator
     double altitudeAMSL;        ///< Global altitude as estimated by position estimator, AMSL
-    double altitudeAMSLFT;        ///< Global altitude as estimated by position estimator, AMSL
-    double altitudeWGS84;        ///< Global altitude as estimated by position estimator, WGS84
+    double altitudeAMSLFT;      ///< Global altitude as estimated by position estimator, AMSL
     double altitudeRelative;    ///< Altitude above home as estimated by position estimator
+
+    double satRawHDOP;
+    double satRawVDOP;
+    double satRawCOG;
 
     double satelliteCount;      ///< Number of satellites visible to raw GPS
     bool globalEstimatorActive; ///< Global position estimator present, do not fall back to GPS raw for position
@@ -431,7 +418,9 @@ protected: //COMMENTS FOR TEST UNIT
     double airSpeed;             ///< Airspeed
     double groundSpeed;          ///< Groundspeed
     double bearingToWaypoint;    ///< Bearing to next waypoint
+#ifndef __mobile__
     FileManager   fileManager;
+#endif
 
     /// ATTITUDE
     bool attitudeKnown;             ///< True if attitude was received, false else
@@ -445,7 +434,7 @@ protected: //COMMENTS FOR TEST UNIT
     /// IMAGING
     int imageSize;              ///< Image size being transmitted (bytes)
     int imagePackets;           ///< Number of data packets being sent for this image
-    int imagePacketsArrived;    ///< Number of data packets recieved
+    int imagePacketsArrived;    ///< Number of data packets received
     int imagePayload;           ///< Payload size per transmitted packet (bytes). Standard is 254, and decreases when image resolution increases.
     int imageQuality;           ///< Quality of the transmitted image (percentage)
     int imageType;              ///< Type of the transmitted image (BMP, PNG, JPEG, RAW 8 bit, RAW 32 bit)
@@ -478,14 +467,12 @@ protected: //COMMENTS FOR TEST UNIT
 #endif
 
 public:
-    /** @brief Get the current charge level */
-    float getChargeLevel();
     /** @brief Get the human-readable status message for this code */
     void getStatusForCode(int statusCode, QString& uasState, QString& stateDescription);
 
-    virtual FileManager* getFileManager() {
-        return &fileManager;
-    }
+#ifndef __mobile__
+    virtual FileManager* getFileManager() { return &fileManager; }
+#endif
 
     /** @brief Get the HIL simulation */
 #ifndef __mobile__
@@ -551,13 +538,8 @@ public slots:
     void stopHil();
 #endif
 
-    void startLowBattAlarm();
-    void stopLowBattAlarm();
-
     /** @brief Set the values for the manual control of the vehicle */
-#ifndef __mobile__
     void setExternalControlSetpoint(float roll, float pitch, float yaw, float thrust, quint16 buttons, int joystickMode);
-#endif
 
     /** @brief Set the values for the 6dof manual control of the vehicle */
 #ifndef __mobile__
@@ -566,9 +548,6 @@ public slots:
 
     /** @brief Receive a message from one of the communication links. */
     virtual void receiveMessage(mavlink_message_t message);
-
-    /** @brief Update the system state */
-    void updateState();
 
     void startCalibration(StartCalibrationType calType);
     void stopCalibration(void);
@@ -583,15 +562,11 @@ public slots:
     void unsetRCToParameterMap();
 signals:
     void loadChanged(UASInterface* uas, double load);
-    /** @brief Propagate a heartbeat received from the system */
-    //void heartbeat(UASInterface* uas); // Defined in UASInterface already
     void imageStarted(quint64 timestamp);
     /** @brief A new camera image has arrived */
     void imageReady(UASInterface* uas);
     /** @brief HIL controls have changed */
     void hilControlsChanged(quint64 time, float rollAilerons, float pitchElevator, float yawRudder, float throttle, quint8 systemMode, quint8 navMode);
-    /** @brief HIL actuator outputs have changed */
-    void hilActuatorsChanged(quint64 time, float act1, float act2, float act3, float act4, float act5, float act6, float act7, float act8);
 
     void localXChanged(double val,QString name);
     void localYChanged(double val,QString name);
@@ -600,8 +575,12 @@ signals:
     void latitudeChanged(double val,QString name);
     void altitudeAMSLChanged(double val,QString name);
     void altitudeAMSLFTChanged(double val,QString name);
-    void altitudeWGS84Changed(double val,QString name);
     void altitudeRelativeChanged(double val,QString name);
+
+    void satRawHDOPChanged  (double value);
+    void satRawVDOPChanged  (double value);
+    void satRawCOGChanged   (double value);
+
     void rollChanged(double val,QString name);
     void pitchChanged(double val,QString name);
     void yawChanged(double val,QString name);
@@ -635,7 +614,7 @@ protected:
 
 private:
     void _say(const QString& text, int severity = 6);
-    
+
 private:
     Vehicle*                _vehicle;
     FirmwarePluginManager*  _firmwarePluginManager;

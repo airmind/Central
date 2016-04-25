@@ -64,6 +64,23 @@ class ArduCopterFirmwarePlugin : public APMFirmwarePlugin
     
 public:
     ArduCopterFirmwarePlugin(void);
+
+    // Overrides from FirmwarePlugin
+    bool isCapable(FirmwareCapabilities capabilities) final;
+    bool isPaused(const Vehicle* vehicle) const final;
+    void setGuidedMode(Vehicle* vehicle, bool guidedMode) final;
+    void pauseVehicle(Vehicle* vehicle) final;
+    void guidedModeRTL(Vehicle* vehicle) final;
+    void guidedModeLand(Vehicle* vehicle) final;
+    void guidedModeTakeoff(Vehicle* vehicle, double altitudeRel) final;
+    void guidedModeGotoLocation(Vehicle* vehicle, const QGeoCoordinate& gotoCoord) final;
+    void guidedModeChangeAltitude(Vehicle* vehicle, double altitudeRel) final;
+    const FirmwarePlugin::remapParamNameMajorVersionMap_t& paramNameRemapMajorVersionMap(void) const final { return _remapParamName; }
+    virtual int remapParamNameHigestMinorVersionNumber(int majorVersionNumber) const final;
+
+private:
+    static bool _remapParamNameIntialized;
+    static FirmwarePlugin::remapParamNameMajorVersionMap_t  _remapParamName;
 };
 
 #endif

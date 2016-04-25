@@ -6,8 +6,16 @@ import QGroundControl.Palette 1.0
 import QGroundControl.ScreenTools 1.0
 
 TextField {
+    id: root
+
     property bool showUnits: false
     property string unitsLabel: ""
+
+    Component.onCompleted: {
+        if (typeof qgcTextFieldforwardKeysTo !== 'undefined') {
+            root.Keys.forwardTo = [qgcTextFieldforwardKeysTo]
+        }
+    }
 
     property var __qgcPal: QGCPalette { colorGroupEnabled: enabled }
 
@@ -63,7 +71,7 @@ TextField {
     }
 
     onActiveFocusChanged: {
-        if (activeFocus) {
+        if (!ScreenTools.isMobile && activeFocus) {
             selectAll()
         }
     }

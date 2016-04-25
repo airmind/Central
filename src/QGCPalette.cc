@@ -34,7 +34,7 @@ QList<QGCPalette*>   QGCPalette::_paletteObjects;
 QGCPalette::Theme QGCPalette::_theme = QGCPalette::Dark;
 
 QColor QGCPalette::_window[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
-    { QColor("#f9f8f4"), QColor("#f9f8f4") },
+    { QColor("#ffffff"), QColor("#ffffff") },
     { QColor(0x22, 0x22, 0x22), QColor(0x22, 0x22, 0x22) }
 };
 
@@ -49,7 +49,7 @@ QColor QGCPalette::_windowShadeDark[QGCPalette::_cThemes][QGCPalette::_cColorGro
 };
 
 QColor QGCPalette::_text[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
-    { QColor("#cccccc"), QColor("#000000") },
+    { QColor("#9d9d9d"), QColor("#000000") },
     { QColor(0x58, 0x58, 0x58), QColor(0xFF, 0xFF, 0xFF) }
 };
 
@@ -59,17 +59,17 @@ QColor QGCPalette::_warningText[QGCPalette::_cThemes][QGCPalette::_cColorGroups]
 };
 
 QColor QGCPalette::_button[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
-    { QColor("#ffffff"), QColor("#ffffff") },
+    { QColor("#ffffff"),  QColor("#ffffff") },
     { QColor(0x58, 0x58, 0x58), QColor(98, 98, 100) },
 };
 
 QColor QGCPalette::_buttonText[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
-    { QColor("#dedede"), QColor("#000000") },
+    { QColor("#9d9d9d"), QColor("#000000") },
     { QColor(0x2c, 0x2c, 0x2c), QColor(0xFF, 0xFF, 0xFF) },
 };
 
 QColor QGCPalette::_buttonHighlight[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
-    { QColor("#e4e4e4"), QColor("#e4e4e4") },
+    { QColor("#e4e4e4"), QColor("#33b5e5") },
     { QColor(0x58, 0x58, 0x58), QColor(237, 235, 51) },
 };
 
@@ -106,6 +106,27 @@ QColor QGCPalette::_mapButton[QGCPalette::_cThemes][QGCPalette::_cColorGroups] =
 QColor QGCPalette::_mapButtonHighlight[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
     { QColor(0x58, 0x58, 0x58), QColor(190, 120, 28) },
     { QColor(0x58, 0x58, 0x58), QColor(190, 120, 28) },
+};
+
+// Map widget colors are not affecting by theming
+QColor QGCPalette::_mapWidgetBorderLight[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
+    { QColor(255, 255, 255), QColor(255, 255, 255) },
+    { QColor(255, 255, 255), QColor(255, 255, 255) },
+};
+
+QColor QGCPalette::_mapWidgetBorderDark[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
+    { QColor(0, 0, 0), QColor(0, 0, 0) },
+    { QColor(0, 0, 0), QColor(0, 0, 0) },
+};
+
+QColor QGCPalette::_brandingPurple[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
+    { QColor("#4A2C6D"), QColor("#4A2C6D") },
+    { QColor("#4A2C6D"), QColor("#4A2C6D") },
+};
+
+QColor QGCPalette::_brandingBlue[QGCPalette::_cThemes][QGCPalette::_cColorGroups] = {
+    { QColor("#48D6FF"), QColor("#48D6FF") },
+    { QColor("#48D6FF"), QColor("#48D6FF") },
 };
 
 QGCPalette::QGCPalette(QObject* parent) :

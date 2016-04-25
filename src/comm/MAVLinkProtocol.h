@@ -76,12 +76,6 @@ public:
     int getSystemId();
     /** @brief Get the component id of this application */
     int getComponentId();
-    /** @brief The auto heartbeat emission rate in Hertz */
-    int getHeartbeatRate();
-    /** @brief Get heartbeat state */
-    bool heartbeatsEnabled() const {
-        return _heartbeatsEnabled;
-    }
     
     /** @brief Get protocol version check state */
     bool versionCheckEnabled() const {
@@ -169,6 +163,7 @@ public slots:
     void receiveBytes(BTSerialLink* link, QByteArray b);
 #endif
     
+<<<<<<< HEAD
     void linkConnected(void);
     void linkDisconnected(void);
 
@@ -194,11 +189,10 @@ public slots:
     
     /** @brief Set the rate at which heartbeats are emitted */
     void setHeartbeatRate(int rate);
+=======
+>>>>>>> upstream/master
     /** @brief Set the system id of this application */
     void setSystemId(int id);
-
-    /** @brief Enable / disable the heartbeat emission */
-    void enableHeartbeats(bool enabled);
 
     /** @brief Enabled/disable packet multiplexing */
     void enableMultiplexing(bool enabled);
@@ -228,9 +222,6 @@ public slots:
     void setAuthKey(QString key) {
         m_authKey = key;
     }
-
-    /** @brief Send an extra heartbeat to all connected units */
-    void sendHeartbeat();
 
     /** @brief Load protocol settings */
     void loadSettings();
@@ -266,10 +257,11 @@ protected:
     int systemId;
 
 signals:
+    /// Heartbeat received on link
+    void vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
+
     /** @brief Message received and directly copied via signal */
     void messageReceived(LinkInterface* link, mavlink_message_t message);
-    /** @brief Emitted if heartbeat emission mode is changed */
-    void heartbeatChanged(bool heartbeats);
     /** @brief Emitted if multiplexing is started / stopped */
     void multiplexingChanged(bool enabled);
     /** @brief Emitted if authentication support is enabled / disabled */
@@ -292,21 +284,22 @@ signals:
     void actionGuardChanged(bool enabled);
     /** @brief Emitted if action request timeout changed */
     void actionRetransmissionTimeoutChanged(int ms);
-    /** @brief Update the packet loss from one system */
-    void receiveLossChanged(int uasId, float loss);
+
+    void receiveLossPercentChanged(int uasId, float lossPercent);
+    void receiveLossTotalChanged(int uasId, int totalLoss);
 
     /**
      * @brief Emitted if a new radio status packet received
      *
      * @param rxerrors receive errors
      * @param fixed count of error corrected packets
-     * @param rssi local signal strength
-     * @param remrssi remote signal strength
+     * @param rssi local signal strength in dBm
+     * @param remrssi remote signal strength in dBm
      * @param txbuf how full the tx buffer is as a percentage
      * @param noise background noise level
      * @param remnoise remote background noise level
      */
-    void radioStatusChanged(LinkInterface* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
+    void radioStatusChanged(LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi,
     unsigned txbuf, unsigned noise, unsigned remnoise);
 #ifdef __ios__
     void radioStatusChanged(BTSerialLink* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
@@ -323,10 +316,16 @@ private slots:
     void _vehicleCountChanged(int count);
     
 private:
+<<<<<<< HEAD
     void _linkStatusChanged(LinkInterface* link, bool connected);
 #ifdef __ios__
     void _linkStatusChanged(BTSerialLink* link, bool connected);
 #endif
+=======
+    void _sendMessage(mavlink_message_t message);
+    void _sendMessage(LinkInterface* link, mavlink_message_t message);
+    void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
+>>>>>>> upstream/master
 
 #ifndef __mobile__
     bool _closeLogFile(void);
@@ -335,12 +334,13 @@ private:
 
     bool _logSuspendError;      ///< true: Logging suspended due to error
     bool _logSuspendReplay;     ///< true: Logging suspended due to replay
-    bool _logWasArmed;          ///< true: vehicle was armed during logging
+    bool _logPromptForSave;     ///< true: Prompt for log save when appropriate
 
     QGCTemporaryFile    _tempLogFile;            ///< File to log to
     static const char*  _tempLogFileTemplate;    ///< Template for temporary log file
     static const char*  _logFileExtension;       ///< Extension for log files
 #endif
+<<<<<<< HEAD
     
     /// List of all links connected to protocol. We keep SharedLinkInterface objects
     /// which are QSharedPointer's in order to maintain reference counts across threads.
@@ -353,6 +353,8 @@ private:
     QTimer  _heartbeatTimer;    ///< Timer to emit heartbeats
     int     _heartbeatRate;     ///< Heartbeat rate, controls the timer interval
     bool    _heartbeatsEnabled; ///< Enabled/disable heartbeat emission
+=======
+>>>>>>> upstream/master
 
     LinkManager*            _linkMgr;
     MultiVehicleManager*    _multiVehicleManager;

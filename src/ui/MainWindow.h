@@ -31,6 +31,10 @@ This file is part of the QGROUNDCONTROL project
 #ifndef _MAINWINDOW_H_
 #define _MAINWINDOW_H_
 
+#ifdef __mobile__
+#error Should not be include in mobile build
+#endif
+
 #include <QMainWindow>
 #include <QStatusBar>
 #include <QStackedWidget>
@@ -42,7 +46,9 @@ This file is part of the QGROUNDCONTROL project
 #include "UASInterface.h"
 #include "LogCompressor.h"
 #include "QGCMAVLinkInspector.h"
+#ifndef __mobile__
 #include "QGCMAVLinkLogPlayer.h"
+#endif
 #include "MAVLinkDecoder.h"
 #include "Vehicle.h"
 #include "QGCDockWidget.h"
@@ -80,12 +86,6 @@ public:
     ~MainWindow();
 
 
-    /** @brief Get auto link reconnect setting */
-    bool autoReconnectEnabled() const
-    {
-        return _autoReconnect;
-    }
-
     /** @brief Get low power mode setting */
     bool lowPowerModeEnabled() const
     {
@@ -95,17 +95,16 @@ public:
     /// @brief Saves the last used connection
     void saveLastUsedConnection(const QString connection);
 
-    /// @brief Restore (and connects) the last used connection (if any)
-    void restoreLastUsedConnection();
+    // Called from MainWindow.qml when the user accepts the window close dialog
+    Q_INVOKABLE void reallyClose(void);
+
+    /// @return Root qml object of main window QML
+    QObject* rootQmlObject(void);
 
 public slots:
-    /** @brief Show the application settings */
+#ifndef __mobile__
     void showSettings();
-
-    void manageLinks();
-
-    /** @brief Automatically reconnect last link */
-    void enableAutoReconnect(bool enabled);
+#endif
 
     /** @brief Save power by reducing update rates */
     void enableLowPowerMode(bool enabled) { _lowPowerMode = enabled; }
@@ -117,50 +116,14 @@ public slots:
 
 protected slots:
     /**
-     * @brief Unchecks the normalActionItem.
-     * Used as a triggered() callback by the fullScreenAction to make sure only one of it or the
-     * normalAction are checked at a time, as they're mutually exclusive.
-     */
-    void fullScreenActionItemCallback(bool);
-    /**
-     * @brief Unchecks the fullScreenActionItem.
-     * Used as a triggered() callback by the normalAction to make sure only one of it or the
-     * fullScreenAction are checked at a time, as they're mutually exclusive.
-     */
-    void normalActionItemCallback(bool);
-    /**
      * @brief Enable/Disable Status Bar
      */
     void showStatusBarCallback(bool checked);
 
-    /**
-     * @brief Disable the other QActions that trigger view mode changes
-     *
-     * When a user hits Ctrl+1, Ctrl+2, Ctrl+3  - only one view is set to active
-     * (and in the QML file for the MainWindow the others are set to have
-     * visibility = false), but on the Menu all of them would be selected making
-     * this incoherent.
-     */
-    void handleActiveViewActionState(bool triggered);
 signals:
-    // Signals the Qml to show the specified view
-    void showFlyView(void);
-    void showPlanView(void);
-    void showSetupView(void);
-
-    void showToolbarMessage(const QString& message);
-
-    // These are used for unit testing
-    void showSetupFirmware(void);
-    void showSetupParameters(void);
-    void showSetupSummary(void);
-    void showSetupVehicleComponent(VehicleComponent* vehicleComponent);
-
     void initStatusChanged(const QString& message, int alignment, const QColor &color);
     /** Emitted when any value changes from any source */
     void valueChanged(const int uasId, const QString& name, const QString& unit, const QVariant& value, const quint64 msec);
-    /** Emitted when any the Canvas elements within QML wudgets need updating */
-    void repaintCanvas();
 
     // Used for unit tests to know when the main window closes
     void mainWindowClosed(void);
@@ -171,10 +134,12 @@ signals:
 #endif //QGC_MOUSE_ENABLED_LINUX
 
 public:
+#ifndef __mobile__
     QGCMAVLinkLogPlayer* getLogPlayer()
     {
         return logPlayer;
     }
+#endif
 
 protected:
     void connectCommonActions();
@@ -185,8 +150,9 @@ protected:
     QSettings settings;
 
     QPointer<MAVLinkDecoder> mavlinkDecoder;
+#ifndef __mobile__
     QGCMAVLinkLogPlayer* logPlayer;
-
+#endif
 #ifdef QGC_MOUSE_ENABLED_WIN
     /** @brief 3d Mouse support (WIN only) */
     Mouse3DInput* mouseInput;               ///< 3dConnexion 3dMouse SDK
@@ -213,11 +179,14 @@ protected:
     QTimer windowNameUpdateTimer;
 
 private slots:
+<<<<<<< HEAD
     void _linkStateChange(LinkInterface*);
 #ifdef __ios__
     void _linkStateChange(BTSerialLink*);
     
 #endif
+=======
+>>>>>>> upstream/master
     void _closeWindow(void) { close(); }
     void _vehicleAdded(Vehicle* vehicle);
 
@@ -235,12 +204,6 @@ private:
 
     void _openUrl(const QString& url, const QString& errorMessage);
 
-    // Center widgets
-    QPointer<QWidget> _planView;
-    QPointer<QWidget> _flightView;
-    QPointer<QWidget> _setupView;
-    QPointer<QWidget> _missionEditorView;
-
 #ifndef __mobile__
     QMap<QString, QGCDockWidget*>   _mapName2DockWidget;
     QMap<QString, QAction*>         _mapName2Action;
@@ -250,7 +213,7 @@ private:
     void _loadCurrentViewState(void);
 
 #ifndef __mobile__
-    void _createInnerDockWidget(const QString& widgetName);
+    bool _createInnerDockWidget(const QString& widgetName);
     void _buildCommonWidgets(void);
     void _hideAllDockWidgets(void);
     void _showDockWidget(const QString &name, bool show);
@@ -258,13 +221,14 @@ private:
     void _storeVisibleWidgetsSettings(void);
 #endif
 
-    bool                    _autoReconnect;
     bool                    _lowPowerMode;           ///< If enabled, QGC reduces the update rates of all widgets
     bool                    _showStatusBar;
     QVBoxLayout*            _centralLayout;
     Ui::MainWindow          _ui;
 
     QGCQmlWidgetHolder*     _mainQmlWidgetHolder;
+
+    bool    _forceClose;
 
     QString _getWindowGeometryKey();
 };

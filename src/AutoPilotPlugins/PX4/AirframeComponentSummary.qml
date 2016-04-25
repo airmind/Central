@@ -18,25 +18,25 @@ FactPanel {
     property Fact sysIdFact:        controller.getParameterFact(-1, "MAV_SYS_ID")
     property Fact sysAutoStartFact: controller.getParameterFact(-1, "SYS_AUTOSTART")
 
-    property bool autoStartSet: sysAutoStartFact.value != 0
+    property bool autoStartSet: sysAutoStartFact ? (sysAutoStartFact.value !== 0) : false
 
     Column {
-        anchors.fill: parent
+        anchors.fill:    parent
         anchors.margins: 8
 
         VehicleSummaryRow {
-            labelText: "System ID:"
-            valueText: sysIdFact.valueString
+            labelText: qsTr("System ID:")
+            valueText: sysIdFact ? sysIdFact.valueString : ""
         }
 
         VehicleSummaryRow {
-            labelText: "Airframe type:"
-            valueText: autoStartSet ? controller.currentAirframeType : "Setup required"
+            labelText: qsTr("Airframe type:")
+            valueText: autoStartSet ? controller.currentAirframeType : qsTr("Setup required")
         }
 
         VehicleSummaryRow {
-            labelText: "Vehicle:"
-            valueText: autoStartSet ? controller.currentVehicleName : "Setup required"
+            labelText: qsTr("Vehicle:")
+            valueText: autoStartSet ? controller.currentVehicleName : qsTr("Setup required")
         }
     }
 }

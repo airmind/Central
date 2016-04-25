@@ -45,8 +45,8 @@ public:
     qint64 getCurrentOutDataRate() const;
     qint64 getCurrentInDataRate() const;
 
-public slots: // virtual functions from LinkInterface
-	void writeBytes(const char *bytes, qint64 length);
+private slots: // virtual functions from LinkInterface
+	void _writeBytes(const QByteArray bytes);
 
 protected slots: // virtual functions from LinkInterface
 	void readBytes();
@@ -67,7 +67,7 @@ protected:
 private:
     // From LinkInterface
     virtual bool _connect(void);
-    virtual bool _disconnect(void);
+    virtual void _disconnect(void);
 
     bool hardwareConnect();
 	//void CALLTYPE portCallback(xbee_con *XbeeCon, xbee_pkt *XbeePkt);

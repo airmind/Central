@@ -36,7 +36,7 @@ Rectangle {
     property bool calInProgress: false
 
     // Text to show while calibration is in progress
-    property string calInProgressText: "Hold Still"
+    property string calInProgressText: qsTr("Hold Still")
 
     // Image source
     property var imageSource: ""
@@ -49,7 +49,6 @@ Rectangle {
 
     Rectangle {
         readonly property int inset: 5
-        property string calText: calInProgress ? calInProgressText : (calValid ? "Completed" : "Incomplete")
 
         x:      inset
         y:      inset
@@ -71,18 +70,7 @@ Rectangle {
             horizontalAlignment:    Text.AlignHCenter
             verticalAlignment:      Text.AlignBottom
             font.pixelSize:         ScreenTools.mediumFontPixelSize
-            font.bold:              true
-            color:                  "black"
-            text: parent.calText
-        }
-        QGCLabel {
-            width:                  parent.width
-            height:                 parent.height
-            horizontalAlignment:    Text.AlignHCenter
-            verticalAlignment:      Text.AlignBottom
-            font.pixelSize:         ScreenTools.mediumFontPixelSize
-            color:                  calInProgress ? "yellow" : "white"
-            text: parent.calText
+            text:                   calInProgress ? calInProgressText : (calValid ? qsTr("Completed") : qsTr("Incomplete"))
         }
     }
 }

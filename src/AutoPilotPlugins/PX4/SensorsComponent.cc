@@ -32,7 +32,7 @@
 // These two list must be kept in sync
 
 SensorsComponent::SensorsComponent(Vehicle* vehicle, AutoPilotPlugin* autopilot, QObject* parent) :
-    PX4Component(vehicle, autopilot, parent),
+    VehicleComponent(vehicle, autopilot, parent),
     _name(tr("Sensors"))
 {
 
@@ -61,25 +61,13 @@ bool SensorsComponent::requiresSetup(void) const
 
 bool SensorsComponent::setupComplete(void) const
 {
-    foreach(QString triggerParam, setupCompleteChangedTriggerList()) {
-        if (_autopilot->getParameterFact(FactSystem::defaultComponentId, triggerParam)->value().toFloat() == 0.0f) {
+    foreach(const QString &triggerParam, setupCompleteChangedTriggerList()) {
+        if (_autopilot->getParameterFact(FactSystem::defaultComponentId, triggerParam)->rawValue().toFloat() == 0.0f) {
             return false;
         }
     }
 
     return true;
-}
-
-QString SensorsComponent::setupStateDescription(void) const
-{
-    const char* stateDescription;
-    
-    if (requiresSetup()) {
-        stateDescription = "Requires calibration";
-    } else {
-        stateDescription = "Calibrated";
-    }
-    return QString(stateDescription);
 }
 
 QStringList SensorsComponent::setupCompleteChangedTriggerList(void) const
@@ -92,6 +80,10 @@ QStringList SensorsComponent::setupCompleteChangedTriggerList(void) const
         case MAV_TYPE_VTOL_DUOROTOR:
         case MAV_TYPE_VTOL_QUADROTOR:
         case MAV_TYPE_VTOL_TILTROTOR:
+        case MAV_TYPE_VTOL_RESERVED2:
+        case MAV_TYPE_VTOL_RESERVED3:
+        case MAV_TYPE_VTOL_RESERVED4:
+        case MAV_TYPE_VTOL_RESERVED5:
             triggers << "SENS_DPRES_OFF";
             break;
         default:
@@ -99,15 +91,6 @@ QStringList SensorsComponent::setupCompleteChangedTriggerList(void) const
     }
     
     return triggers;
-}
-
-QStringList SensorsComponent::paramFilterList(void) const
-{
-    QStringList list;
-    
-    list << "SENS_*" << "CAL_*";
-    
-    return list;
 }
 
 QUrl SensorsComponent::setupSource(void) const

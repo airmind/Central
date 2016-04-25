@@ -9,11 +9,13 @@ Item {
     id: _root
 
     signal          clicked()
-    property alias  buttonImage:        button.source
+    property alias  buttonImage:        roundButton.buttonImage
+    property alias  rotateImage:        roundButton.rotateImage
     property real   radius:             ScreenTools.defaultFontPixelHeight * 1.5
     property int    dropDirection:      dropDown
     property alias  dropDownComponent:  dropDownLoader.sourceComponent
     property real   viewportMargins:    0
+    property alias  lightBorders:       roundButton.lightBorders
 
     width:  radius * 2
     height: radius * 2
@@ -38,7 +40,7 @@ Item {
 
     // Set up ExclusiveGroup support. We use the checked property to drive visibility of drop down.
 
-    property bool checked: false
+    property alias checked: roundButton.checked
     property ExclusiveGroup exclusiveGroup: null
 
     onExclusiveGroupChanged: {
@@ -77,7 +79,7 @@ Item {
 
                 dropItemHolderRect.y = 0
             } else {
-                dropDownItem.y = button.height + _dropMargin
+                dropDownItem.y = roundButton.height + _dropMargin
 
                 dropItemHolderRect.y = _arrowPointHeight
             }
@@ -87,7 +89,7 @@ Item {
             dropDownItem.x = Math.min(dropDownItem.x + dropDownItem.width, _viewportMaxRight) - dropDownItem.width
 
             // Arrow points
-            arrowCanvas.arrowPoint.x = (button.x + radius) - dropDownItem.x
+            arrowCanvas.arrowPoint.x = (roundButton.x + radius) - dropDownItem.x
             if (dropDirection == dropUp) {
                 arrowCanvas.arrowPoint.y = dropDownItem.height
                 arrowCanvas.arrowBase1.x = arrowCanvas.arrowPoint.x - (_arrowBaseWidth / 2)
@@ -113,7 +115,7 @@ Item {
 
                 dropItemHolderRect.x = 0
             } else {
-                dropDownItem.x = button.width + _dropMargin
+                dropDownItem.x = roundButton.width + _dropMargin
 
                 dropItemHolderRect.x = _arrowPointHeight
             }
@@ -123,7 +125,7 @@ Item {
             dropDownItem.y = Math.min(dropDownItem.y + dropDownItem.height, _viewportMaxBottom) - dropDownItem.height
 
             // Arrow points
-            arrowCanvas.arrowPoint.y = (button.y + radius) - dropDownItem.y
+            arrowCanvas.arrowPoint.y = (roundButton.y + radius) - dropDownItem.y
             if (dropDirection == dropLeft) {
                 arrowCanvas.arrowPoint.x = dropDownItem.width
                 arrowCanvas.arrowBase1.x = arrowCanvas.arrowPoint.x - _arrowPointHeight
@@ -155,36 +157,20 @@ Item {
         }
     }
 
-    // Button
-    Rectangle {
-        anchors.fill:   parent
-        radius:         width / 2
-        border.width:   ScreenTools.defaultFontPixelHeight * 0.0625
-        border.color:   "white"
-        color:          checked ? qgcPal.mapButtonHighlight : qgcPal.mapButton
+    RoundButton {
+        id:             roundButton
+        radius:         parent.width / 2
 
-        Image {
-            id:             button
-            anchors.fill:   parent
-            fillMode:       Image.PreserveAspectFit
-            mipmap:         true
-            smooth:         true
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked:  {
-                    checked = !checked
-                    _root.clicked()
-                }
-            }
-        } // Image - button
+        onClicked:  {
+            _root.clicked()
+        }
     }
 
     Item {
         id:         dropDownItem
         visible:    checked
 
-        QGCCanvas {
+        Canvas {
             id:             arrowCanvas
             anchors.fill:   parent
 

@@ -151,7 +151,7 @@ void QmlObjectListModel::clear(void)
 QObject* QmlObjectListModel::removeAt(int i)
 {
     QObject* removedObject = _objectList[i];
-    
+
     // Look for a dirtyChanged signal on the object
     if (_objectList[i]->metaObject()->indexOfSignal(QMetaObject::normalizedSignature("dirtyChanged(bool)")) != -1) {
         if (!_skipDirtyFirstItem || i != 0) {
@@ -197,11 +197,6 @@ int QmlObjectListModel::count(void) const
     return rowCount();
 }
 
-QObject* QmlObjectListModel::get(int index)
-{
-    return _objectList[index];
-}
-
 void QmlObjectListModel::setDirty(bool dirty)
 {
     _dirty = dirty;
@@ -224,4 +219,20 @@ void QmlObjectListModel::_childDirtyChanged(bool dirty)
     // We want to emit dirtyChanged even if the actual value of _dirty didn't change. It can be a useful
     // signal to know when a child has changed dirty state
     emit dirtyChanged(_dirty);
+}
+
+void QmlObjectListModel::deleteListAndContents(void)
+{
+    for (int i=0; i<_objectList.count(); i++) {
+        _objectList[i]->deleteLater();
+    }
+    deleteLater();
+}
+
+void QmlObjectListModel::clearAndDeleteContents(void)
+{
+    for (int i=0; i<_objectList.count(); i++) {
+        _objectList[i]->deleteLater();
+    }
+    clear();
 }

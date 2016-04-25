@@ -25,28 +25,28 @@ FactPanel {
         anchors.margins:    8
 
         VehicleSummaryRow {
-            labelText: "RTL min alt:"
-            valueText: returnAltFact.valueString
+            labelText: qsTr("RTL min alt:")
+            valueText: returnAltFact ? returnAltFact.valueString : ""
         }
 
         VehicleSummaryRow {
-            labelText: "RTL home alt:"
-            valueText: descendAltFact.valueString
+            labelText: qsTr("RTL home alt:")
+            valueText: descendAltFact ? descendAltFact.valueString : ""
         }
 
         VehicleSummaryRow {
-            labelText: "RTL loiter delay:"
-            valueText: landDelayFact.value < 0 ? "Disabled" : landDelayFact.valueString
+            labelText: qsTr("RTL loiter delay:")
+            valueText: landDelayFact ? (landDelayFact.value < 0 ? qsTr("Disabled") : landDelayFact.valueString) : ""
         }
 
         VehicleSummaryRow {
-            labelText: "Telemetry loss RTL:"
-            valueText: commDLLossFact.value != -1 ? "Disabled" : commDLLossFact.valueString
+            labelText: qsTr("Telemetry loss RTL:")
+            valueText: commDLLossFact ? (commDLLossFact.value != -1 ? qsTr("Disabled") : commDLLossFact.valueString) : ""
         }
 
         VehicleSummaryRow {
-            labelText: "RC loss RTL (seconds):"
-            valueText: commRCLossFact.valueString
+            labelText: qsTr("RC loss RTL (seconds):")
+            valueText: commRCLossFact ? commRCLossFact.valueString : ""
         }
     }
 }

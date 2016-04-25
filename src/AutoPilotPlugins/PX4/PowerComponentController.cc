@@ -26,7 +26,6 @@
 
 #include "PowerComponentController.h"
 #include "QGCMAVLink.h"
-#include "QGCMessageBox.h"
 #include "UAS.h"
 
 #include <QVariant>
@@ -35,11 +34,6 @@
 PowerComponentController::PowerComponentController(void)
 {
 
-}
-
-PowerComponentController::~PowerComponentController()
-{
-    _stopCalibration();
 }
 
 void PowerComponentController::calibrateEsc(void)

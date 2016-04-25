@@ -19,7 +19,7 @@
 
 #
 # This file contains configuration settings which are common to both the QGC Application and
-# the Location Plugin. It should mainly contains intial CONFIG tag setup and compiler settings.
+# the Location Plugin. It should mainly contains initial CONFIG tag setup and compiler settings.
 #
 
 # Setup our supported build types. We do this once here and then use the defined config scopes
@@ -27,17 +27,21 @@
 # the project file.
 
 linux {
-    linux-g++ | linux-g++-64 {
+    linux-g++ | linux-g++-64 | linux-g++-32 {
         message("Linux build")
         CONFIG += LinuxBuild
         DEFINES += __STDC_LIMIT_MACROS
+    } else : linux-rasp-pi2-g++ {
+        message("Linux R-Pi2 build")
+        CONFIG += LinuxBuild
+        DEFINES += __STDC_LIMIT_MACROS __rasp_pi2__
     } else : android-g++ {
         message("Android build")
         CONFIG += AndroidBuild MobileBuild
         DEFINES += __android__
         DEFINES += __STDC_LIMIT_MACROS
+        DEFINES += QGC_ENABLE_BLUETOOTH
         target.path = $$DESTDIR
-        warning("Android build is experimental and not fully functional")
     } else {
         error("Unsuported Linux toolchain, only GCC 32- or 64-bit is supported")
     }
@@ -56,8 +60,12 @@ linux {
         DEFINES += __macos__
         CONFIG += x86_64
         CONFIG -= x86
+equals(QT_MAJOR_VERSION, 5) | greaterThan(QT_MINOR_VERSION, 5) {
+        QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
+} else {
         QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.6
-        QMAKE_MAC_SDK = macosx10.10
+}
+        QMAKE_MAC_SDK = macosx10.11
         QMAKE_CXXFLAGS += -fvisibility=hidden
     } else {
         error("Unsupported Mac toolchain, only 64-bit LLVM+clang is supported")
@@ -70,9 +78,8 @@ linux {
     CONFIG += iOSBuild MobileBuild app_bundle
     DEFINES += __ios__
     QMAKE_IOS_DEPLOYMENT_TARGET = 8.0
-    QMAKE_IOS_TARGETED_DEVICE_FAMILY = 2 #- iPad only for now
+    QMAKE_IOS_TARGETED_DEVICE_FAMILY = 1,2 # Universal
     QMAKE_LFLAGS += -Wl,-no_pie
-    warning("iOS build is experimental and not yet fully functional")
 } else {
     error("Unsupported build platform, only Linux, Windows, Android and Mac (Mac OS and iOS) are supported")
 }
@@ -84,13 +91,28 @@ MobileBuild {
 # set the QGC version from git
 
 exists ($$PWD/.git) {
-  GIT_DESCRIBE = $$system(git --git-dir $$PWD/.git --work-tree $$PWD describe --always --tags)
-  message(QGroundControl version $${GIT_DESCRIBE})
+    GIT_DESCRIBE = $$system(git --git-dir $$PWD/.git --work-tree $$PWD describe --always --tags)
+    GIT_HASH     = $$system(git rev-parse HEAD)
+    VERSION      = $$replace(GIT_DESCRIBE, "v", "")
+    VERSION      = $$replace(VERSION, "-", ".")
+    VERSION      = $$section(VERSION, ".", 0, 3)
+    MacBuild {
+        MAC_VERSION  = $$section(VERSION, ".", 0, 2)
+        MAC_BUILD    = $$section(VERSION, ".", 3, 3)
+        message(QGroundControl version $${MAC_VERSION} build $${MAC_BUILD} describe $${GIT_DESCRIBE} hash $${GIT_HASH})
+    } else {
+        message(QGroundControl version $${VERSION} describe $${GIT_DESCRIBE} hash $${GIT_HASH})
+    }
 } else {
-  GIT_DESCRIBE = None
+    GIT_DESCRIBE    = None
+    GIT_HASH        = None
+    VERSION         = 0.0.0   # Marker to indicate out-of-tree build
+    MAC_VERSION     = 0.0.0
+    MAC_BUILD       = 0
 }
 
-DEFINES += GIT_VERSION=\"\\\"$$GIT_DESCRIBE\\\"\"
+DEFINES += GIT_TAG=\"\\\"$$GIT_DESCRIBE\\\"\"
+DEFINES += GIT_HASH=\"\\\"$$GIT_HASH\\\"\"
 
 # Installer configuration
 
@@ -111,11 +133,6 @@ CONFIG(debug, debug|release) {
     CONFIG += ReleaseBuild
 } else {
     error(Unsupported build flavor)
-}
-
-# Need to special case Windows debug_and_release since VS Project creation in this case does strange things [QTBUG-40351]
-win32:debug_and_release {
-    CONFIG += WindowsDebugAndRelease
 }
 
 # Setup our build directories
@@ -150,6 +167,10 @@ MacBuild | LinuxBuild {
     WarningsAsErrorsOn {
         QMAKE_CXXFLAGS_WARN_ON += -Werror
     }
+    MacBuild {
+        # Latest clang version has a buggy check for this which cause Qt headers to throw warnings on qmap.h
+        QMAKE_CXXFLAGS_WARN_ON += -Wno-return-stack-address
+    }
 }
 
 WindowsBuild {
@@ -183,12 +204,7 @@ ReleaseBuild {
 #
 # Unit Test specific configuration goes here
 #
-# We have to special case Windows debug_and_release builds because you can't have files
-# which are only in the debug variant [QTBUG-40351]. So in this case we include unit tests
-# even in the release variant. If you want a Windows release build with no unit tests run
-# qmake with CONFIG-=debug_and_release CONFIG+=release.
-#
 
-DebugBuild|WindowsDebugAndRelease {
+DebugBuild {
     DEFINES += UNITTEST_BUILD
 }

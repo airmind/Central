@@ -34,30 +34,27 @@ import QGroundControl.MultiVehicleManager   1.0
 import QGroundControl.Palette               1.0
 
 Rectangle {
-    id:     __mavlinkRoot
-    color:  __qgcPal.window
+    id:             __mavlinkRoot
+    color:          qgcPal.window
+    anchors.fill:   parent
 
-    QGCPalette {
-        id:                 qgcPal
-        colorGroupEnabled:  enabled
-    }
+    QGCPalette { id: qgcPal }
 
-    Flickable {
+    QGCFlickable {
         clip:               true
         anchors.fill:       parent
         anchors.margins:    ScreenTools.defaultFontPixelWidth
         contentHeight:      settingsColumn.height
-        contentWidth:       __mavlinkRoot.width
-        flickableDirection: Flickable.VerticalFlick
-        boundsBehavior:     Flickable.StopAtBounds
+        contentWidth:       settingsColumn.width
 
         Column {
             id:                 settingsColumn
-            width:              __mavlinkRoot.width
             spacing:            ScreenTools.defaultFontPixelHeight
             anchors.margins:    ScreenTools.defaultFontPixelWidth
+            anchors.left:       parent.left
+            anchors.top:        parent.top
             QGCLabel {
-                text:   "MavLink Settings"
+                text:   qsTr("MavLink Settings")
                 font.pixelSize: ScreenTools.mediumFontPixelSize
             }
             Rectangle {
@@ -66,18 +63,37 @@ Rectangle {
                 color:  qgcPal.button
             }
             //-----------------------------------------------------------------
+            //-- System ID
+            Row {
+                spacing:    ScreenTools.defaultFontPixelWidth
+                QGCLabel {
+                    text:   qsTr("Ground Station MavLink System ID:")
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                QGCTextField {
+                    id:     sysidField
+                    text:   QGroundControl.mavlinkSystemID.toString()
+                    width:  ScreenTools.defaultFontPixelWidth * 6
+                    inputMethodHints:       Qt.ImhFormattedNumbersOnly
+                    anchors.verticalCenter: parent.verticalCenter
+                    onEditingFinished: {
+                        QGroundControl.mavlinkSystemID = parseInt(sysidField.text)
+                    }
+                }
+            }
+            //-----------------------------------------------------------------
             //-- Mavlink Heartbeats
             QGCCheckBox {
-                text:       "Emit heartbeat"
-                checked:    QGroundControl.isHeartBeatEnabled
+                text:       qsTr("Emit heartbeat")
+                checked:    QGroundControl.multiVehicleManager.gcsHeartBeatEnabled
                 onClicked: {
-                    QGroundControl.isHeartBeatEnabled = checked
+                    QGroundControl.multiVehicleManager.gcsHeartBeatEnabled = checked
                 }
             }
             //-----------------------------------------------------------------
             //-- Mavlink Multiplexing
             QGCCheckBox {
-                text:       "Enable multiplexing (forward packets to all other links)"
+                text:       qsTr("Enable multiplexing (forward packets to all other links)")
                 checked:    QGroundControl.isMultiplexingEnabled
                 onClicked: {
                     QGroundControl.isMultiplexingEnabled = checked
@@ -86,7 +102,7 @@ Rectangle {
             //-----------------------------------------------------------------
             //-- Mavlink Version Check
             QGCCheckBox {
-                text:       "Only accept MAVs with same protocol version"
+                text:       qsTr("Only accept MAVs with same protocol version")
                 checked:    QGroundControl.isVersionCheckEnabled
                 onClicked: {
                     QGroundControl.isVersionCheckEnabled = checked

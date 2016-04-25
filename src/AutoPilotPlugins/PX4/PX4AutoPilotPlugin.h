@@ -27,11 +27,13 @@
 #include "AutoPilotPlugin.h"
 #include "PX4AirframeLoader.h"
 #include "AirframeComponent.h"
-#include "RadioComponent.h"
+#include "PX4RadioComponent.h"
+#include "ESP8266Component.h"
 #include "FlightModesComponent.h"
 #include "SensorsComponent.h"
 #include "SafetyComponent.h"
 #include "PowerComponent.h"
+#include "PX4TuningComponent.h"
 #include "Vehicle.h"
 
 #include <QImage>
@@ -53,11 +55,13 @@ public:
 
     // These methods should only be used by objects within the plugin
     AirframeComponent*      airframeComponent(void)     { return _airframeComponent; }
-    RadioComponent*         radioComponent(void)        { return _radioComponent; }
+    PX4RadioComponent*      radioComponent(void)        { return _radioComponent; }
+    ESP8266Component*       esp8266Component(void)      { return _esp8266Component; }
     FlightModesComponent*   flightModesComponent(void)  { return _flightModesComponent; }
     SensorsComponent*       sensorsComponent(void)      { return _sensorsComponent; }
     SafetyComponent*        safetyComponent(void)       { return _safetyComponent; }
     PowerComponent*         powerComponent(void)        { return _powerComponent; }
+    PX4TuningComponent*     tuningComponent(void)       { return _tuningComponent; }
 
 public slots:
     // FIXME: This is public until we restructure AutoPilotPlugin/FirmwarePlugin/Vehicle
@@ -67,11 +71,13 @@ private:
     PX4AirframeLoader*      _airframeFacts;
     QVariantList            _components;
     AirframeComponent*      _airframeComponent;
-    RadioComponent*         _radioComponent;
+    PX4RadioComponent*      _radioComponent;
+    ESP8266Component*       _esp8266Component;
     FlightModesComponent*   _flightModesComponent;
     SensorsComponent*       _sensorsComponent;
     SafetyComponent*        _safetyComponent;
     PowerComponent*         _powerComponent;
+    PX4TuningComponent*     _tuningComponent;
     bool                    _incorrectParameterVersion; ///< true: parameter version incorrect, setup not allowed
 };
 

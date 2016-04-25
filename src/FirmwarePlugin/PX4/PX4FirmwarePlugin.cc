@@ -25,6 +25,7 @@
 ///     @author Don Gagne <don@thegagnes.com>
 
 #include "PX4FirmwarePlugin.h"
+#include "PX4ParameterMetaData.h"
 #include "AutoPilotPlugins/PX4/PX4AutoPilotPlugin.h"    // FIXME: Hack
 
 #include <QDebug>
@@ -47,7 +48,8 @@ enum PX4_CUSTOM_SUB_MODE_AUTO {
     PX4_CUSTOM_SUB_MODE_AUTO_MISSION,
     PX4_CUSTOM_SUB_MODE_AUTO_RTL,
     PX4_CUSTOM_SUB_MODE_AUTO_LAND,
-    PX4_CUSTOM_SUB_MODE_AUTO_RTGS
+    PX4_CUSTOM_SUB_MODE_AUTO_RTGS,
+    PX4_CUSTOM_SUB_MODE_AUTO_FOLLOW_ME
 };
 
 union px4_custom_mode {
@@ -67,24 +69,41 @@ struct Modes2Name {
     bool        canBeSet;   ///< true: Vehicle can be set to this flight mode
 };
 
-/// Tranlates from PX4 custom modes to flight mode names
-// FIXME: Doens't handle fixed-wing/multi-rotor name differences
-static const struct Modes2Name rgModes2Name[] = {
-    { PX4_CUSTOM_MAIN_MODE_MANUAL,      0,                                  "Manual",           true },
-    { PX4_CUSTOM_MAIN_MODE_ACRO,        0,                                  "Acro",             true },
-    { PX4_CUSTOM_MAIN_MODE_STABILIZED,  0,                                  "Stabilized",       true },
-    { PX4_CUSTOM_MAIN_MODE_RATTITUDE,   0,                                  "Rattitude",        true },
-    { PX4_CUSTOM_MAIN_MODE_ALTCTL,      0,                                  "Altitude Control", true },
-    { PX4_CUSTOM_MAIN_MODE_POSCTL,      0,                                  "Position Control", true },
-    { PX4_CUSTOM_MAIN_MODE_OFFBOARD,    0,                                  "Offboard Control", true },
-    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_READY,     "Auto Ready",       false },
-    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF,   "Taking Off",       false },
-    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_LOITER,    "Loiter",           true },
-    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_MISSION,   "Mission",          true },
-    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_RTL,       "Return To Land",   true },
-    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_LAND,      "Landing",          false },
-};
+const char* PX4FirmwarePlugin::manualFlightMode =       "Manual";
+const char* PX4FirmwarePlugin::acroFlightMode =         "Acro";
+const char* PX4FirmwarePlugin::stabilizedFlightMode =   "Stabilized";
+const char* PX4FirmwarePlugin::rattitudeFlightMode =    "Rattitude";
+const char* PX4FirmwarePlugin::altCtlFlightMode =       "Altitude Control";
+const char* PX4FirmwarePlugin::posCtlFlightMode =       "Position Control";
+const char* PX4FirmwarePlugin::offboardFlightMode =     "Offboard Control";
+const char* PX4FirmwarePlugin::readyFlightMode =        "Ready";
+const char* PX4FirmwarePlugin::takeoffFlightMode =      "Takeoff";
+const char* PX4FirmwarePlugin::pauseFlightMode =        "Pause";
+const char* PX4FirmwarePlugin::missionFlightMode =      "Mission";
+const char* PX4FirmwarePlugin::rtlFlightMode =          "Return To Land";
+const char* PX4FirmwarePlugin::landingFlightMode =      "Landing";
+const char* PX4FirmwarePlugin::rtgsFlightMode =         "Return, Link Loss";
+const char* PX4FirmwarePlugin::followMeFlightMode =     "Follow Me";
 
+/// Tranlates from PX4 custom modes to flight mode names
+
+static const struct Modes2Name rgModes2Name[] = {
+    { PX4_CUSTOM_MAIN_MODE_MANUAL,      0,                                  PX4FirmwarePlugin::manualFlightMode,        true },
+    { PX4_CUSTOM_MAIN_MODE_ACRO,        0,                                  PX4FirmwarePlugin::acroFlightMode,          true },
+    { PX4_CUSTOM_MAIN_MODE_STABILIZED,  0,                                  PX4FirmwarePlugin::stabilizedFlightMode,    true },
+    { PX4_CUSTOM_MAIN_MODE_RATTITUDE,   0,                                  PX4FirmwarePlugin::rattitudeFlightMode,     true },
+    { PX4_CUSTOM_MAIN_MODE_ALTCTL,      0,                                  PX4FirmwarePlugin::altCtlFlightMode,        true },
+    { PX4_CUSTOM_MAIN_MODE_POSCTL,      0,                                  PX4FirmwarePlugin::posCtlFlightMode,        true },
+    { PX4_CUSTOM_MAIN_MODE_OFFBOARD,    0,                                  PX4FirmwarePlugin::offboardFlightMode,      true },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_READY,     PX4FirmwarePlugin::readyFlightMode,         false },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF,   PX4FirmwarePlugin::takeoffFlightMode,       false },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_LOITER,    PX4FirmwarePlugin::pauseFlightMode,         true },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_MISSION,   PX4FirmwarePlugin::missionFlightMode,       true },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_RTL,       PX4FirmwarePlugin::rtlFlightMode,           true },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_LAND,      PX4FirmwarePlugin::landingFlightMode,       false },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_RTGS,      PX4FirmwarePlugin::rtgsFlightMode,          false },
+    { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_FOLLOW_ME, PX4FirmwarePlugin::followMeFlightMode,      true },
+};
 
 QList<VehicleComponent*> PX4FirmwarePlugin::componentsForVehicle(AutoPilotPlugin* vehicle)
 {
@@ -110,7 +129,7 @@ QStringList PX4FirmwarePlugin::flightModes(void)
     return flightModes;
 }
 
-QString PX4FirmwarePlugin::flightMode(uint8_t base_mode, uint32_t custom_mode)
+QString PX4FirmwarePlugin::flightMode(uint8_t base_mode, uint32_t custom_mode) const
 {
     QString flightMode = "Unknown";
 
@@ -174,19 +193,12 @@ bool PX4FirmwarePlugin::setFlightMode(const QString& flightMode, uint8_t* base_m
 
 int PX4FirmwarePlugin::manualControlReservedButtonCount(void)
 {
-    return 8;   // 8 buttons reserved for rc switch simulation
-}
-
-void PX4FirmwarePlugin::adjustMavlinkMessage(mavlink_message_t* message)
-{
-    Q_UNUSED(message);
-
-    // PX4 Flight Stack plugin does no message adjustment
+    return 0;   // 0 buttons reserved for rc switch simulation
 }
 
 bool PX4FirmwarePlugin::isCapable(FirmwareCapabilities capabilities)
 {
-    return (capabilities & (MavCmdPreflightStorageCapability | SetFlightModeCapability)) == capabilities;
+    return (capabilities & (MavCmdPreflightStorageCapability | SetFlightModeCapability | PauseVehicleCapability)) == capabilities;
 }
 
 void PX4FirmwarePlugin::initializeVehicle(Vehicle* vehicle)
@@ -203,7 +215,50 @@ bool PX4FirmwarePlugin::sendHomePositionToVehicle(void)
     return false;
 }
 
-void PX4FirmwarePlugin::addMetaDataToFact(Fact* fact)
+void PX4FirmwarePlugin::addMetaDataToFact(QObject* parameterMetaData, Fact* fact, MAV_TYPE vehicleType)
 {
-    _parameterMetaData.addMetaDataToFact(fact);
+    PX4ParameterMetaData* px4MetaData = qobject_cast<PX4ParameterMetaData*>(parameterMetaData);
+
+    if (px4MetaData) {
+        px4MetaData->addMetaDataToFact(fact, vehicleType);
+    } else {
+        qWarning() << "Internal error: pointer passed to PX4FirmwarePlugin::addMetaDataToFact not PX4ParameterMetaData";
+    }
+}
+
+QList<MAV_CMD> PX4FirmwarePlugin::supportedMissionCommands(void)
+{
+    QList<MAV_CMD> list;
+
+    list << MAV_CMD_NAV_WAYPOINT
+         << MAV_CMD_NAV_LOITER_UNLIM << MAV_CMD_NAV_LOITER_TIME
+         << MAV_CMD_NAV_LAND << MAV_CMD_NAV_TAKEOFF
+         << MAV_CMD_DO_JUMP
+         << MAV_CMD_DO_VTOL_TRANSITION << MAV_CMD_NAV_VTOL_TAKEOFF << MAV_CMD_NAV_VTOL_LAND
+         << MAV_CMD_DO_DIGICAM_CONTROL
+         << MAV_CMD_DO_SET_CAM_TRIGG_DIST
+         << MAV_CMD_DO_SET_SERVO
+         << MAV_CMD_DO_CHANGE_SPEED
+         << MAV_CMD_NAV_PATHPLANNING;
+    return list;
+}
+
+void PX4FirmwarePlugin::missionCommandOverrides(QString& commonJsonFilename, QString& fixedWingJsonFilename, QString& multiRotorJsonFilename) const
+{
+    // No overrides
+    commonJsonFilename = QStringLiteral(":/json/PX4/MavCmdInfoCommon.json");
+    fixedWingJsonFilename = QStringLiteral(":/json/PX4/MavCmdInfoFixedWing.json");
+    multiRotorJsonFilename = QStringLiteral(":/json/PX4/MavCmdInfoMultiRotor.json");
+}
+
+QObject* PX4FirmwarePlugin::loadParameterMetaData(const QString& metaDataFile)
+{
+    PX4ParameterMetaData* metaData = new PX4ParameterMetaData;
+    metaData->loadParameterFactMetaDataFile(metaDataFile);
+    return metaData;
+}
+
+void PX4FirmwarePlugin::pauseVehicle(Vehicle* vehicle)
+{
+    vehicle->setFlightMode(pauseFlightMode);
 }

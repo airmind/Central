@@ -30,9 +30,10 @@
 #include <QMutex>
 #include <QTimer>
 
-#include "QmlObjectListModel.h"
+#include "MissionItem.h"
 #include "QGCMAVLink.h"
 #include "QGCLoggingCategory.h"
+#include "LinkInterface.h"
 
 class Vehicle;
 
@@ -47,28 +48,21 @@ public:
     MissionManager(Vehicle* vehicle);
     ~MissionManager();
     
-    Q_PROPERTY(bool                 inProgress      READ inProgress     NOTIFY inProgressChanged)
-    Q_PROPERTY(QmlObjectListModel*  missionItems    READ missionItems   CONSTANT)
-    Q_PROPERTY(bool                 canEdit         READ canEdit        NOTIFY  canEditChanged)
-    
-    // Property accessors
-    
-    bool inProgress(void) { return _retryAck != AckNone; }
-    QmlObjectListModel* missionItems(void) { return &_missionItems; }
-    bool canEdit(void) { return _canEdit; }
-    
-    // C++ methods
+    bool inProgress(void);
+    const QList<MissionItem*>& missionItems(void) { return _missionItems; }
+    int currentItem(void) { return _currentMissionItem; }
     
     void requestMissionItems(void);
     
     /// Writes the specified set of mission items to the vehicle
-    ///     @oaram missionItems Items to send to vehicle
-    void writeMissionItems(const QmlObjectListModel& missionItems);
+    ///     @param missionItems Items to send to vehicle
+    void writeMissionItems(const QList<MissionItem*>& missionItems);
     
-    /// Returns a copy of the current set of mission items. Caller is responsible for
-    /// freeing returned object.
-    QmlObjectListModel* copyMissionItems(void);
-    
+    /// Writes the specified set mission items to the vehicle as an ArduPilot guided mode mission item.
+    ///     @param gotoCoord Coordinate to move to
+    ///     @param altChangeOnly true: only altitude change, false: lat/lon/alt change
+    void writeArduPilotGuidedMissionItem(const QGeoCoordinate& gotoCoord, bool altChangeOnly);
+
     /// Error codes returned in error signal
     typedef enum {
         InternalError,
@@ -78,6 +72,7 @@ public:
         ItemMismatchError,      ///< Vehicle returned item with seq # different than requested
         VehicleError,           ///< Vehicle returned error
         MissingRequestsError,   ///< Vehicle did not request all items during write sequence
+        MaxRetryExceeded,       ///< Retry failed
     } ErrorCode_t;
 
     // These values are public so the unit test can set appropriate signal wait times
@@ -85,11 +80,10 @@ public:
     static const int _maxRetryCount = 5;
     
 signals:
-    // Public signals
-    void canEditChanged(bool canEdit);
     void newMissionItemsAvailable(void);
     void inProgressChanged(bool inProgress);
     void error(int errorCode, const QString& errorMsg);
+    void currentItemChanged(int currentItem);
     
 private slots:
     void _mavlinkMessageReceived(const mavlink_message_t& message);
@@ -101,6 +95,7 @@ private:
         AckMissionCount,    ///< MISSION_COUNT message expected
         AckMissionItem,     ///< MISSION_ITEM expected
         AckMissionRequest,  ///< MISSION_REQUEST is expected, or MISSION_ACK to end sequence
+        AckGuidedItem,      ///< MISSION_ACK expected in reponse to ArduPilot guided mode single item send
     } AckType_t;
     
     void _startAckTimeout(AckType_t ack);
@@ -110,30 +105,31 @@ private:
     void _handleMissionItem(const mavlink_message_t& message);
     void _handleMissionRequest(const mavlink_message_t& message);
     void _handleMissionAck(const mavlink_message_t& message);
-    void _requestNextMissionItem(int sequenceNumber);
+    void _handleMissionCurrent(const mavlink_message_t& message);
+    void _requestNextMissionItem(void);
     void _clearMissionItems(void);
     void _sendError(ErrorCode_t errorCode, const QString& errorMsg);
-    void _retryWrite(void);
-    void _retryRead(void);
-    bool _retrySequence(AckType_t ackType);
     QString _ackTypeToString(AckType_t ackType);
     QString _missionResultToString(MAV_MISSION_RESULT result);
+    void _finishTransaction(bool success);
 
 private:
     Vehicle*            _vehicle;
+    LinkInterface*      _dedicatedLink;
     
-    int                 _cMissionItems;     ///< Mission items on vehicle
-    bool                _canEdit;           ///< true: Mission items are editable in the ui
-
     QTimer*             _ackTimeoutTimer;
     AckType_t           _retryAck;
-    int                 _retryCount;
+    int                 _requestItemRetryCount;
     
-    int                 _expectedSequenceNumber;
+    bool        _readTransactionInProgress;
+    bool        _writeTransactionInProgress;
+    QList<int>  _itemIndicesToWrite;    ///< List of mission items which still need to be written to vehicle
+    QList<int>  _itemIndicesToRead;     ///< List of mission items which still need to be requested from vehicle
     
     QMutex _dataMutex;
     
-    QmlObjectListModel  _missionItems;
+    QList<MissionItem*> _missionItems;
+    int                 _currentMissionItem;
 };
 
 #endif

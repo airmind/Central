@@ -60,7 +60,7 @@ void QGCMAVLinkLogPlayer::_pause(void)
 void QGCMAVLinkLogPlayer::_selectLogFileForPlayback(void)
 {
     // Disallow replay when any links are connected
-    if (qgcApp()->toolbox()->linkManager()->anyConnectedLinks()) {
+    if (qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()) {
         QGCMessageBox::information(tr("Log Replay"), tr("You must close all connections prior to replaying a log."));
         return;
     }
@@ -68,7 +68,7 @@ void QGCMAVLinkLogPlayer::_selectLogFileForPlayback(void)
     QString logFilename = QGCFileDialog::getOpenFileName(
         this,
         tr("Load MAVLink Log File"),
-        qgcApp()->mavlinkLogFilesLocation(),
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
         tr("MAVLink Log Files (*.mavlink);;All Files (*)"));
 
     if (logFilename.isEmpty()) {
@@ -161,7 +161,7 @@ void QGCMAVLinkLogPlayer::_enablePlaybackControls(bool enabled)
 
 void QGCMAVLinkLogPlayer::_setAccelerationFromSlider(int value)
 {
-    qDebug() << value;
+    //qDebug() << value;
     if (_replayLink) {
         _replayLink->setAccelerationFactor(value);
     }

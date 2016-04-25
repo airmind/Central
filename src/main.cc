@@ -32,9 +32,14 @@ This file is part of the QGROUNDCONTROL project
 #include <QApplication>
 #include <QSslSocket>
 #include <QProcessEnvironment>
-
+#include <QHostAddress>
+#include <QUdpSocket>
+#include <QtPlugin>
+#include <QStringListModel>
 #include "QGCApplication.h"
-#include "MainWindow.h"
+#include "AppMessages.h"
+
+#define  SINGLE_INSTANCE_PORT   14499
 
 #ifndef __mobile__
     #include "QGCSerialPortInfo.h"
@@ -50,7 +55,12 @@ This file is part of the QGROUNDCONTROL project
     #endif
 #endif
 
+#ifdef QGC_ENABLE_BLUETOOTH
+#include <QtBluetooth/QBluetoothSocket>
+#endif
+
 #include <iostream>
+#include "QGCMapEngine.h"
 
 /* SDL does ugly things to main() */
 #ifdef main
@@ -62,17 +72,6 @@ This file is part of the QGROUNDCONTROL project
 #endif
 
 #ifdef Q_OS_WIN
-
-/// @brief Message handler which is installed using qInstallMsgHandler so you do not need
-/// the MSFT debug tools installed to see qDebug(), qWarning(), qCritical and qAbort
-void msgHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
-    const char symbols[] = { 'I', 'E', '!', 'X' };
-    QString output = QString("[%1] at %2:%3 - \"%4\"").arg(symbols[type]).arg(context.file).arg(context.line).arg(msg);
-    std::cerr << output.toStdString() << std::endl;
-    if( type == QtFatalMsg ) abort();
-}
-
 /// @brief CRT Report Hook installed using _CrtSetReportHook. We install this hook when
 /// we don't want asserts to pop a dialog on windows.
 int WindowsCrtReportHook(int reportType, char* message, int* returnValue)
@@ -115,6 +114,24 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_OS_UNIX
+    //Force writing to the console on UNIX/BSD devices
+    if (!qEnvironmentVariableIsSet("QT_LOGGING_TO_CONSOLE"))
+        qputenv("QT_LOGGING_TO_CONSOLE", "1");
+#endif
+
+    // install the message handler
+    AppMessages::installHandler();
+
+#ifndef __mobile__
+    //-- Test for another instance already running. If that's the case, we simply exit.
+    QHostAddress host("127.0.0.1");
+    QUdpSocket socket;
+    if(!socket.bind(host, SINGLE_INSTANCE_PORT, QAbstractSocket::DontShareAddress)) {
+        qWarning() << "Another instance already running. Exiting.";
+        exit(-1);
+    }
+#endif
 
 #ifdef Q_OS_MAC
 #ifndef __ios__
@@ -124,9 +141,21 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-    // install the message handler
 #ifdef Q_OS_WIN
-    qInstallMessageHandler(msgHandler);
+    // Set our own OpenGL buglist
+    qputenv("QT_OPENGL_BUGLIST", ":/opengl/resources/opengl/buglist.json");
+
+    // Allow for command line override of renderer
+    for (int i = 0; i < argc; i++) {
+        const QString arg(argv[i]);
+        if (arg == QStringLiteral("-angle")) {
+            QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+            break;
+        } else if (arg == QStringLiteral("-swrast")) {
+            QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+            break;
+        }
+    }
 #endif
 
     // The following calls to qRegisterMetaType are done to silence debug output which warns
@@ -135,6 +164,10 @@ int main(int argc, char *argv[])
     // anyway to silence the debug output.
 #ifndef __ios__
     qRegisterMetaType<QSerialPort::SerialPortError>();
+#endif
+#ifdef QGC_ENABLE_BLUETOOTH
+    qRegisterMetaType<QBluetoothSocket::SocketError>();
+    qRegisterMetaType<QBluetoothServiceInfo>();
 #endif
     qRegisterMetaType<QAbstractSocket::SocketError>();
 #ifndef __mobile__
@@ -199,6 +232,8 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QList<QPair<QByteArray,QByteArray> > >();
 
     app->_initCommon();
+    //-- Initialize Cache System
+    getQGCMapEngine()->init();
 
     int exitCode = 0;
 
@@ -232,6 +267,8 @@ int main(int argc, char *argv[])
     }
 
     delete app;
+    //-- Shutdown Cache System
+    destroyMapEngine();
 
     qDebug() << "After app delete";
 

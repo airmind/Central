@@ -24,33 +24,31 @@
 #ifndef APMAirframeComponent_H
 #define APMAirframeComponent_H
 
-#include "APMComponent.h"
+#include "VehicleComponent.h"
 
-class APMAirframeComponent : public APMComponent
+class APMAirframeComponent : public VehicleComponent
 {
     Q_OBJECT
     
 public:
     APMAirframeComponent(Vehicle* vehicle, AutoPilotPlugin* autopilot, QObject* parent = NULL);
     
-    // Virtuals from APMComponent
-    virtual QStringList setupCompleteChangedTriggerList(void) const;
+    // Virtuals from VehicleComponent
+    QStringList setupCompleteChangedTriggerList(void) const final;
 
     // Virtuals from VehicleComponent
-    virtual QString name(void) const;
-    virtual QString description(void) const;
-    virtual QString iconResource(void) const;
-    virtual bool requiresSetup(void) const;
-    virtual bool setupComplete(void) const;
-    virtual QString setupStateDescription(void) const;
-    virtual QUrl setupSource(void) const;
-    virtual QStringList paramFilterList(void) const;
-    virtual QUrl summaryQmlSource(void) const;    
-    virtual QString prerequisiteSetup(void) const;
+    QString name(void) const final;
+    QString description(void) const final;
+    QString iconResource(void) const final;
+    bool requiresSetup(void) const final;
+    bool setupComplete(void) const final;
+    QUrl setupSource(void) const final;
+    QUrl summaryQmlSource(void) const final;
+    QString prerequisiteSetup(void) const final;
 
 private:
+    bool            _requiresFrameSetup; ///< true: FRAME parameter must be set
     const QString   _name;
-    QVariantList    _summaryItems;
 };
 
 #endif

@@ -57,6 +57,12 @@ class LinkInterface : public QThread
     friend class LinkManager;
 
 public:
+    Q_PROPERTY(bool active      READ active         WRITE setActive         NOTIFY activeChanged)
+
+    // Property accessors
+    bool active(void)                       { return _active; }
+    void setActive(bool active)             { _active = active; emit activeChanged(active); }
+
     /**
      * @brief Get link configuration (if used)
      * @return A pointer to the instance of LinkConfiguration if supported. NULL otherwise.
@@ -96,6 +102,14 @@ public:
     virtual bool isLogReplay(void) { return false; }
 
     /**
+     * @Enable/Disable data rate collection
+     **/
+    void enableDataRate(bool enable)
+    {
+        _enableRateCollection = enable;
+    }
+
+    /**
      * @Brief Get the current incoming data rate.
      *
      * This should be over a short timespan, something like 100ms. A precise value isn't necessary,
@@ -125,9 +139,6 @@ public:
     /// set into the link when it is added to LinkManager
     uint8_t getMavlinkChannel(void) const { Q_ASSERT(_mavlinkChannelSet); return _mavlinkChannel; }
 
-    /// @return true: "sh /etc/init.d/rc.usb" must be sent on link to start mavlink
-    virtual bool requiresUSBMavlinkStart(void) const { return false; }
-
     // These are left unimplemented in order to cause linker errors which indicate incorrect usage of
     // connect/disconnect on link directly. All connect/disconnect calls should be made through LinkManager.
     bool connect(void);
@@ -140,14 +151,27 @@ public slots:
      *
      * If the underlying communication is packet oriented,
      * one write command equals a datagram. In case of serial
-     * communication arbitrary byte lengths can be written
+     * communication arbitrary byte lengths can be written. The method ensures
+     * thread safety regardless of the underlying LinkInterface implementation.
      *
      * @param bytes The pointer to the byte array containing the data
      * @param length The length of the data array
      **/
-    virtual void writeBytes(const char *bytes, qint64 length) = 0;
+    void writeBytesSafe(const char *bytes, int length)
+    {
+        emit _invokeWriteBytes(QByteArray(bytes, length));
+    }
+
+private slots:
+    virtual void _writeBytes(const QByteArray) = 0;
     
 signals:
+    void autoconnectChanged(bool autoconnect);
+    void activeChanged(bool active);
+    void _invokeWriteBytes(QByteArray);
+
+    /// Signalled when a link suddenly goes away due to it being removed by for example pulling the cable to the connection.
+    void connectionRemoved(LinkInterface* link);
 
     /**
      * @brief New data arrived
@@ -184,8 +208,10 @@ signals:
 protected:
     // Links are only created by LinkManager so constructor is not public
     LinkInterface() :
-        QThread(0),
-        _mavlinkChannelSet(false)
+        QThread(0)
+        , _mavlinkChannelSet(false)
+        , _active(false)
+        , _enableRateCollection(false)
     {
         // Initialize everything for the data rate calculation buffers.
         _inDataIndex  = 0;
@@ -197,6 +223,7 @@ protected:
         memset(_outDataWriteAmounts,0, sizeof(_outDataWriteAmounts));
         memset(_outDataWriteTimes,  0, sizeof(_outDataWriteTimes));
         
+        QObject::connect(this, &LinkInterface::_invokeWriteBytes, this, &LinkInterface::_writeBytes);
         qRegisterMetaType<LinkInterface*>("LinkInterface*");
     }
 
@@ -205,7 +232,8 @@ protected:
     ///     @param byteCount Number of bytes received
     ///     @param time Time in ms send occured
     void _logInputDataRate(quint64 byteCount, qint64 time) {
-        _logDataRateToBuffer(_inDataWriteAmounts, _inDataWriteTimes, &_inDataIndex, byteCount, time);
+        if(_enableRateCollection)
+            _logDataRateToBuffer(_inDataWriteAmounts, _inDataWriteTimes, &_inDataIndex, byteCount, time);
     }
     
     /// This function logs the send times and amounts of datas for output. Data is used for calculating
@@ -213,19 +241,10 @@ protected:
     ///     @param byteCount Number of bytes sent
     ///     @param time Time in ms receive occured
     void _logOutputDataRate(quint64 byteCount, qint64 time) {
-        _logDataRateToBuffer(_outDataWriteAmounts, _outDataWriteTimes, &_outDataIndex, byteCount, time);
+        if(_enableRateCollection)
+            _logDataRateToBuffer(_outDataWriteAmounts, _outDataWriteTimes, &_outDataIndex, byteCount, time);
     }
     
-protected slots:
-
-    /**
-     * @brief Read a number of bytes from the interface.
-     *
-     * @param bytes The pointer to write the bytes to
-     * @param maxLength The maximum length which can be written
-     **/
-    virtual void readBytes() = 0;
-
 private:
     /**
      * @brief logDataRateToBuffer Stores transmission times/amounts for statistics
@@ -321,12 +340,7 @@ private:
      **/
     virtual bool _connect(void) = 0;
 
-    /**
-     * @brief Disconnect this interface logically
-     *
-     * @return True if connection could be terminated, false otherwise
-     **/
-    virtual bool _disconnect(void) = 0;
+    virtual void _disconnect(void) = 0;
     
     /// Sets the mavlink channel to use for this link
     void _setMavlinkChannel(uint8_t channel) { Q_ASSERT(!_mavlinkChannelSet); _mavlinkChannelSet = true; _mavlinkChannel = channel; }
@@ -351,6 +365,9 @@ private:
     qint64  _outDataWriteTimes[_dataRateBufferSize]; // in ms
     
     mutable QMutex _dataRateMutex; // Mutex for accessing the data rate member variables
+
+    bool _active;       ///< true: link is actively receiving mavlink messages
+    bool _enableRateCollection;
 };
 
 typedef QSharedPointer<LinkInterface> SharedLinkInterface;

@@ -76,6 +76,7 @@ public:
     // Supported bootloader board ids
     static const int boardIDPX4FMUV1 = 5;   ///< PX4 V1 board
     static const int boardIDPX4FMUV2 = 9;   ///< PX4 V2 board
+    static const int boardIDPX4FMUV4 = 11;   ///< PX4 V4 board
     static const int boardIDPX4Flow = 6;    ///< PX4 Flow board
     static const int boardIDAeroCore = 98;  ///< Gumstix AeroCore board
     static const int boardID3DRRadio = 78;  ///< 3DR Radio
@@ -128,13 +129,13 @@ private:
         
         INFO_BL_REV         =   1,    ///< bootloader protocol revision
         BL_REV_MIN          =   2,    ///< Minimum supported bootlader protocol
-        BL_REV_MAX			=   4,    ///< Maximum supported bootloader protocol
+        BL_REV_MAX			=   5,    ///< Maximum supported bootloader protocol
         INFO_BOARD_ID		=   2,    ///< board type
         INFO_BOARD_REV		=   3,    ///< board revision
         INFO_FLASH_SIZE		=   4,    ///< max firmware size in bytes
         
-        PROG_MULTI_MAX		=   64,   ///< write size for PROTO_PROG_MULTI, must be multiple of 4
-        READ_MULTI_MAX		=   255   ///< read size for PROTO_READ_MULTI, must be multiple of 4
+        PROG_MULTI_MAX		=   64,     ///< write size for PROTO_PROG_MULTI, must be multiple of 4
+        READ_MULTI_MAX		=   0x28    ///< read size for PROTO_READ_MULTI, must be multiple of 4. Sik Radio max size is 0x28
     };
     
     uint32_t    _boardID;           ///< board id for currently connected board
@@ -149,7 +150,7 @@ private:
     static const int _eraseTimeout = 20000;     ///< Msecs to wait for response from erase command
     static const int _rebootTimeout = 10000;    ///< Msecs to wait for reboot command to cause serial port to disconnect
     static const int _verifyTimeout = 5000;     ///< Msecs to wait for response to PROTO_GET_CRC command
-    static const int _readTimout = 2000;        ///< Msecs to wait for read bytes to become avilable
+    static const int _readTimout = 2000;        ///< Msecs to wait for read bytes to become available
     static const int _responseTimeout = 2000;   ///< Msecs to wait for command response bytes
 };
 
