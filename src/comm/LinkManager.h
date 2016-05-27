@@ -46,7 +46,7 @@ This file is part of the PIXHAWK project
     #include "SerialLink.h"
 #endif
 <<<<<<< HEAD
-<<<<<<< account //switch 3
+<<<<<<< account //switch 4
 
 #ifdef __ios__
 #include "BTSerialLink.h"
