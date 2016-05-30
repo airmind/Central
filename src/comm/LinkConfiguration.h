@@ -28,6 +28,7 @@ This file is part of the QGROUNDCONTROL project
 
 class LinkInterface;
 
+
 /// Interface holding link specific settings.
 
 class LinkConfiguration : public QObject
