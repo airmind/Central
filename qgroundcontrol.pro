@@ -44,6 +44,16 @@ exists(user_config.pri):infile(user_config.pri, CONFIG) {
     message($$sprintf("Using user-supplied additional config: '%1' specified in user_config.pri", $$fromfile(user_config.pri, CONFIG)))
 }
 
+# mind skin
+contains (DEFINES, __mindskin__) {
+    message ("Use mind skin")
+}
+
+# Airmind BLE
+contains (DEFINES, __mindble__) {
+    message ("Enable BLE")
+}
+
 # Bluetooth
 contains (DEFINES, QGC_DISABLE_BLUETOOTH) {
     message("Skipping support for Bluetooth (manual override from command line)")
@@ -327,6 +337,44 @@ WindowsBuild {
 contains(DEFINES, QGC_ENABLE_BLUETOOTH) {
     HEADERS += \
     src/comm/BluetoothLink.h \
+}
+
+contains(DEFINES, __mindskin__) {
+iOSBuild {
+    HEADERS += \
+        BLE/ios/BTSerialLink_objc.h \
+        BLE/ios/BTSerialLink.h \
+        mindskin/ios/qt2ioshelper.h \
+        mindskin/ios/ConnectPopover.h \
+        mindskin/ios/ConnectPopoverViewController.h \
+        mindskin/ios/MindStickButton.h \
+        mindskin/ios/MindStickButtonViewController.h \
+
+    SOURCES += \
+        mindskin/ios/MindStickButton.cpp \
+
+    OBJECTIVE_SOURCES += \
+        BLE/ios/BTSerialLink.mm \
+        mindskin/ios/ConnectPopoverViewController.mm \
+        mindskin/ios/MindStickButtonViewController.mm \
+
+    DebugBuild {
+        HEADERS += \
+            mindskin/ios/BLEDebugTextView.h \
+            mindskin/ios/BLEDebugTextViewController.h \
+
+        OBJECTIVE_SOURCES += \
+            mindskin/ios/BLEDebugTextViewController.mm \
+
+    }
+
+
+}
+
+AndroidBuild {
+
+}
+
 }
 
 !iOSBuild {
