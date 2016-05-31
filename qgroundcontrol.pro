@@ -47,6 +47,10 @@ exists(user_config.pri):infile(user_config.pri, CONFIG) {
 # mind skin
 contains (DEFINES, __mindskin__) {
     message ("Use mind skin")
+
+    DebugBuild {
+        DEFINES += _BLE_DEBUG_
+    }
 }
 
 # Airmind BLE
