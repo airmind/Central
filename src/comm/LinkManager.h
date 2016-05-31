@@ -48,7 +48,7 @@ This file is part of the PIXHAWK project
 <<<<<<< HEAD
 <<<<<<< account //switch 7
 
-#ifdef __ios__
+#ifdef __mindskin__
 #include "BTSerialLink.h"
 #endif
 
@@ -155,7 +155,7 @@ public:
     const QList<SerialLink*> getSerialLinks();
 #endif
     
-#ifdef __ios__
+#ifdef __mindskin__
     //BTSerialLink* getlink();
     const QList<BTSerialLink*> getBTSerialLinks();
     //for link operation call backs;
@@ -214,7 +214,7 @@ public:
     /// Returns true if the link manager is holding this link
     bool containsLink(LinkInterface* link);
 
-#ifdef __ios__
+#ifdef __mindskin__
     bool containsLink(BTSerialLink* link);
 #endif
     
@@ -242,7 +242,7 @@ public:
     void _addLink(LinkInterface* link);
 
 <<<<<<< HEAD
-#ifdef __ios__
+#ifdef __mindskin__
     void _deleteLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
 #endif
@@ -282,7 +282,7 @@ signals:
 <<<<<<< HEAD
     void linkConfigurationChanged();
     
-#ifdef __ios__
+#ifdef __mindskin__
     void newLink(BTSerialLink* link);
     void linkDeleted(BTSerialLink* link);
     void linkConnected(BTSerialLink* link);
@@ -315,7 +315,7 @@ private slots:
     void _activeLinkCheck(void);
 #endif
 
-#ifdef __ios__
+#ifdef __mindskin__
     
     void _bleLinkConnected(void);
     void _bleLinkDisconnected(void);
@@ -332,7 +332,7 @@ private:
 #endif
 <<<<<<< HEAD
     
-#ifdef __ios__
+#ifdef __mindskin__
     BLEHelper* blehelper = NULL;
 #endif
     
@@ -343,7 +343,7 @@ private:
     /// The reference counting allows for orderly deletion.
     QList<SharedLinkInterface>  _links;
     
-#ifdef __ios__
+#ifdef __mindskin__
     //BTSerialLink is not a Qthread, so need to be handled seperately.
     QList<BTSerialLink*> _blelinks;
     QMutex                      _bleLinkListMutex;         ///< Mutex for thread safe access to _blelinks list

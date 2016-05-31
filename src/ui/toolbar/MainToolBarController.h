@@ -35,9 +35,9 @@ This file is part of the QGROUNDCONTROL project
 #include "Vehicle.h"
 #include "UASMessageView.h"
 
-#define __mindskin__ 1 //for the moment; //move to "custom compiler flags" - "other C flags"
+//#define __mindskin__ 1 //for the moment; //move to "custom compiler flags" - "other C flags"
 
-#ifdef __ios__
+#ifdef __mindskin__
 #include "BTSerialLink.h"
 #endif
 
@@ -115,7 +115,7 @@ private slots:
     void _updateConfigurations          ();
     void _linkConnected                 (LinkInterface* link);
     void _linkDisconnected              (LinkInterface* link);
-#ifdef __ios__
+#ifdef __mindskin__
     void _linkConnected                 (BTSerialLink* link);
     void _linkDisconnected              (BTSerialLink* link);
 

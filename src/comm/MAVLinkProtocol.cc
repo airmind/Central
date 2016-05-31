@@ -192,7 +192,7 @@ void MAVLinkProtocol::linkDisconnected(void)
     _linkStatusChanged(link, false);
 }
 
-#ifdef __ios__
+#ifdef __mindskin__
 void MAVLinkProtocol::linkConnected(BTSerialLink* link) {
     Q_ASSERT(link);
     
@@ -832,7 +832,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
 <<<<<<< HEAD
 
 
-#ifdef __ios__
+#ifdef __mindskin__
 /**
  * @param link the link to send the message over
  * @param message message to send

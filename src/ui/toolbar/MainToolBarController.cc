@@ -38,7 +38,7 @@ This file is part of the QGROUNDCONTROL project
 #include "MultiVehicleManager.h"
 #include "UAS.h"
 
-#ifdef __ios__
+#ifdef __mindskin__
 #include "BTSerialLink.h"
 #include "BLEDebugTextView.h"
 
@@ -58,7 +58,7 @@ MainToolBarController::MainToolBarController(QObject* parent)
     
     // Link signals
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConfigurationChanged, this, &MainToolBarController::_updateConfigurations);
-#ifndef __ios__
+#ifndef __mindskin__
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConnected,            this, &MainToolBarController::_linkConnected);
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkDisconnected,         this, &MainToolBarController::_linkDisconnected);
 #else
@@ -282,7 +282,7 @@ void MainToolBarController::_linkDisconnected(LinkInterface* link)
 }
 
 
-#ifdef __ios__
+#ifdef __mindskin__
 void MainToolBarController::_linkConnected                 (BTSerialLink* link) {
     _updateConnection();
     //dismiss popover;

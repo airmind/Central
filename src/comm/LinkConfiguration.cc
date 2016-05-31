@@ -31,7 +31,7 @@ This file is part of the QGROUNDCONTROL project
 #ifndef __ios__
 #include "SerialLink.h"
 #endif
-#ifdef __ios__
+#ifdef __mindskin__
 #include "BTSerialLink.h"
 #endif
 
@@ -101,7 +101,7 @@ LinkConfiguration* LinkConfiguration::createSettings(int type, const QString& na
             config = new SerialConfiguration(name);
             break;
 #endif
-#ifdef __ios__
+#ifdef __mindskin__
         case LinkConfiguration::TypeBLESerial:
             config = new BTSerialConfiguration(name);
             break;
@@ -145,7 +145,7 @@ LinkConfiguration* LinkConfiguration::duplicateSettings(LinkConfiguration* sourc
             break;
 #endif
 
-#ifdef __ios__
+#ifdef __mindskin__
         case TypeBLESerial:
             dupe = new BTSerialConfiguration(dynamic_cast<BTSerialConfiguration*>(source));
             break;

@@ -64,7 +64,7 @@ public:
         TypeSerial,     ///< Serial Link
 #endif
         
-#ifdef __ios__
+#ifdef __mindskin__
         TypeBLESerial,     ///< Bluetooth Serial Link
 #endif
         TypeUdp,        ///< UDP Link

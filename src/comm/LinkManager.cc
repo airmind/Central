@@ -106,7 +106,7 @@ LinkManager::~LinkManager()
         _linkConfigurations.removeAt(0);
     }
     Q_ASSERT_X(_links.count() == 0, "LinkManager", "LinkManager::_shutdown should have been called previously");
-#ifdef __ios__
+#ifdef __mindskin__
     delete blehelper;
 #endif
 =======
@@ -125,7 +125,7 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 
 }
 
-#ifdef __ios__
+#ifdef __mindskin__
 //for BT LE;
 bool LinkManager::discoverBTLinks(void* delegate) {
     if (blehelper == NULL) {
@@ -316,7 +316,7 @@ void LinkManager::_addLink(LinkInterface* link)
     connect(link, &LinkInterface::bytesReceived,        _mavlinkProtocol,   &MAVLinkProtocol::receiveBytes);
 
 <<<<<<< HEAD
-#ifndef __ios__
+#ifndef __mindskin__  //?__ios__
     connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
     connect(link, &LinkInterface::connected,        _mavlinkProtocol, &MAVLinkProtocol::linkConnected);
     connect(link, &LinkInterface::disconnected,     _mavlinkProtocol, &MAVLinkProtocol::linkDisconnected);
@@ -329,7 +329,7 @@ void LinkManager::_addLink(LinkInterface* link)
     
 }
 
-#ifdef __ios__
+#ifdef __mindskin__
 
 const QList<BTSerialLink*> LinkManager::getBTSerialLinks() {
     return _blelinks;
