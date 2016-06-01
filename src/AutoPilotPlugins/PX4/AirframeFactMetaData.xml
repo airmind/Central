@@ -4,7 +4,7 @@
   <airframe_version_major>1</airframe_version_major>
   <airframe_version_minor>1</airframe_version_minor>
   <airframe_group image="HelicopterCoaxial" name="Coaxial Helicopter">
-    <airframe id="15001" maintainer="Emmanuel Roussel" name="Coaxial Helicopter (such as Esky Lama v4 or Esky Big Lama)">
+    <airframe id="15001" maintainer="Emmanuel Roussel" name="Esky (Big) Lama v4">
       <maintainer>Emmanuel Roussel</maintainer>
       <type>Coaxial Helicopter</type>
       <output name="MAIN1">Left swashplate servomotor, pitch axis</output>
@@ -65,6 +65,17 @@
     <airframe id="3035" maintainer="Simon Wilks &lt;simon@px4.io&gt;" name="Viper">
       <maintainer>Simon Wilks &lt;simon@px4.io&gt;</maintainer>
       <type>Flying Wing</type>
+    </airframe>
+    <airframe id="3036" maintainer="Simon Wilks &lt;simon@px4.io&gt;" name="Sparkle Tech Pigeon">
+      <maintainer>Simon Wilks &lt;simon@px4.io&gt;</maintainer>
+      <type>Flying Wing</type>
+      <url>http://www.sparkletech.hk/</url>
+      <output name="AUX1">feed-through of RC AUX1 channel</output>
+      <output name="AUX2">feed-through of RC AUX2 channel</output>
+      <output name="AUX3">feed-through of RC AUX3 channel</output>
+      <output name="MAIN1">left aileron</output>
+      <output name="MAIN2">right aileron</output>
+      <output name="MAIN4">throttle</output>
     </airframe>
     <airframe id="3100" maintainer="Lorenz Meier &lt;lorenz@px4.io&gt;" name="TBS Caipirinha">
       <maintainer>Lorenz Meier &lt;lorenz@px4.io&gt;</maintainer>
@@ -239,6 +250,13 @@
       <output name="AUX2">feed-through of RC AUX2 channel</output>
       <output name="AUX3">feed-through of RC AUX3 channel</output>
     </airframe>
+    <airframe id="4060" maintainer="James Goppert &lt;james.goppert@gmail.com&gt;" name="DJI Matrice 100">
+      <maintainer>James Goppert &lt;james.goppert@gmail.com&gt;</maintainer>
+      <type>Quadrotor x</type>
+      <output name="AUX1">feed-through of RC AUX1 channel</output>
+      <output name="AUX2">feed-through of RC AUX2 channel</output>
+      <output name="AUX3">feed-through of RC AUX3 channel</output>
+    </airframe>
   </airframe_group>
   <airframe_group image="Rover" name="Rover">
     <airframe id="50001" maintainer="John Doe &lt;john@example.com&gt;" name="Axial Racing AX10">
@@ -352,6 +370,10 @@
     </airframe>
     <airframe id="13008" maintainer="Sander Smeets &lt;sander@droneslab.com&gt;" name="QuadRanger">
       <maintainer>Sander Smeets &lt;sander@droneslab.com&gt;</maintainer>
+      <type>Standard VTOL</type>
+    </airframe>
+    <airframe id="13009" maintainer="Andreas Antener &lt;andreas@uaventure.com&gt;" name="Sparkle Tech Ranger VTOL">
+      <maintainer>Andreas Antener &lt;andreas@uaventure.com&gt;</maintainer>
       <type>Standard VTOL</type>
     </airframe>
   </airframe_group>

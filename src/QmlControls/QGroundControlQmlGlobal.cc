@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2014 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 /// @file
 ///     @author Don Gagne <don@thegagnes.com>
@@ -37,7 +24,8 @@ FactMetaData* QGroundControlQmlGlobal::_distanceUnitsMetaData =                 
 SettingsFact* QGroundControlQmlGlobal::_speedUnitsFact =                        NULL;
 FactMetaData* QGroundControlQmlGlobal::_speedUnitsMetaData =                    NULL;
 
-const char* QGroundControlQmlGlobal::_virtualTabletJoystickKey = "VirtualTabletJoystick";
+const char* QGroundControlQmlGlobal::_virtualTabletJoystickKey  = "VirtualTabletJoystick";
+const char* QGroundControlQmlGlobal::_baseFontPointSizeKey      = "BaseFontPointSize";
 
 QGroundControlQmlGlobal::QGroundControlQmlGlobal(QGCApplication* app)
     : QGCTool(app)
@@ -48,9 +36,11 @@ QGroundControlQmlGlobal::QGroundControlQmlGlobal(QGCApplication* app)
     , _multiVehicleManager(NULL)
     , _mapEngineManager(NULL)
     , _virtualTabletJoystick(false)
+    , _baseFontPointSize(0.0)
 {
     QSettings settings;
-    _virtualTabletJoystick = settings.value(_virtualTabletJoystickKey, false). toBool();
+    _virtualTabletJoystick  = settings.value(_virtualTabletJoystickKey, false).toBool();
+    _baseFontPointSize      = settings.value(_baseFontPointSizeKey, 0.0).toDouble();
 
     // We clear the parent on this object since we run into shutdown problems caused by hybrid qml app. Instead we let it leak on shutdown.
     setParent(NULL);
@@ -70,7 +60,8 @@ void QGroundControlQmlGlobal::setToolbox(QGCToolbox* toolbox)
     _linkManager            = toolbox->linkManager();
     _missionCommands        = toolbox->missionCommands();
     _multiVehicleManager    = toolbox->multiVehicleManager();
-    _mapEngineManager     = toolbox->mapEngineManager();
+    _mapEngineManager       = toolbox->mapEngineManager();
+    _qgcPositionManager      = toolbox->qgcPositionManager();
 }
 
 
@@ -203,6 +194,16 @@ void QGroundControlQmlGlobal::setVirtualTabletJoystick(bool enabled)
         settings.setValue(_virtualTabletJoystickKey, enabled);
         _virtualTabletJoystick = enabled;
         emit virtualTabletJoystickChanged(enabled);
+    }
+}
+
+void QGroundControlQmlGlobal::setBaseFontPointSize(qreal size)
+{
+    if (size >= 6.0 && size <= 48.0) {
+        QSettings settings;
+        settings.setValue(_baseFontPointSizeKey, size);
+        _baseFontPointSize = size;
+        emit baseFontPointSizeChanged(size);
     }
 }
 

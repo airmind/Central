@@ -1,4 +1,9 @@
 <RCC>
+    <qresource prefix="/fonts">
+        <file alias="opensans">resources/fonts/OpenSans-Regular.ttf</file>
+        <file alias="opensans-demibold">resources/fonts/OpenSans-Semibold.ttf</file>
+    </qresource>
+
     <qresource prefix="/qmlimages">
         <file alias="AirframeComponentIcon.png">src/AutoPilotPlugins/Common/Images/AirframeComponentIcon.png</file>
 
@@ -48,7 +53,16 @@
         <file alias="arrow-down.png">src/QmlControls/arrow-down.png</file>
         <file alias="FirmwareUpgradeIcon.png">src/VehicleSetup/FirmwareUpgradeIcon.png</file>
         <file alias="FlightModesComponentIcon.png">src/AutoPilotPlugins/PX4/Images/FlightModesComponentIcon.png</file>
+        <file alias="CameraTrigger.svg">src/AutoPilotPlugins/PX4/Images/CameraTrigger.svg</file>
         <file alias="CameraComponentIcon.png">src/AutoPilotPlugins/PX4/Images/CameraComponentIcon.png</file>
+        <file alias="DatalinkLoss.svg">src/AutoPilotPlugins/PX4/Images/DatalinkLoss.svg</file>
+        <file alias="DatalinkLossLight.svg">src/AutoPilotPlugins/PX4/Images/DatalinkLossLight.svg</file>
+        <file alias="GeoFence.svg">src/AutoPilotPlugins/PX4/Images/GeoFence.svg</file>
+        <file alias="GeoFenceLight.svg">src/AutoPilotPlugins/PX4/Images/GeoFenceLight.svg</file>
+        <file alias="LandMode.svg">src/AutoPilotPlugins/PX4/Images/LandMode.svg</file>
+        <file alias="LandModeCopter.svg">src/AutoPilotPlugins/PX4/Images/LandModeCopter.svg</file>
+        <file alias="LowBattery.svg">src/AutoPilotPlugins/PX4/Images/LowBattery.svg</file>
+        <file alias="LowBatteryLight.svg">src/AutoPilotPlugins/PX4/Images/LowBatteryLight.svg</file>
         <file alias="PowerComponentBattery_01cell.svg">src/AutoPilotPlugins/PX4/Images/PowerComponentBattery_01cell.svg</file>
         <file alias="PowerComponentBattery_02cell.svg">src/AutoPilotPlugins/PX4/Images/PowerComponentBattery_02cell.svg</file>
         <file alias="PowerComponentBattery_03cell.svg">src/AutoPilotPlugins/PX4/Images/PowerComponentBattery_03cell.svg</file>
@@ -57,7 +71,10 @@
         <file alias="PowerComponentBattery_06cell.svg">src/AutoPilotPlugins/PX4/Images/PowerComponentBattery_06cell.svg</file>
         <file alias="PowerComponentIcon.png">src/AutoPilotPlugins/PX4/Images/PowerComponentIcon.png</file>
         <file alias="RadioComponentIcon.png">src/AutoPilotPlugins/PX4/Images/RadioComponentIcon.png</file>
+        <file alias="RCLoss.svg">src/AutoPilotPlugins/PX4/Images/RCLoss.svg</file>
+        <file alias="RCLossLight.svg">src/AutoPilotPlugins/PX4/Images/RCLossLight.svg</file>
         <file alias="ReturnToHomeAltitude.svg">src/AutoPilotPlugins/PX4/Images/ReturnToHomeAltitude.svg</file>
+        <file alias="ReturnToHomeAltitudeCopter.svg">src/AutoPilotPlugins/PX4/Images/ReturnToHomeAltitudeCopter.svg</file>
         <file alias="SafetyComponentIcon.png">src/AutoPilotPlugins/PX4/Images/SafetyComponentIcon.png</file>
         <file alias="SensorsComponentIcon.png">src/AutoPilotPlugins/PX4/Images/SensorsComponentIcon.png</file>
         <file alias="TuningComponentIcon.png">src/AutoPilotPlugins/PX4/Images/TuningComponentIcon.png</file>
@@ -88,6 +105,8 @@
         <file alias="rollPointerWhite.svg">src/FlightMap/Images/rollPointerWhite.svg</file>
         <file alias="scale.png">src/FlightMap/Images/scale.png</file>
         <file alias="scale_end.png">src/FlightMap/Images/scale_end.png</file>
+        <file alias="scaleLight.png">src/FlightMap/Images/scaleLight.png</file>
+        <file alias="scale_endLight.png">src/FlightMap/Images/scale_endLight.png</file>
         <file alias="airplaneOutline.svg">src/FlightMap/Images/airplaneOutline.svg</file>
         <file alias="airplaneOpaque.svg">src/FlightMap/Images/airplaneOpaque.svg</file>
         <file alias="ZoomPlus.svg">src/FlightMap/Images/ZoomPlus.svg</file>
@@ -107,8 +126,6 @@
         <file alias="MapSyncChanged.svg">src/FlightMap/Images/MapSyncChanged.svg</file>
         <file alias="MapType.svg">src/FlightMap/Images/MapType.svg</file>
         <file alias="MapTypeBlack.svg">src/FlightMap/Images/MapTypeBlack.svg</file>
-        <file alias="TrashDelete.svg">src/FlightMap/Images/TrashDelete.svg</file>
-        <file alias="TrashDeleteBlack.svg">src/FlightMap/Images/TrashDeleteBlack.svg</file>
         <file alias="Armed.svg">src/ui/toolbar/Images/Armed.svg</file>
         <file alias="Battery.svg">src/ui/toolbar/Images/Battery.svg</file>
         <file alias="Connect.svg">src/ui/toolbar/Images/Connect.svg</file>
@@ -131,6 +148,8 @@
         <file alias="TelemRSSI.svg">src/ui/toolbar/Images/TelemRSSI.svg</file>
         <file alias="Yield.svg">src/ui/toolbar/Images/Yield.svg</file>
         <file alias="CogWheel.svg">src/MissionManager/CogWheel.svg</file>
+        <file alias="StationMode.svg">src/AutoPilotPlugins/Common/Images/StationMode.svg</file>
+        <file alias="APMode.svg">src/AutoPilotPlugins/Common/Images/APMode.svg</file>
     </qresource>
     <qresource prefix="/res">
         <file alias="AntennaRC">resources/Antenna_RC.svg</file>
@@ -153,9 +172,10 @@
         <file alias="QGroundControlConnect">resources/QGroundControlConnect.svg</file>
         <file alias="SplashScreen">resources/SplashScreen.png</file>
         <file alias="Stop">resources/Stop.svg</file>
+        <file alias="TrashDelete.svg">resources/TrashDelete.svg</file>
         <file alias="XDelete.svg">resources/XDelete.svg</file>
         <file alias="XDeleteBlack.svg">resources/XDeleteBlack.svg</file>
-</qresource>
+    </qresource>
     <qresource prefix="/res/firmware">
         <file alias="px4.png">resources/firmware/px4.png</file>
         <file alias="apm.png">resources/firmware/apm.png</file>
@@ -246,6 +266,7 @@
         <file alias="APMParameterFactMetaData.Copter.3.3.xml">src/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.3.xml</file>
         <file alias="APMParameterFactMetaData.Copter.3.4.xml">src/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.4.xml</file>
         <file alias="APMParameterFactMetaData.Rover.3.0.xml">src/FirmwarePlugin/APM/APMParameterFactMetaData.Rover.3.0.xml</file>
+        <file alias="APMParameterFactMetaData.Sub.3.4.xml">src/FirmwarePlugin/APM/APMParameterFactMetaData.Sub.3.4.xml</file>
     </qresource>
     <qresource prefix="/FirmwarePlugin/PX4">
         <file alias="PX4ParameterFactMetaData.xml">src/FirmwarePlugin/PX4/PX4ParameterFactMetaData.xml</file>

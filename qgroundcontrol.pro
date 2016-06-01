@@ -4,17 +4,7 @@
 # Maintainer:
 # Lorenz Meier <lm@inf.ethz.ch>
 # (c) 2009-2015 QGroundControl Developers
-# This file is part of the open groundstation project
-# QGroundControl is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# QGroundControl is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License
-# along with QGroundControl. If not, see <http://www.gnu.org/licenses/>.
+# License terms set in COPYING.md
 # -------------------------------------------------
 
 exists($${OUT_PWD}/qgroundcontrol.pro) {
@@ -214,6 +204,7 @@ INCLUDEPATH += \
     src/input \
     src/Joystick \
     src/FollowMe \
+    src/GPS \
     src/lib/qmapcontrol \
     src/MissionEditor \
     src/MissionManager \
@@ -231,6 +222,7 @@ INCLUDEPATH += \
     src/ViewWidgets \
     src/QtLocationPlugin \
     src/QtLocationPlugin/QMLControl \
+    src/PositionManager \
 
 FORMS += \
     src/ui/MainWindow.ui \
@@ -279,6 +271,7 @@ HEADERS += \
     src/Joystick/Joystick.h \
     src/Joystick/JoystickManager.h \
     src/FollowMe/FollowMe.h \
+    src/PositionManager/SimulatedPosition.h \
     src/JsonHelper.h \
     src/LogCompressor.h \
     src/MG.h \
@@ -321,8 +314,8 @@ HEADERS += \
     src/AutoPilotPlugins/PX4/PX4AirframeLoader.h \
     src/AutoPilotPlugins/APM/APMAirframeLoader.h \
     src/QmlControls/QGCImageProvider.h \
-    src/AutoPilotPlugins/APM/APMRemoteParamsDownloader.h \
     src/QtLocationPlugin/QMLControl/QGCMapEngineManager.h \
+    src/PositionManager/PositionManager.h
 
 DebugBuild {
 HEADERS += \
@@ -429,6 +422,15 @@ HEADERS += \
     src/ui/uas/UASQuickViewItem.h \
     src/ui/uas/UASQuickViewItemSelect.h \
     src/ui/uas/UASQuickViewTextItem.h \
+    src/GPS/Drivers/src/gps_helper.h \
+    src/GPS/Drivers/src/ubx.h \
+    src/GPS/definitions.h \
+    src/GPS/vehicle_gps_position.h \
+    src/GPS/satellite_info.h \
+    src/GPS/RTCM/RTCMMavlink.h \
+    src/GPS/GPSManager.h \
+    src/GPS/GPSPositionMessage.h \
+    src/GPS/GPSProvider.h \
     src/VehicleSetup/JoystickConfigController.h \
     src/ViewWidgets/CustomCommandWidget.h \
     src/ViewWidgets/CustomCommandWidgetController.h \
@@ -502,8 +504,9 @@ SOURCES += \
     src/AutoPilotPlugins/PX4/PX4AirframeLoader.cc \
     src/AutoPilotPlugins/APM/APMAirframeLoader.cc \
     src/QmlControls/QGCImageProvider.cc \
-    src/AutoPilotPlugins/APM/APMRemoteParamsDownloader.cc \
     src/QtLocationPlugin/QMLControl/QGCMapEngineManager.cc \
+    src/PositionManager/SimulatedPosition.cc \
+    src/PositionManager/PositionManager.cpp
 
 DebugBuild {
 SOURCES += \
@@ -563,6 +566,11 @@ SOURCES += \
     src/ui/uas/UASQuickViewItem.cc \
     src/ui/uas/UASQuickViewItemSelect.cc \
     src/ui/uas/UASQuickViewTextItem.cc \
+    src/GPS/Drivers/src/gps_helper.cpp \
+    src/GPS/Drivers/src/ubx.cpp \
+    src/GPS/RTCM/RTCMMavlink.cc \
+    src/GPS/GPSManager.cc \
+    src/GPS/GPSProvider.cc \
     src/VehicleSetup/JoystickConfigController.cc \
     src/ViewWidgets/CustomCommandWidget.cc \
     src/ViewWidgets/CustomCommandWidgetController.cc \
@@ -683,6 +691,7 @@ HEADERS+= \
     src/AutoPilotPlugins/PX4/PowerComponentController.h \
     src/AutoPilotPlugins/PX4/PX4AutoPilotPlugin.h \
     src/AutoPilotPlugins/PX4/PX4RadioComponent.h \
+    src/AutoPilotPlugins/PX4/CameraComponent.h \
     src/AutoPilotPlugins/PX4/SafetyComponent.h \
     src/AutoPilotPlugins/PX4/SensorsComponent.h \
     src/AutoPilotPlugins/PX4/SensorsComponentController.h \
@@ -740,6 +749,7 @@ SOURCES += \
     src/AutoPilotPlugins/PX4/PowerComponentController.cc \
     src/AutoPilotPlugins/PX4/PX4AutoPilotPlugin.cc \
     src/AutoPilotPlugins/PX4/PX4RadioComponent.cc \
+    src/AutoPilotPlugins/PX4/CameraComponent.cc \
     src/AutoPilotPlugins/PX4/SafetyComponent.cc \
     src/AutoPilotPlugins/PX4/SensorsComponent.cc \
     src/AutoPilotPlugins/PX4/SensorsComponentController.cc \

@@ -1,25 +1,12 @@
-/*=====================================================================
- 
- QGroundControl Open Source Ground Control Station
- 
- (c) 2009, 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
- 
- This file is part of the QGROUNDCONTROL project
- 
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
- 
- ======================================================================*/
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
+
 
 /// @file
 ///     @author Don Gagne <don@thegagnes.com>
@@ -312,13 +299,25 @@ void SensorsComponentController::_handleUASTextMessage(int uasId, int compId, in
                 _orientationCalTailDownSideVisible = true;
                 _orientationCalNoseDownSideVisible = true;
             } else if (text == "mag") {
+
+                // Work out what the autopilot is configured to
+                int sides = 0;
+
+                if (_autopilot->parameterExists(FactSystem::defaultComponentId, "CAL_MAG_SIDES")) {
+                    // Read the requested calibration directions off the system
+                    sides = _autopilot->getParameterFact(FactSystem::defaultComponentId, "CAL_MAG_SIDES")->rawValue().toFloat();
+                } else {
+                    // There is no valid setting, default to all six sides
+                    sides = (1 << 5) | (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (1 << 0);
+                }
+
                 _magCalInProgress = true;
-                _orientationCalDownSideVisible = true;
-                _orientationCalUpsideDownSideVisible = true;
-                _orientationCalLeftSideVisible = true;
-                _orientationCalRightSideVisible = true;
-                _orientationCalTailDownSideVisible = true;
-                _orientationCalNoseDownSideVisible = true;
+                _orientationCalTailDownSideVisible =   ((sides & (1 << 0)) > 0);
+                _orientationCalNoseDownSideVisible =   ((sides & (1 << 1)) > 0);
+                _orientationCalLeftSideVisible =       ((sides & (1 << 2)) > 0);
+                _orientationCalRightSideVisible =      ((sides & (1 << 3)) > 0);
+                _orientationCalUpsideDownSideVisible = ((sides & (1 << 4)) > 0);
+                _orientationCalDownSideVisible =       ((sides & (1 << 5)) > 0);
             } else if (text == "gyro") {
                 _gyroCalInProgress = true;
                 _orientationCalDownSideVisible = true;
@@ -453,23 +452,6 @@ void SensorsComponentController::_refreshParams(void)
     // Now ask for all to refresh
     _autopilot->refreshParametersPrefix(FactSystem::defaultComponentId, "CAL_");
     _autopilot->refreshParametersPrefix(FactSystem::defaultComponentId, "SENS_");
-}
-
-bool SensorsComponentController::fixedWing(void)
-{
-    switch (_vehicle->vehicleType()) {
-        case MAV_TYPE_FIXED_WING:
-        case MAV_TYPE_VTOL_DUOROTOR:
-        case MAV_TYPE_VTOL_QUADROTOR:
-        case MAV_TYPE_VTOL_TILTROTOR:
-        case MAV_TYPE_VTOL_RESERVED2:
-        case MAV_TYPE_VTOL_RESERVED3:
-        case MAV_TYPE_VTOL_RESERVED4:
-        case MAV_TYPE_VTOL_RESERVED5:
-            return true;
-        default:
-            return false;
-    }
 }
 
 void SensorsComponentController::_updateAndEmitShowOrientationCalArea(bool show)

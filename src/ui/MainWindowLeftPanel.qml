@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
-QGroundControl Open Source Ground Control Station
-
-(c) 2009, 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
-This file is part of the QGROUNDCONTROL project
-
-QGROUNDCONTROL is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-QGROUNDCONTROL is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
-======================================================================*/
 
 import QtQuick          2.5
 import QtQuick.Controls 1.2
@@ -37,68 +24,17 @@ Item {
     id:             settingsMenu
     anchors.fill:   parent
 
-    property alias animateShowDialog: __animateShowDialog
-    property alias animateHideDialog: __animateHideDialog
-
-    readonly property int  __animationDuration: 100
-    readonly property real __closeButtonSize:   ScreenTools.defaultFontPixelHeight * 2
-    readonly property real _margins:            ScreenTools.defaultFontPixelHeight / 2
+    readonly property real __closeButtonSize:   ScreenTools.defaultFontPixelHeight * 1.5
+    readonly property real _margins:            ScreenTools.defaultFontPixelHeight * 0.5
+    readonly property real _buttonHeight:       ScreenTools.isTinyScreen ? ScreenTools.defaultFontPixelHeight * 3 : ScreenTools.defaultFontPixelHeight * 2
 
     QGCPalette { id: qgcPal }
 
-    onVisibleChanged: {
-        //-- Unselect any selected button
-        panelActionGroup.current = null
-        //-- Destroy panel contents if not visible
-        if(!visible) {
-            __rightPanel.source = ""
-        }
-    }
-
-    function closeSettings() {
-        __rightPanel.source = ""
-        mainWindow.hideLeftMenu()
-    }
-
-    ParallelAnimation {
-        id: __animateShowDialog
-        NumberAnimation {
-            target:     __transparentSection
-            properties: "opacity"
-            from:       0.0
-            to:         0.8
-            duration:   settingsMenu.__animationDuration
-        }
-        NumberAnimation {
-            target:     __transparentSection
-            properties: "width"
-            from:       1
-            to:         mainWindow.width
-            duration:   settingsMenu.__animationDuration
-        }
-    }
-
-    ParallelAnimation {
-        id: __animateHideDialog
-        NumberAnimation {
-            target:     __transparentSection
-            properties: "opacity"
-            from:       0.8
-            to:         0.0
-            duration:   settingsMenu.__animationDuration
-        }
-        NumberAnimation {
-            target:     __transparentSection
-            properties: "width"
-            from:       mainWindow.width
-            to:         1
-            duration:   settingsMenu.__animationDuration
-        }
-        onRunningChanged: {
-            if (!running) {
-                parent.visible = false
-            }
-        }
+    Component.onCompleted: {
+        //-- Default to General Settings
+        __rightPanel.source = "GeneralSettings.qml"
+        _generalButton.checked = true
+        panelActionGroup.current = _generalButton
     }
 
     // This covers the screen with a transparent section
@@ -110,14 +46,6 @@ Item {
         opacity:        0.0
         color:          qgcPal.window
         visible:        __rightPanel.source == ""
-        // Dismiss if clicked outside menu area
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                if (!__animateShowDialog.running)
-                    mainWindow.hideLeftMenu()
-            }
-        }
     }
 
     //-- Top Separator
@@ -133,7 +61,7 @@ Item {
     // This is the menu dialog panel which is anchored to the left edge
     Rectangle {
         id:             __leftMenu
-        width:          ScreenTools.defaultFontPixelWidth * 14
+        width:          ScreenTools.defaultFontPixelWidth * 16
         anchors.left:   parent.left
         anchors.top:    __topSeparator.bottom
         anchors.bottom: parent.bottom
@@ -155,7 +83,7 @@ Item {
                 anchors.right:          parent.right
                 anchors.topMargin:      _margins
                 anchors.top:            parent.top
-                spacing:                 ScreenTools.defaultFontPixelHeight
+                spacing:                ScreenTools.defaultFontPixelHeight * 0.5
 
                 QGCLabel {
                     text:           qsTr("Preferences")
@@ -163,6 +91,8 @@ Item {
                 }
 
                 QGCButton {
+                    id:             _generalButton
+                    height:         _buttonHeight
                     anchors.left:   parent.left
                     anchors.right:  parent.right
                     text:           qsTr("General")
@@ -176,6 +106,7 @@ Item {
                 }
 
                 QGCButton {
+                    height:         _buttonHeight
                     anchors.left:   parent.left
                     anchors.right:  parent.right
                     text:           qsTr("Comm Links")
@@ -189,6 +120,7 @@ Item {
                 }
 
                 QGCButton {
+                    height:         _buttonHeight
                     anchors.left:   parent.left
                     anchors.right:  parent.right
                     text:           qsTr("Offline Maps")
@@ -202,6 +134,7 @@ Item {
                 }
 
                 QGCButton {
+                    height:         _buttonHeight
                     anchors.left:   parent.left
                     anchors.right:  parent.right
                     text:           qsTr("MavLink")
@@ -215,6 +148,7 @@ Item {
                 }
 
                 QGCButton {
+                    height:         _buttonHeight
                     anchors.left:   parent.left
                     anchors.right:  parent.right
                     text:           qsTr("Console")
@@ -228,6 +162,7 @@ Item {
                 }
 
                 QGCButton {
+                    height:         _buttonHeight
                     anchors.left:   parent.left
                     anchors.right:  parent.right
                     text:           qsTr("Mock Link")
@@ -242,6 +177,7 @@ Item {
                 }
 
                 QGCButton {
+                    height:         _buttonHeight
                     anchors.left:   parent.left
                     anchors.right:  parent.right
                     text:           qsTr("Debug")
@@ -258,18 +194,6 @@ Item {
         }
     }
 
-    //-- Clicking in tool bar area dismiss it all
-    MouseArea {
-        anchors.top:    parent.top
-        anchors.left:   parent.left
-        anchors.right:  parent.right
-        height:         toolBar.height
-        onClicked: {
-            if (!__animateShowDialog.running)
-                mainWindow.hideLeftMenu()
-        }
-    }
-
     //-- Vertical Separator
     Rectangle {
         id:             __verticalSeparator
@@ -282,6 +206,7 @@ Item {
 
     //-- Main Setting Display Area
     Rectangle {
+        id:             settingDisplayArea
         anchors.left:   __verticalSeparator.right
         width:          mainWindow.width - __leftMenu.width - __verticalSeparator.width
         height:         parent.height - toolBar.height - __topSeparator.height
@@ -292,34 +217,6 @@ Item {
         Loader {
             id:             __rightPanel
             anchors.fill:   parent
-        }
-        //-- Dismiss it all
-        Item {
-            id:              closeButton
-            width:           __closeButtonSize
-            height:          __closeButtonSize
-            anchors.right:   parent.right
-            anchors.top:     parent.top
-            anchors.margins: ScreenTools.defaultFontPixelSize * 0.5
-            QGCColoredImage {
-                source:       "/res/XDelete.svg"
-                mipmap:       true
-                fillMode:     Image.PreserveAspectFit
-                color:        qgcPal.text
-                width:        parent.width  * 0.75
-                height:       parent.height * 0.75
-                anchors.centerIn: parent
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    if (!__animateShowDialog.running) {
-                        __rightPanel.source = ""
-                        mainWindow.hideLeftMenu()
-                    }
-                }
-            }
-
         }
     }
 }

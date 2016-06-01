@@ -1,25 +1,12 @@
-/*=====================================================================
- 
- QGroundControl Open Source Ground Control Station
- 
- (c) 2009 - 2014 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
- 
- This file is part of the QGROUNDCONTROL project
- 
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
- 
- ======================================================================*/
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
+
 
 /// @file
 ///     @brief Object which exposes a FactMetaData
@@ -38,6 +25,7 @@
 const FactMetaData::BuiltInTranslation_s FactMetaData::_rgBuiltInTranslations[] = {
     { "centi-degrees",  "degrees",  FactMetaData::_centiDegreesToDegrees,   FactMetaData::_degreesToCentiDegrees },
     { "radians",        "degrees",  FactMetaData::_radiansToDegrees,        FactMetaData::_degreesToRadians },
+    { "norm",           "%",  FactMetaData::_normToPercent,           FactMetaData::_percentToNorm },
 };
 
 // Translations driven by app settings
@@ -449,6 +437,16 @@ QVariant FactMetaData::_knotsToMetersPerSecond(const QVariant& knots)
     return QVariant(knots.toDouble() * 0.51444444444);
 }
 
+QVariant FactMetaData::_percentToNorm(const QVariant& percent)
+{
+    return QVariant(percent.toDouble() / 100.0);
+}
+
+QVariant FactMetaData::_normToPercent(const QVariant& normalized)
+{
+    return QVariant(normalized.toDouble() * 100.0);
+}
+
 void FactMetaData::setRawUnits(const QString& rawUnits)
 {
     _rawUnits = rawUnits;
@@ -585,7 +583,7 @@ int FactMetaData::decimalPlaces(void) const
     int incrementDecimalPlaces = unknownDecimalPlaces;
 
     // First determine decimal places from increment
-    double increment = this->increment();
+    double increment = _rawTranslator(this->increment()).toDouble();
     if (!qIsNaN(increment)) {
         double integralPart;
 
@@ -603,7 +601,16 @@ int FactMetaData::decimalPlaces(void) const
     if (incrementDecimalPlaces != unknownDecimalPlaces && _decimalPlaces == unknownDecimalPlaces) {
         actualDecimalPlaces = incrementDecimalPlaces;
     } else {
-        actualDecimalPlaces = qMax(_decimalPlaces, incrementDecimalPlaces);
+        // Adjust decimal places for cooked translation
+        int settingsDecimalPlaces = _decimalPlaces == unknownDecimalPlaces ? defaultDecimalPlaces : _decimalPlaces;
+        double ctest = _rawTranslator(1.0).toDouble();
+
+        settingsDecimalPlaces += -log10(ctest);
+
+        settingsDecimalPlaces = qMin(25, settingsDecimalPlaces);
+        settingsDecimalPlaces = qMax(0, settingsDecimalPlaces);
+
+        actualDecimalPlaces = qMax(settingsDecimalPlaces, incrementDecimalPlaces);
     }
 
     return actualDecimalPlaces;

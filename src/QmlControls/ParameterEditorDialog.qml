@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 /// @file
 ///     @author Don Gagne <don@thegagnes.com>
@@ -42,17 +29,32 @@ QGCViewDialog {
     property bool   validate:       false
     property string validateValue
 
+    property real   _editFieldWidth:  ScreenTools.defaultFontPixelWidth * 20
+
     ParameterEditorController { id: controller; factPanel: parent }
 
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
 
     function accept() {
-        if (factCombo.visible) {
+        /*
+        if (bitmaskEditor.visible) {
+            var value = 0;
+            for (var i = 0; i < fact.bitmaskValues.length; ++i) {
+                var checkbox = bitmaskEditor.itemAt(i)
+                if (checkbox.checked) {
+                    value |= fact.bitmaskValues[i];
+                }
+            }
+            fact.value = value;
+            fact.valueChanged(fact.value)
+            hideDialog();
+        }
+        else */ if (factCombo.visible) {
             fact.enumIndex = factCombo.currentIndex
             hideDialog()
         } else {
             var errorString = fact.validate(valueField.text, forceSave.checked)
-            if (errorString == "") {
+            if (errorString === "") {
                 fact.value = valueField.text
                 fact.valueChanged(fact.value)
                 hideDialog()
@@ -85,7 +87,7 @@ QGCViewDialog {
             QGCLabel {
                 width:      parent.width
                 wrapMode:   Text.WordWrap
-                text:       fact.shortDescription ? fact.shortDescription : qsTr("Description missing")
+                text:       fact.shortDescription ? fact.shortDescription : qsTr("Parameter Description (not defined)")
             }
 
             QGCLabel {
@@ -111,6 +113,7 @@ QGCViewDialog {
                 QGCButton {
                     anchors.baseline:   valueField.baseline
                     visible:            fact.defaultValueAvailable
+                    width:              _editFieldWidth
                     text:               qsTr("Reset to default")
 
                     onClicked: {
@@ -127,13 +130,27 @@ QGCViewDialog {
                 visible:        _showCombo
                 model:          fact.enumStrings
 
-                property bool _showCombo: fact.enumStrings.length != 0 && !validate
+                property bool _showCombo: fact.enumStrings.length != 0 && fact.bitmaskStrings.length == 0 && !validate
 
                 Component.onCompleted: {
                     // We can't bind directly to fact.enumIndex since that would add an unknown value
                     // if there are no enum strings.
                     if (_showCombo) {
                         currentIndex = fact.enumIndex
+                    }
+                }
+            }
+
+            Column {
+                spacing: ScreenTools.defaultFontPixelHeight / 2
+                visible: fact.bitmaskStrings.length > 0 ? true : false;
+                Repeater {
+                    id: bitmaskEditor
+                    model: fact.bitmaskStrings
+
+                    delegate : QGCCheckBox {
+                        text : modelData
+                        checked : fact.value & fact.bitmaskValues[index]
                     }
                 }
             }
@@ -217,6 +234,7 @@ QGCViewDialog {
 
             QGCButton {
                 text:           qsTr("Set RC to Param...")
+                width:          _editFieldWidth
                 visible:        _advanced.checked && !validate && showRCToParam
                 onClicked:      controller.setRCToParam(fact.name)
             }

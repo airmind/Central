@@ -1,25 +1,12 @@
-/*=====================================================================
- 
- QGroundControl Open Source Ground Control Station
- 
- (c) 2009 - 2014 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
- 
- This file is part of the QGROUNDCONTROL project
- 
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
- 
- ======================================================================*/
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
+
 
 #include "MissionItemTest.h"
 #include "LinkManager.h"
@@ -281,20 +268,20 @@ void MissionItemTest::_testLoadFromJson(void)
 {
     MissionItem missionItem;
     QString     errorString;
-    QJsonArray  coordinateArray = { -10.0, -20.0, -30.0 };
-    QJsonObject jsonObject
-    {
-        { "autoContinue",   true },
-        { "command",        80 },
-        { "frame",          3 },
-        { "id",             10 },
-        { "param1",         10 },
-        { "param2",         20 },
-        { "param3",         30 },
-        { "param4",         40 },
-        { "type",           "missionItem" },
-        { "coordinate",     coordinateArray },
-    };
+    QJsonArray  coordinateArray;
+    coordinateArray << -10.0 << -20.0 <<-30.0;
+    QJsonObject jsonObject;
+    jsonObject.insert("autoContinue", true);
+    jsonObject.insert("command", 80);
+    jsonObject.insert("frame", 3);
+    jsonObject.insert("id", 10);
+    jsonObject.insert("param1", 10);
+    jsonObject.insert("param2", 20);
+    jsonObject.insert("param3", 30);
+    jsonObject.insert("param4", 40);
+    jsonObject.insert("type", "missionItem");
+    jsonObject.insert("coordinate", coordinateArray);
+
 
     // Test missing key detection
 
@@ -317,7 +304,8 @@ void MissionItemTest::_testLoadFromJson(void)
     QVERIFY(!errorString.isEmpty());
     qDebug() << errorString;
 
-    QJsonArray  badCoordinateArray = { -10.0, -20.0 };
+    QJsonArray  badCoordinateArray;
+    badCoordinateArray << -10.0 << -20.0 ;
     badObject = jsonObject;
     badObject.remove("coordinate");
     badObject["coordinate"] = badCoordinateArray;
@@ -325,19 +313,22 @@ void MissionItemTest::_testLoadFromJson(void)
     QVERIFY(!errorString.isEmpty());
     qDebug() << errorString;
 
-    badCoordinateArray = { -10.0, -20.0, true };
+    QJsonArray badCoordinateArray_second;
+    badCoordinateArray_second << -10.0 << -20.0 << true;
     badObject = jsonObject;
     badObject.remove("coordinate");
-    badObject["coordinate"] = badCoordinateArray;
+    badObject["coordinate"] = badCoordinateArray_second;
     QCOMPARE(missionItem.load(badObject, errorString), false);
     QVERIFY(!errorString.isEmpty());
     qDebug() << errorString;
 
-    QJsonArray  badCoordinateArray2 = { 1, 2 };
-    badCoordinateArray = { -10.0, -20.0, badCoordinateArray2 };
+    QJsonArray  badCoordinateArray2;
+    badCoordinateArray2 << 1 << 2;
+    QJsonArray badCoordinateArray_third;
+    badCoordinateArray_third << -10.0 << -20.0 << badCoordinateArray2;
     badObject = jsonObject;
     badObject.remove("coordinate");
-    badObject["coordinate"] = badCoordinateArray;
+    badObject["coordinate"] = badCoordinateArray_third;
     QCOMPARE(missionItem.load(badObject, errorString), false);
     QVERIFY(!errorString.isEmpty());
     qDebug() << errorString;
@@ -364,20 +355,19 @@ void MissionItemTest::_testSimpleLoadFromJson(void)
 
     SimpleMissionItem simpleMissionItem(NULL);
     QString     errorString;
-    QJsonArray  coordinateArray = { -10.0, -20.0, -30.0 };
-    QJsonObject jsonObject
-    {
-        { "autoContinue",   true },
-        { "command",        80 },
-        { "frame",          3 },
-        { "id",             10 },
-        { "param1",         10 },
-        { "param2",         20 },
-        { "param3",         30 },
-        { "param4",         40 },
-        { "type",           "missionItem" },
-        { "coordinate",     coordinateArray },
-    };
+    QJsonArray  coordinateArray;
+    coordinateArray << -10.0 << -20.0 << -30.0;
+    QJsonObject jsonObject;
+    jsonObject.insert("autoContinue", true);
+    jsonObject.insert("command", 80);
+    jsonObject.insert("frame", 3);
+    jsonObject.insert("id", 10);
+    jsonObject.insert("param1", 10);
+    jsonObject.insert("param2", 20);
+    jsonObject.insert("param3", 30);
+    jsonObject.insert("param4", 40);
+    jsonObject.insert("type", "missionItem");
+    jsonObject.insert("coordinate", coordinateArray);
 
 
     QVERIFY(simpleMissionItem.load(jsonObject, errorString));

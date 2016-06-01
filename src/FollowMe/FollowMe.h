@@ -1,25 +1,12 @@
-/*=====================================================================
- 
- QGroundControl Open Source Ground Control Station
- 
- (c) 2009 - 2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
- 
- This file is part of the QGROUNDCONTROL project
- 
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
- 
- ======================================================================*/
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
+
 
 #pragma once
 
@@ -30,7 +17,6 @@
 #include <QGeoPositionInfoSource>
 #include <QElapsedTimer>
 
-#include "QGCLoggingCategory.h"
 #include "QGCToolbox.h"
 #include "MAVLinkProtocol.h"
 
@@ -52,8 +38,8 @@ private slots:
     void _sendGCSMotionReport(void);
 
 private:
-    QGeoPositionInfoSource * _locationInfo;
-    QElapsedTimer runTime;
+    QElapsedTimer runTime;    
+    QTimer _gcsMotionReportTimer;   // Timer to emit motion reports
 
     struct motionReport_s {
         uint32_t timestamp;     // time since boot
@@ -69,14 +55,6 @@ private:
         float pos_std_dev[3];   // -1 for unknown
     } _motionReport;
 
-    QString _followMeStr;
-
-    QTimer _gcsMotionReportTimer;        ///< Timer to emit motion reports
-    double _degreesToRadian(double deg);
-
-    void disable();
-    void enable();
-
     // Mavlink defined motion reporting capabilities
 
     enum {
@@ -86,22 +64,10 @@ private:
         ATT_RATES = 3
     };
 
-#ifdef QT_QML_DEBUG
+    uint8_t estimatation_capabilities;
 
-    // items for simulating QGC movment in jMAVSIM
+    void _disable();
+    void _enable();
 
-    struct simulated_motion_s {
-        int lon;
-        int lat;
-    };
-
-    static simulated_motion_s _simulated_motion[4];
-
-    int _simulate_motion_timer;
-    int _simulate_motion_index;
-
-    bool _simulate_motion;
-
-    void _createSimulatedMotion(mavlink_follow_target_t & follow_target);
-#endif
+    double _degreesToRadian(double deg);
 };

@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 import QtQuick              2.5
 import QtQuick.Controls     1.2
@@ -80,7 +67,7 @@ QGCView {
             QGCLabel {
                 id:         failsafeLabel
                 text:       qsTr("Failsafe Triggers")
-                font.weight: Font.DemiBold
+                font.family: ScreenTools.demiboldFontFamily
             }
 
             Rectangle {
@@ -217,7 +204,7 @@ QGCView {
                 anchors.left:       failsafeSettings.right
                 anchors.top:        parent.top
                 text:               qsTr("GeoFence")
-                font.weight:        Font.DemiBold
+                font.family:        ScreenTools.demiboldFontFamily
             }
 
             Rectangle {
@@ -342,7 +329,7 @@ QGCView {
                 anchors.topMargin:  _margins
                 anchors.top:        geoFenceSettings.bottom
                 text:               qsTr("Return to Launch")
-                font.weight:        Font.DemiBold
+                font.family:        ScreenTools.demiboldFontFamily
             }
 
             Rectangle {
@@ -361,6 +348,7 @@ QGCView {
                     anchors.top:        parent.top
                     height:             ScreenTools.defaultFontPixelWidth * 20
                     width:              ScreenTools.defaultFontPixelWidth * 20
+                    sourceSize.width:   width
                     mipmap:             true
                     fillMode:           Image.PreserveAspectFit
                     visible:            false
@@ -475,7 +463,7 @@ QGCView {
                 anchors.left:       parent.left
                 anchors.top:        rtlSettings.bottom
                 text:               qsTr("Arming Checks")
-                font.weight:        Font.DemiBold
+                font.family:        ScreenTools.demiboldFontFamily
             }
 
             Rectangle {

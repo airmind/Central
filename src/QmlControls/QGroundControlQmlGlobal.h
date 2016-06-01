@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2014 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 /// @file
 ///     @author Don Gagne <don@thegagnes.com>
@@ -35,6 +22,8 @@
 #include "MissionCommands.h"
 #include "SettingsFact.h"
 #include "FactMetaData.h"
+#include "SimulatedPosition.h"
+#include "QGCLoggingCategory.h"
 
 #ifdef QT_DEBUG
 #include "MockLink.h"
@@ -72,6 +61,7 @@ public:
     Q_PROPERTY(MissionCommands*     missionCommands     READ missionCommands        CONSTANT)
     Q_PROPERTY(MultiVehicleManager* multiVehicleManager READ multiVehicleManager    CONSTANT)
     Q_PROPERTY(QGCMapEngineManager* mapEngineManager    READ mapEngineManager       CONSTANT)
+    Q_PROPERTY(QGCPositionManager*  qgcPositionManger   READ qgcPositionManger      CONSTANT)
 
     Q_PROPERTY(qreal                zOrderTopMost       READ zOrderTopMost          CONSTANT) ///< z order for top most items, toolbar, main window sub view
     Q_PROPERTY(qreal                zOrderWidgets       READ zOrderWidgets          CONSTANT) ///< z order value to widgets, for example: zoom controls, hud widgetss
@@ -84,6 +74,7 @@ public:
     Q_PROPERTY(bool     isSaveLogPrompt         READ isSaveLogPrompt            WRITE setIsSaveLogPrompt            NOTIFY isSaveLogPromptChanged)
     Q_PROPERTY(bool     isSaveLogPromptNotArmed READ isSaveLogPromptNotArmed    WRITE setIsSaveLogPromptNotArmed    NOTIFY isSaveLogPromptNotArmedChanged)
     Q_PROPERTY(bool     virtualTabletJoystick   READ virtualTabletJoystick      WRITE setVirtualTabletJoystick      NOTIFY virtualTabletJoystickChanged)
+    Q_PROPERTY(qreal    baseFontPointSize       READ baseFontPointSize          WRITE setBaseFontPointSize          NOTIFY baseFontPointSizeChanged)
 
     // MavLink Protocol
     Q_PROPERTY(bool     isMultiplexingEnabled   READ isMultiplexingEnabled      WRITE setIsMultiplexingEnabled      NOTIFY isMultiplexingEnabledChanged)
@@ -130,6 +121,18 @@ public:
 
     QString appSettingsDistanceUnitsString(void) const { return FactMetaData::appSettingsDistanceUnitsString(); }
 
+    /// Returns the list of available logging category names.
+    Q_INVOKABLE QStringList loggingCategories(void) const { return QGCLoggingCategoryRegister::instance()->registeredCategories(); }
+
+    /// Turns on/off logging for the specified category. State is saved in app settings.
+    Q_INVOKABLE void setCategoryLoggingOn(const QString& category, bool enable) { QGCLoggingCategoryRegister::instance()->setCategoryLoggingOn(category, enable); };
+
+    /// Returns true if logging is turned on for the specified category.
+    Q_INVOKABLE bool categoryLoggingOn(const QString& category) { return QGCLoggingCategoryRegister::instance()->categoryLoggingOn(category); };
+
+    /// Updates the logging filter rules after settings have changed
+    Q_INVOKABLE void updateLoggingFilterRules(void) { QGCLoggingCategoryRegister::instance()->setFilterRulesFromSettings(QString()); }
+
     // Property accesors
 
     FlightMapSettings*      flightMapSettings   ()      { return _flightMapSettings; }
@@ -137,7 +140,8 @@ public:
     LinkManager*            linkManager         ()      { return _linkManager; }
     MissionCommands*        missionCommands     ()      { return _missionCommands; }
     MultiVehicleManager*    multiVehicleManager ()      { return _multiVehicleManager; }
-    QGCMapEngineManager*     mapEngineManager  ()      { return _mapEngineManager; }
+    QGCMapEngineManager*    mapEngineManager    ()      { return _mapEngineManager; }
+    QGCPositionManager*     qgcPositionManger   ()      { return _qgcPositionManager; }
 
     qreal                   zOrderTopMost       ()      { return 1000; }
     qreal                   zOrderWidgets       ()      { return 100; }
@@ -148,6 +152,7 @@ public:
     bool    isSaveLogPrompt         () { return _app->promptFlightDataSave(); }
     bool    isSaveLogPromptNotArmed () { return _app->promptFlightDataSaveNotArmed(); }
     bool    virtualTabletJoystick   () { return _virtualTabletJoystick; }
+    qreal   baseFontPointSize       () { return _baseFontPointSize; }
 
     bool    isMultiplexingEnabled   () { return _toolbox->mavlinkProtocol()->multiplexingEnabled(); }
     bool    isVersionCheckEnabled   () { return _toolbox->mavlinkProtocol()->versionCheckEnabled(); }
@@ -167,6 +172,7 @@ public:
     void    setIsSaveLogPrompt          (bool prompt);
     void    setIsSaveLogPromptNotArmed  (bool prompt);
     void    setVirtualTabletJoystick    (bool enabled);
+    void    setBaseFontPointSize        (qreal size);
 
     void    setIsMultiplexingEnabled    (bool enable);
     void    setIsVersionCheckEnabled    (bool enable);
@@ -188,6 +194,7 @@ signals:
     void isSaveLogPromptChanged         (bool prompt);
     void isSaveLogPromptNotArmedChanged (bool prompt);
     void virtualTabletJoystickChanged   (bool enabled);
+    void baseFontPointSizeChanged       (qreal size);
     void isMultiplexingEnabledChanged   (bool enabled);
     void isVersionCheckEnabledChanged   (bool enabled);
     void mavlinkSystemIDChanged         (int id);
@@ -202,11 +209,12 @@ private:
     MissionCommands*        _missionCommands;
     MultiVehicleManager*    _multiVehicleManager;
     QGCMapEngineManager*    _mapEngineManager;
+    QGCPositionManager*     _qgcPositionManager;
 
-    bool _virtualTabletJoystick;
-
-    QGeoCoordinate  _flightMapPosition;
-    double          _flightMapZoom;
+    bool                    _virtualTabletJoystick;
+    qreal                   _baseFontPointSize;
+    QGeoCoordinate          _flightMapPosition;
+    double                  _flightMapZoom;
 
     // These are static so they are available to C++ code as well as Qml
     static SettingsFact*    _offlineEditingFirmwareTypeFact;
@@ -217,6 +225,7 @@ private:
     static FactMetaData*    _speedUnitsMetaData;
 
     static const char*  _virtualTabletJoystickKey;
+    static const char*  _baseFontPointSizeKey;
 };
 
 #endif

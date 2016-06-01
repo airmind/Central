@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 /// @file
 ///     @brief Battery, propeller and magnetometer settings
@@ -46,6 +33,7 @@ QGCView {
     property Fact battHighVolt:     controller.getParameterFact(-1, "BAT_V_CHARGED")
     property Fact battLowVolt:      controller.getParameterFact(-1, "BAT_V_EMPTY")
     property Fact battVoltLoadDrop: controller.getParameterFact(-1, "BAT_V_LOAD_DROP")
+    property Fact uavcanEnable:     controller.getParameterFact(-1, "UAVCAN_ENABLE", false)
 
     readonly property string highlightPrefix:   "<font color=\"" + qgcPal.warningText + "\">"
     readonly property string highlightSuffix:   "</font>"
@@ -122,7 +110,7 @@ QGCView {
 
                 QGCLabel {
                     text: qsTr("Battery")
-                    font.weight: Font.DemiBold
+                    font.family: ScreenTools.demiboldFontFamily
                 }
 
                 Rectangle {
@@ -200,6 +188,7 @@ QGCView {
                         x:                      voltageCol.firstColumnWidth + textEditWidth + (ScreenTools.defaultFontPixelWidth * 3)
                         width:                  height * 0.75
                         height:                 voltageCol.height
+                        sourceSize.height:      height
                         fillMode:               Image.PreserveAspectFit
                         smooth:                 true
                         color:                  palette.text
@@ -235,7 +224,7 @@ QGCView {
 
                 QGCLabel {
                     text:           qsTr("ESC PWM Minimum and Maximum Calibration")
-                    font.weight:    Font.DemiBold
+                    font.family:    ScreenTools.demiboldFontFamily
                 }
 
                 Rectangle {
@@ -268,13 +257,14 @@ QGCView {
                 }
 
                 QGCCheckBox {
-                    id:     showUAVCAN
-                    text:   qsTr("Show UAVCAN Settings")
+                    id:         showUAVCAN
+                    text:       qsTr("Show UAVCAN Settings")
+                    visible:    uavcanEnable !== -1
                 }
 
                 QGCLabel {
                     text:           qsTr("UAVCAN Bus Configuration")
-                    font.weight:    Font.DemiBold
+                    font.family:    ScreenTools.demiboldFontFamily
                     visible:        showUAVCAN.checked
                 }
 
@@ -294,7 +284,7 @@ QGCView {
                         FactCheckBox {
                             id:                 uavcanEnabledCheckBox
                             width:              ScreenTools.defaultFontPixelWidth * 20
-                            fact:               controller.getParameterFact(-1, "UAVCAN_ENABLE")
+                            fact:               uavcanEnable
                             checkedValue:       3
                             uncheckedValue:     0
                             text:               qsTr("Enable UAVCAN as the default MAIN output bus (requires autopilot restart)")
@@ -304,7 +294,7 @@ QGCView {
 
                 QGCLabel {
                     text:           qsTr("UAVCAN Motor Index and Direction Assignment")
-                    font.weight:    Font.DemiBold
+                    font.family:    ScreenTools.demiboldFontFamily
                     visible:        showUAVCAN.checked
                 }
 
@@ -356,7 +346,7 @@ QGCView {
 
                 QGCLabel {
                     text:           qsTr("Advanced Power Settings")
-                    font.weight:    Font.DemiBold
+                    font.family:    ScreenTools.demiboldFontFamily
                     visible:        showAdvanced.checked
                 }
 

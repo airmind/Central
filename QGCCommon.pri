@@ -4,17 +4,7 @@
 # Maintainer:
 # Lorenz Meier <lm@inf.ethz.ch>
 # (c) 2009-2014 QGroundControl Developers
-# This file is part of the open groundstation project
-# QGroundControl is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# QGroundControl is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License
-# along with QGroundControl. If not, see <http://www.gnu.org/licenses/>.
+# License terms set in COPYING.md
 # -------------------------------------------------
 
 #
@@ -27,10 +17,14 @@
 # the project file.
 
 linux {
-    linux-g++ | linux-g++-64 | linux-g++-32 {
+    linux-g++ | linux-g++-64 | linux-g++-32 | linux-clang {
         message("Linux build")
         CONFIG += LinuxBuild
         DEFINES += __STDC_LIMIT_MACROS
+		linux-clang {
+			message("Linux clang")
+			QMAKE_CXXFLAGS += -Qunused-arguments -fcolor-diagnostics
+		}
     } else : linux-rasp-pi2-g++ {
         message("Linux R-Pi2 build")
         CONFIG += LinuxBuild
@@ -113,6 +107,7 @@ exists ($$PWD/.git) {
 
 DEFINES += GIT_TAG=\"\\\"$$GIT_DESCRIBE\\\"\"
 DEFINES += GIT_HASH=\"\\\"$$GIT_HASH\\\"\"
+DEFINES += EIGEN_MPL2_ONLY
 
 # Installer configuration
 
@@ -174,11 +169,15 @@ MacBuild | LinuxBuild {
 }
 
 WindowsBuild {
+    QMAKE_CFLAGS_RELEASE -= -Zc:strictStrings
+    QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO -= -Zc:strictStrings
+    QMAKE_CXXFLAGS_RELEASE -= -Zc:strictStrings
+    QMAKE_CXXFLAGS_RELEASE_WITH_DEBUGINFO -= -Zc:strictStrings
     QMAKE_CXXFLAGS_WARN_ON += /W3 \
         /wd4996 \   # silence warnings about deprecated strcpy and whatnot
         /wd4005 \   # silence warnings about macro redefinition
-        /wd4290 \   # ignore exception specifications
-        /Zc:strictStrings-  # work around win 8.1 sdk sapi.h problem
+        /wd4290     # ignore exception specifications
+
     WarningsAsErrorsOn {
         QMAKE_CXXFLAGS_WARN_ON += /WX
     }
@@ -190,14 +189,21 @@ WindowsBuild {
 
 ReleaseBuild {
     DEFINES += QT_NO_DEBUG
-    WindowsBuild {
-        # Use link time code generation for better optimization (I believe this is supported in MSVC Express, but not 100% sure)
-        QMAKE_LFLAGS_LTCG = /LTCG
-        QMAKE_CFLAGS_LTCG = -GL
+    CONFIG += force_debug_info  # Enable debugging symbols on release builds
+    !iOSBuild {
+        CONFIG += ltcg              # Turn on link time code generation
+    }
 
-        # Turn on debugging information so we can collect good crash dumps from release builds
-        QMAKE_CXXFLAGS_RELEASE += /Zi
-        QMAKE_LFLAGS_RELEASE += /DEBUG
+    WindowsBuild {
+        # Enable function level linking and enhanced optimized debugging
+        QMAKE_CFLAGS_RELEASE   += /Gy /Zo
+        QMAKE_CXXFLAGS_RELEASE += /Gy /Zo
+        QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO   += /Gy /Zo
+        QMAKE_CXXFLAGS_RELEASE_WITH_DEBUGINFO += /Gy /Zo
+
+        # Eliminate duplicate COMDATs
+        QMAKE_LFLAGS_RELEASE += /OPT:ICF
+        QMAKE_LFLAGS_RELEASE_WITH_DEBUGINFO += /OPT:ICF
     }
 }
 

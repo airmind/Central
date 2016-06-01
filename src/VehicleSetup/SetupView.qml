@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
-QGroundControl Open Source Ground Control Station
-
-(c) 2009, 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
-This file is part of the QGROUNDCONTROL project
-
-QGROUNDCONTROL is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-QGROUNDCONTROL is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
-======================================================================*/
 
 /// @file
 ///     @brief Setup View
@@ -36,6 +23,7 @@ import QGroundControl.ScreenTools           1.0
 import QGroundControl.MultiVehicleManager   1.0
 
 Rectangle {
+    id: setupView
     color:  qgcPal.window
     z:      QGroundControl.zOrderTopMost
 
@@ -110,6 +98,13 @@ Rectangle {
                 panelLoader.sourceComponent = messagePanelComponent
             } else {
                 panelLoader.source = vehicleComponent.setupSource
+                for(var i = 0; i < componentRepeater.count; i++) {
+                    var obj = componentRepeater.itemAt(i);
+                    if (obj.text === vehicleComponent.name) {
+                        obj.checked = true;
+                        break;
+                    }
+                }
             }
         }
     }
@@ -143,7 +138,7 @@ Rectangle {
                 verticalAlignment:      Text.AlignVCenter
                 horizontalAlignment:    Text.AlignHCenter
                 wrapMode:               Text.WordWrap
-                font.pixelSize:         ScreenTools.mediumFontPixelSize
+                font.pointSize:         ScreenTools.mediumFontPointSize
                 text:                   "QGroundControl does not currently support setup of your vehicle type. " +
                                         "If your vehicle is already configured you can still Fly."
 
@@ -164,7 +159,7 @@ Rectangle {
                 verticalAlignment:      Text.AlignVCenter
                 horizontalAlignment:    Text.AlignHCenter
                 wrapMode:               Text.WordWrap
-                font.pixelSize:         ScreenTools.largeFontPixelSize
+                font.pointSize:         ScreenTools.largeFontPointSize
                 text:                   "Connect vehicle to your device and QGroundControl will automatically detect it." +
                                         (ScreenTools.isMobile ? "" : " Click Firmware on the left to upgrade your vehicle.")
 
@@ -184,7 +179,7 @@ Rectangle {
                 verticalAlignment:      Text.AlignVCenter
                 horizontalAlignment:    Text.AlignHCenter
                 wrapMode:               Text.WordWrap
-                font.pixelSize:         ScreenTools.mediumFontPixelSize
+                font.pointSize:         ScreenTools.mediumFontPointSize
                 text:                   "You are currently connected to a vehicle, but that vehicle did not return back the full parameter list. " +
                                         "Because of this the full set of vehicle setup options are not available."
 
@@ -203,7 +198,7 @@ Rectangle {
                 verticalAlignment:      Text.AlignVCenter
                 horizontalAlignment:    Text.AlignHCenter
                 wrapMode:               Text.WordWrap
-                font.pixelSize:         ScreenTools.mediumFontPixelSize
+                font.pointSize:         ScreenTools.mediumFontPointSize
                 text:                   _messagePanelText
             }
         }
@@ -217,6 +212,7 @@ Rectangle {
         anchors.bottom:     parent.bottom
         contentHeight:      buttonColumn.height
         flickableDirection: Flickable.VerticalFlick
+        clip:               true
 
         Column {
             id:         buttonColumn
@@ -229,16 +225,22 @@ Rectangle {
 
             Connections {
                 target: componentRepeater
-
                 onModelChanged: buttonColumn.reflowWidths()
             }
 
+            // I don't know why this does not work
+            Connections {
+                target: QGroundControl
+                onBaseFontPointSizeChanged: buttonColumn.reflowWidths()
+            }
+
             function reflowWidths() {
-                for (var i=0; i<children.length; i++) {
-                    _maxButtonWidth = Math.max(_maxButtonWidth, children[i].width)
+                buttonColumn._maxButtonWidth = 0
+                for (var i = 0; i < children.length; i++) {
+                    buttonColumn._maxButtonWidth = Math.max(buttonColumn._maxButtonWidth, children[i].width)
                 }
-                for (var i=0; i<children.length; i++) {
-                    children[i].width = _maxButtonWidth
+                for (var j = 0; j < children.length; j++) {
+                    children[j].width = buttonColumn._maxButtonWidth
                 }
             }
 
@@ -295,7 +297,6 @@ Rectangle {
                     exclusiveGroup: setupButtonGroup
                     text:           modelData.name
                     visible:        modelData.setupSource.toString() != ""
-
 
                     onClicked: showVehicleComponentPanel(modelData)
                 }

@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
-QGroundControl Open Source Ground Control Station
-
-(c) 2009, 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
-This file is part of the QGROUNDCONTROL project
-
-    QGROUNDCONTROL is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    QGROUNDCONTROL is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
-======================================================================*/
 
 import QtQuick                  2.5
 import QtQuick.Controls         1.3
@@ -45,9 +32,7 @@ QGCView {
 
     QGCPalette { id: qgcPal; colorGroupEnabled: enabled }
 
-    property var _activeVehicle:    QGroundControl.multiVehicleManager.activeVehicle
-
-
+    property var _activeVehicle:        QGroundControl.multiVehicleManager.activeVehicle
     property bool _mainIsMap:           _controller.hasVideo ? QGroundControl.loadBoolGlobalSetting(_mainIsMapKey,  true) : true
     property bool _isPipVisible:        _controller.hasVideo ? QGroundControl.loadBoolGlobalSetting(_PIPVisibleKey, true) : false
 
@@ -225,7 +210,10 @@ QGCView {
         Loader {
             id:             widgetsLoader
             z:              _panel.z + 4
-            anchors.fill:   parent
+            height:         ScreenTools.availableHeight
+            anchors.left:   parent.left
+            anchors.right:  parent.right
+            anchors.bottom: parent.bottom
             asynchronous:   true
             visible:        status == Loader.Ready
 
@@ -238,11 +226,11 @@ QGCView {
             id:                         multiTouchItem
             z:                          _panel.z + 5
             width:                      parent.width  - (_flightVideoPipControl.width / 2)
-            height:                     Math.min(parent.height * 0.25, ScreenTools.defaultFontPixelWidth * 16)
+            height:                     Math.min(ScreenTools.availableHeight * 0.25, ScreenTools.defaultFontPixelWidth * 16)
             visible:                    QGroundControl.virtualTabletJoystick
             anchors.bottom:             _flightVideoPipControl.top
             anchors.bottomMargin:       ScreenTools.defaultFontPixelHeight * 2
-            anchors.horizontalCenter:   parent.horizontalCenter
+            anchors.horizontalCenter:   widgetsLoader.horizontalCenter
             source:                     "qrc:/qml/VirtualJoystick.qml"
             active:                     QGroundControl.virtualTabletJoystick
         }

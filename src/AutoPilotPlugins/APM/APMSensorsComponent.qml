@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 import QtQuick 2.2
 import QtQuick.Controls 1.2
@@ -64,8 +51,8 @@ QGCView {
     readonly property string _badCompassCalText: "The calibration for Compass %1 appears to be poor. " +
                                                  "Check the compass position within your vehicle and re-do the calibration."
 
-    readonly property int sideBarH1PointSize:  ScreenTools.mediumFontPixelSize
-    readonly property int mainTextH1PointSize: ScreenTools.mediumFontPixelSize // Seems to be unused
+    readonly property int sideBarH1PointSize:  ScreenTools.mediumFontPointSize
+    readonly property int mainTextH1PointSize: ScreenTools.mediumFontPointSize // Seems to be unused
 
     readonly property int rotationColumnWidth: 250
 
@@ -269,7 +256,7 @@ QGCView {
 
         Column {
             QGCLabel {
-                font.pixelSize: sideBarH1PointSize
+                font.pointSize: sideBarH1PointSize
                 text:           qsTr("Set Orientations")
             }
 
@@ -391,8 +378,6 @@ QGCView {
                 onClicked: {
                     if (controller.accelSetupNeeded) {
                         showMessage(qsTr("Calibrate Compass"), qsTr("Accelerometer must be calibrated prior to Compass."), StandardButton.Ok)
-                    } else if (compass3Id.value != 0 && compass3Use.value !=0) {
-                        showMessage(qsTr("Unabled to calibrate"), qsTr("Support for calibrating compass 3 is currently not supported by QGroundControl."), StandardButton.Ok)
                     } else {
                         preCalibrationDialogType = "compass"
                         preCalibrationDialogHelp = compassHelp
@@ -459,7 +444,7 @@ QGCView {
                     anchors.left:       orientationCalArea.left
                     width:              parent.width
                     wrapMode:           Text.WordWrap
-                    font.pixelSize:     ScreenTools.mediumFontPixelSize
+                    font.pointSize:     ScreenTools.mediumFontPointSize
                 }
 
                 Flow {

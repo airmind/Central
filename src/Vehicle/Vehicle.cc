@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2014 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 #include "Vehicle.h"
 #include "MAVLinkProtocol.h"
@@ -99,8 +86,8 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _navigationTargetBearing(0.0f)
     , _refreshTimer(new QTimer(this))
     , _updateCount(0)
-    , _rcRSSI(0)
-    , _rcRSSIstore(100.0)
+    , _rcRSSI(255)
+    , _rcRSSIstore(255)
     , _autoDisconnect(false)
     , _flying(false)
     , _connectionLost(false)
@@ -126,6 +113,7 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _firmwareMajorVersion(versionNotSetValue)
     , _firmwareMinorVersion(versionNotSetValue)
     , _firmwarePatchVersion(versionNotSetValue)
+    , _firmwareVersionType(FIRMWARE_VERSION_TYPE_OFFICIAL)
     , _rollFact             (0, _rollFactName,              FactMetaData::valueTypeDouble)
     , _pitchFact            (0, _pitchFactName,             FactMetaData::valueTypeDouble)
     , _headingFact          (0, _headingFactName,           FactMetaData::valueTypeDouble)
@@ -218,6 +206,9 @@ Vehicle::Vehicle(LinkInterface*             link,
     connect(_parameterLoader, &ParameterLoader::parametersReady, _autopilotPlugin, &AutoPilotPlugin::_parametersReadyPreChecks);
     connect(_parameterLoader, &ParameterLoader::parameterListProgress, _autopilotPlugin, &AutoPilotPlugin::parameterListProgress);
 
+    // Ask the vehicle for firmware version info
+    doCommandLong(defaultComponentId(), MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, 1 /* request firmware version */);
+
     _firmwarePlugin->initializeVehicle(this);
 
     _sendMultipleTimer.start(_sendMessageMultipleIntraMessageDelay);
@@ -280,8 +271,8 @@ Vehicle::Vehicle(QObject* parent)
     , _navigationTargetBearing(0.0f)
     , _refreshTimer(new QTimer(this))
     , _updateCount(0)
-    , _rcRSSI(0)
-    , _rcRSSIstore(100.0)
+    , _rcRSSI(255)
+    , _rcRSSIstore(255)
     , _autoDisconnect(false)
     , _connectionLost(false)
     , _connectionLostEnabled(true)
@@ -587,6 +578,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     case MAVLINK_MSG_ID_COMMAND_ACK:
         _handleCommandAck(message);
         break;
+    case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
+        _handleAutopilotVersion(message);
+        break;
 
     // Following are ArduPilot dialect messages
 
@@ -600,6 +594,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     _uas->receiveMessage(message);
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 #ifdef __ios__
 void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message) {
@@ -634,6 +629,25 @@ void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t mess
 #endif
 
 =======
+=======
+void Vehicle::_handleAutopilotVersion(mavlink_message_t& message)
+{
+    mavlink_autopilot_version_t autopilotVersion;
+    mavlink_msg_autopilot_version_decode(&message, &autopilotVersion);
+
+    if (autopilotVersion.flight_sw_version != 0) {
+        int majorVersion, minorVersion, patchVersion;
+        FIRMWARE_VERSION_TYPE versionType;
+
+        majorVersion = (autopilotVersion.flight_sw_version >> (8*3)) & 0xFF;
+        minorVersion = (autopilotVersion.flight_sw_version >> (8*2)) & 0xFF;
+        patchVersion = (autopilotVersion.flight_sw_version >> (8*1)) & 0xFF;
+        versionType = (FIRMWARE_VERSION_TYPE)((autopilotVersion.flight_sw_version >> (8*0)) & 0xFF);
+        setFirmwareVersion(majorVersion, minorVersion, patchVersion, versionType);
+    }
+}
+
+>>>>>>> upstream/master
 void Vehicle::_handleCommandAck(mavlink_message_t& message)
 {
     mavlink_command_ack_t ack;
@@ -1143,6 +1157,11 @@ QString Vehicle::formatedMessages()
     return messages;
 }
 
+void Vehicle::clearMessages()
+{
+    qgcApp()->toolbox()->uasMessageHandler()->clearMessages();
+}
+
 void Vehicle::_handletextMessageReceived(UASMessage* message)
 {
     if(message)
@@ -1385,7 +1404,7 @@ bool Vehicle::flightModeSetAvailable(void)
 
 QStringList Vehicle::flightModes(void)
 {
-    return _firmwarePlugin->flightModes();
+    return _firmwarePlugin->flightModes(this);
 }
 
 QString Vehicle::flightMode(void) const
@@ -1557,6 +1576,10 @@ void Vehicle::_imageReady(UASInterface*)
 
 void Vehicle::_remoteControlRSSIChanged(uint8_t rssi)
 {
+    if (_rcRSSIstore < 0 || _rcRSSIstore > 100) {
+        _rcRSSIstore = rssi;
+    }
+
     // Low pass to git rid of jitter
     _rcRSSIstore = (_rcRSSIstore * 0.9f) + ((float)rssi * 0.1);
     uint8_t filteredRSSI = (uint8_t)ceil(_rcRSSIstore);
@@ -1633,12 +1656,62 @@ bool Vehicle::multiRotor(void) const
     }
 }
 
+bool Vehicle::vtol(void) const
+{
+    switch (vehicleType()) {
+    case MAV_TYPE_VTOL_DUOROTOR:
+    case MAV_TYPE_VTOL_QUADROTOR:
+    case MAV_TYPE_VTOL_TILTROTOR:
+    case MAV_TYPE_VTOL_RESERVED2:
+    case MAV_TYPE_VTOL_RESERVED3:
+    case MAV_TYPE_VTOL_RESERVED4:
+    case MAV_TYPE_VTOL_RESERVED5:
+        return true;
+    default:
+        return false;
+    }
+}
+
 void Vehicle::_setCoordinateValid(bool coordinateValid)
 {
     if (coordinateValid != _coordinateValid) {
         _coordinateValid = coordinateValid;
         emit coordinateValidChanged(_coordinateValid);
     }
+}
+
+QString Vehicle::vehicleTypeName() const {
+    static QMap<int, QString> typeNames = {
+        { MAV_TYPE_GENERIC,         tr("Generic micro air vehicle" )},
+        { MAV_TYPE_FIXED_WING,      tr("Fixed wing aircraft")},
+        { MAV_TYPE_QUADROTOR,       tr("Quadrotor")},
+        { MAV_TYPE_COAXIAL,         tr("Coaxial helicopter")},
+        { MAV_TYPE_HELICOPTER,      tr("Normal helicopter with tail rotor.")},
+        { MAV_TYPE_ANTENNA_TRACKER, tr("Ground installation")},
+        { MAV_TYPE_GCS,             tr("Operator control unit / ground control station")},
+        { MAV_TYPE_AIRSHIP,         tr("Airship, controlled")},
+        { MAV_TYPE_FREE_BALLOON,    tr("Free balloon, uncontrolled")},
+        { MAV_TYPE_ROCKET,          tr("Rocket")},
+        { MAV_TYPE_GROUND_ROVER,    tr("Ground rover")},
+        { MAV_TYPE_SURFACE_BOAT,    tr("Surface vessel, boat, ship")},
+        { MAV_TYPE_SUBMARINE,       tr("Submarine")},
+        { MAV_TYPE_HEXAROTOR,       tr("Hexarotor")},
+        { MAV_TYPE_OCTOROTOR,       tr("Octorotor")},
+        { MAV_TYPE_TRICOPTER,       tr("Octorotor")},
+        { MAV_TYPE_FLAPPING_WING,   tr("Flapping wing")},
+        { MAV_TYPE_KITE,            tr("Flapping wing")},
+        { MAV_TYPE_ONBOARD_CONTROLLER, tr("Onboard companion controller")},
+        { MAV_TYPE_VTOL_DUOROTOR,   tr("Two-rotor VTOL using control surfaces in vertical operation in addition. Tailsitter")},
+        { MAV_TYPE_VTOL_QUADROTOR,  tr("Quad-rotor VTOL using a V-shaped quad config in vertical operation. Tailsitter")},
+        { MAV_TYPE_VTOL_TILTROTOR,  tr("Tiltrotor VTOL")},
+        { MAV_TYPE_VTOL_RESERVED2,  tr("VTOL reserved 2")},
+        { MAV_TYPE_VTOL_RESERVED3,  tr("VTOL reserved 3")},
+        { MAV_TYPE_VTOL_RESERVED4,  tr("VTOL reserved 4")},
+        { MAV_TYPE_VTOL_RESERVED5,  tr("VTOL reserved 5")},
+        { MAV_TYPE_GIMBAL,          tr("Onboard gimbal")},
+        { MAV_TYPE_ADSB,            tr("Onboard ADSB peripheral")},
+    };
+    return typeNames[_vehicleType];
 }
 
 /// Returns the string to speak to identify the vehicle
@@ -1816,11 +1889,43 @@ void Vehicle::_prearmErrorTimeout(void)
     setPrearmError(QString());
 }
 
-void Vehicle::setFirmwareVersion(int majorVersion, int minorVersion, int patchVersion)
+void Vehicle::setFirmwareVersion(int majorVersion, int minorVersion, int patchVersion, FIRMWARE_VERSION_TYPE versionType)
 {
     _firmwareMajorVersion = majorVersion;
     _firmwareMinorVersion = minorVersion;
     _firmwarePatchVersion = patchVersion;
+    _firmwareVersionType = versionType;
+    emit firmwareMajorVersionChanged(_firmwareMajorVersion);
+    emit firmwareMinorVersionChanged(_firmwareMinorVersion);
+    emit firmwarePatchVersionChanged(_firmwarePatchVersion);
+    emit firmwareVersionTypeChanged(_firmwareVersionType);
+}
+
+QString Vehicle::firmwareVersionTypeString(void) const
+{
+    switch (_firmwareVersionType) {
+    case FIRMWARE_VERSION_TYPE_DEV:
+        return QStringLiteral("dev");
+    case FIRMWARE_VERSION_TYPE_ALPHA:
+        return QStringLiteral("alpha");
+    case FIRMWARE_VERSION_TYPE_BETA:
+        return QStringLiteral("beta");
+    case FIRMWARE_VERSION_TYPE_RC:
+        return QStringLiteral("rc");
+    case FIRMWARE_VERSION_TYPE_OFFICIAL:
+    default:
+        return QStringLiteral("");
+    }
+}
+
+void Vehicle::rebootVehicle()
+{
+    doCommandLong(id(), MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+}
+
+int Vehicle::defaultComponentId(void)
+{
+    return _parameterLoader->defaultComponenentId();
 }
 
 const char* VehicleGPSFactGroup::_hdopFactName =                "hdop";

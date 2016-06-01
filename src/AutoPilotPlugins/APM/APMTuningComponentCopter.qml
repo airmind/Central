@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 import QtQuick              2.5
 import QtQuick.Controls     1.4
@@ -135,7 +122,7 @@ QGCView {
             QGCLabel {
                 id:         basicLabel
                 text:       qsTr("Basic Tuning")
-                font.weight: Font.DemiBold
+                font.family: ScreenTools.demiboldFontFamily
             }
 
             Rectangle {
@@ -161,7 +148,7 @@ QGCView {
 
                         QGCLabel {
                             text:       qsTr("Throttle Hover")
-                            font.weight: Font.DemiBold
+                            font.family: ScreenTools.demiboldFontFamily
                         }
 
                         QGCLabel {
@@ -191,7 +178,7 @@ QGCView {
 
                         QGCLabel {
                             text:       qsTr("Roll/Pitch Sensitivity")
-                            font.weight: Font.DemiBold
+                            font.family: ScreenTools.demiboldFontFamily
                         }
 
                         QGCLabel {
@@ -224,7 +211,7 @@ QGCView {
 
                         QGCLabel {
                             text:       qsTr("Climb Sensitivity")
-                            font.weight: Font.DemiBold
+                            font.family: ScreenTools.demiboldFontFamily
                         }
 
                         QGCLabel {
@@ -256,7 +243,7 @@ QGCView {
 
                         QGCLabel {
                             text:       qsTr("RC Roll/Pitch Feel")
-                            font.weight: Font.DemiBold
+                            font.family: ScreenTools.demiboldFontFamily
                         }
 
                         QGCLabel {
@@ -287,7 +274,7 @@ QGCView {
                 anchors.topMargin:  _margins
                 anchors.top:        basicTuningRect.bottom
                 text:               qsTr("AutoTune")
-                font.weight:        Font.DemiBold
+                font.family:        ScreenTools.demiboldFontFamily
             }
 
             Rectangle {

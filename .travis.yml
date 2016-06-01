@@ -1,41 +1,38 @@
 language: cpp
 
 git:
-  depth: 500
+  depth: 1000
 
 env:
   global:
+    - SHADOW_BUILD_DIR=/tmp/shadow_build_dir
     # ANDROID_STOREPASS
-    secure: RGovyUnMw3fp/bHZi058JvANT1rYmNqrsuSYew0cIgirO6YbMHr/rsjwCm1FTYpBl8s1zgr+u2b8ftYnfnCz2YT+Aip4NWrVYpVU0FEmfytGILrnUS0pjlt8m7fU9AKR1ElOSll7yw7e1kftynN39Q321etvwbLZcXon6zz0suE=
+    - secure: RGovyUnMw3fp/bHZi058JvANT1rYmNqrsuSYew0cIgirO6YbMHr/rsjwCm1FTYpBl8s1zgr+u2b8ftYnfnCz2YT+Aip4NWrVYpVU0FEmfytGILrnUS0pjlt8m7fU9AKR1ElOSll7yw7e1kftynN39Q321etvwbLZcXon6zz0suE=
 
 matrix:
     fast_finish: true
     include:
         - os: linux
-          env: SPEC=linux-g++-64 CONFIG=debug SHADOW_BUILD_DIR=/tmp/build_linux_debug
+          env: SPEC=linux-g++-64 CONFIG=debug QT_FATAL_WARNINGS=1
           sudo: required
           dist: trusty
         - os: linux
-          env: SPEC=linux-g++-64 CONFIG=installer SHADOW_BUILD_DIR=/tmp/build_linux_install
+          env: SPEC=linux-g++-64 CONFIG=installer
           sudo: required 
           dist: trusty
         - os: osx
           osx_image: xcode7
-          env: SPEC=macx-clang CONFIG=debug QT_FATAL_WARNINGS=1 SHADOW_BUILD_DIR=/tmp/build_macos_debug
+          env: SPEC=macx-clang CONFIG=debug QT_FATAL_WARNINGS=1
         - os: osx
           osx_image: xcode7
-          env: SPEC=macx-clang CONFIG=installer SHADOW_BUILD_DIR=/tmp/build_macos_install
+          env: SPEC=macx-clang CONFIG=installer
           sudo: required
         - os: osx
           osx_image: xcode7
-          env: SPEC=ios SHADOW_BUILD_DIR=/tmp/build_ios
-#        - os: android
-#          language: android
-#          env: SPEC=android-g++ CONFIG=debug SHADOW_BUILD_DIR=/tmp/build_android_debug
-#          sudo: false
+          env: SPEC=ios
         - os: android
           language: android
-          env: SPEC=android-g++ CONFIG=installer SHADOW_BUILD_DIR=/tmp/build_android_install
+          env: SPEC=android-g++ CONFIG=installer
           sudo: false
         - os: linux
           env: CONFIG=doxygen
@@ -53,7 +50,10 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - ccache
+    - debhelper
+    - devscripts
     - doxygen
+    - dput
     - espeak
     - g++-4.8
     - gcc-4.8
@@ -64,6 +64,7 @@ addons:
     - libsdl1.2-dev
     - libudev-dev
     - texlive-font-utils
+    - wget
 
 cache:
   directories:
@@ -141,6 +142,8 @@ before_script:
   - ln -s /usr/bin/ccache ~/bin/gcc
   - ln -s /usr/bin/ccache ~/bin/gcc-4.8
   - export PATH=~/bin:$PATH
+  - wget http://px4-travis.s3.amazonaws.com/Firmware/master/parameters.xml -O src/FirmwarePlugin/PX4/PX4ParameterFactMetaData.xml
+  - wget http://px4-travis.s3.amazonaws.com/Firmware/master/airframes.xml -O src/AutoPilotPlugins/PX4/AirframeFactMetaData.xml
   - if [[ "${TRAVIS_OS_NAME}" = "android" && "${CONFIG}" = "installer" && -z ${ANDROID_STOREPASS} ]]; then
         export CONFIG=release
         ;
@@ -165,7 +168,6 @@ script:
         ;
     fi
   - echo 'Building QGroundControl'
-  - echo -en 'travis_fold:start:script.1\\r'
   - if [[ "${CONFIG}" != "doxygen" && "${SPEC}" != "ios" ]]; then
         cd ${SHADOW_BUILD_DIR} &&
         make -j4 | sed 's/${TRAVIS_BUILD_DIR}/-/'
@@ -181,7 +183,6 @@ script:
         doxygen documentation.dox
         ;
     fi
-  - echo -en 'travis_fold:end:script.1\\r'
   - if [[ "${TRAVIS_OS_NAME}" = "linux" && "${CONFIG}" = "debug" ]]; then
         ${SHADOW_BUILD_DIR}/debug/qgroundcontrol --unittest
         ;

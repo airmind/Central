@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
-QGroundControl Open Source Ground Control Station
-
-(c) 2009, 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
-This file is part of the QGROUNDCONTROL project
-
-    QGROUNDCONTROL is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    QGROUNDCONTROL is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
-======================================================================*/
 
 /**
  * @file
@@ -33,6 +20,7 @@ import QtLocation       5.3
 import QtPositioning    5.3
 
 import QGroundControl                       1.0
+import QGroundControl.FactSystem            1.0
 import QGroundControl.Controls              1.0
 import QGroundControl.FlightMap             1.0
 import QGroundControl.ScreenTools           1.0
@@ -47,14 +35,59 @@ Map {
     property string mapType:            QGroundControl.flightMapSettings.mapTypeForMapName(mapName)
 //  property alias  mapWidgets:         controlWidgets
     property bool   isSatelliteMap:     mapType == "Satellite Map" || mapType == "Hybrid Map"
+    property bool   showScale:          false
 
-    readonly property real maxZoomLevel:    20
+    readonly property real  maxZoomLevel: 20
+    property variant        scaleLengths: [5, 10, 25, 50, 100, 150, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000]
+
+    function formatDistance(meters)
+    {
+        var dist = Math.round(meters)
+        if (dist > 1000 ){
+            if (dist > 100000){
+                dist = Math.round(dist / 1000)
+            }
+            else{
+                dist = Math.round(dist / 100)
+                dist = dist / 10
+            }
+            dist = dist + " km"
+        }
+        else{
+            dist = dist + " m"
+        }
+        return dist
+    }
+
+    function calculateScale() {
+        var coord1, coord2, dist, text, f
+        f = 0
+        coord1 = _map.toCoordinate(Qt.point(0, scale.y))
+        coord2 = _map.toCoordinate(Qt.point(0 + scaleImage.sourceSize.width, scale.y))
+        dist = Math.round(coord1.distanceTo(coord2))
+        if (dist === 0) {
+            // not visible
+        } else {
+            for (var i = 0; i < scaleLengths.length - 1; i++) {
+                if (dist < (scaleLengths[i] + scaleLengths[i+1]) / 2 ) {
+                    f = scaleLengths[i] / dist
+                    dist = scaleLengths[i]
+                    break;
+                }
+            }
+            if (f === 0) {
+                f = dist / scaleLengths[i]
+                dist = scaleLengths[i]
+            }
+        }
+        text = formatDistance(dist)
+        scaleImage.width = (scaleImage.sourceSize.width * f) - 2 * scaleImageLeft.sourceSize.width
+        scaleText.text = text
+    }
 
     zoomLevel:                  18
     center:                     QGroundControl.lastKnownHomePosition
     gesture.flickDeceleration:  3000
-    // This no longer exists in Qt 5.6. The options below also happen the be the default anyway.
-    //gesture.activeGestures:     MapGestureArea.ZoomGesture | MapGestureArea.PanGesture | MapGestureArea.FlickGesture
 
     plugin: Plugin { name: "QGroundControl" }
 
@@ -63,9 +96,9 @@ Map {
     Component.onCompleted: onMapTypeChanged
 
     property bool _initialMapPositionSet: false
+
     Connections {
         target: mainWindow
-
         onGcsPositionChanged: {
             if (!_initialMapPositionSet) {
                 _initialMapPositionSet = true
@@ -90,9 +123,80 @@ Map {
         anchorPoint.y:  sourceItem.height / 2
         visible:        mainWindow.gcsPosition.isValid
         coordinate:     mainWindow.gcsPosition
-
-        sourceItem: MissionItemIndexLabel {
+        sourceItem:     MissionItemIndexLabel {
             label: "Q"
+        }
+    }
+
+    onWidthChanged: {
+        if(_map.showScale)
+            scaleTimer.restart()
+    }
+
+    onHeightChanged: {
+        if(_map.showScale)
+            scaleTimer.restart()
+    }
+
+    onZoomLevelChanged:{
+        if(_map.showScale)
+            scaleTimer.restart()
+    }
+
+    Timer {
+        id:         scaleTimer
+        interval:   100
+        running:    false
+        repeat:     false
+        onTriggered: {
+            _map.calculateScale()
+        }
+    }
+    /*
+        Scale
+    */
+    Item {
+        id:                         scale
+        visible:                    _map.showScale && scaleText.text !== "0 m"
+        z:                          _map.z + 20
+        width:                      scaleImageLeft.width + scaleImage.width + scaleImageRight.width
+        anchors {
+            bottom:                 parent.bottom
+            bottomMargin:           ScreenTools.defaultFontPixelHeight * (0.66)
+            right:                  parent.right
+            rightMargin:            ScreenTools.defaultFontPixelHeight * (0.33)
+        }
+        Image {
+            id:                     scaleImageLeft
+            source:                 isSatelliteMap ? "/qmlimages/scale_end.png" : "/qmlimages/scale_endLight.png"
+            anchors.bottom:         parent.bottom
+            anchors.left:           parent.left
+        }
+        Image {
+            id:                     scaleImage
+            source:                 isSatelliteMap ? "/qmlimages/scale.png" : "/qmlimages/scaleLight.png"
+            anchors.bottom:         parent.bottom
+            anchors.left:           scaleImageLeft.right
+        }
+        Image {
+            id:                     scaleImageRight
+            source:                 isSatelliteMap ? "/qmlimages/scale_end.png" : "/qmlimages/scale_endLight.png"
+            anchors.bottom:         parent.bottom
+            anchors.left:           scaleImage.right
+        }
+        QGCLabel {
+            id: scaleText
+            color:                  isSatelliteMap ? "white" : "black"
+            font.family:            ScreenTools.demiboldFontFamily
+            horizontalAlignment:    Text.AlignHCenter
+            anchors.bottom:         parent.bottom
+            anchors.right:          parent.right
+            anchors.bottomMargin:   ScreenTools.defaultFontPixelHeight * (0.83)
+            text: "0 m"
+        }
+        Component.onCompleted: {
+            if(_map.showScale)
+                _map.calculateScale();
         }
     }
 
@@ -174,65 +278,6 @@ Map {
  The slider and scale display are commented out for now to try to save real estate - DonLakeFlyer
  Not sure if I'll bring them back or not. Need room for waypoint list at bottom
 
- property variant scaleLengths: [5, 10, 25, 50, 100, 150, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000]
-
-    function formatDistance(meters)
-    {
-        var dist = Math.round(meters)
-        if (dist > 1000 ){
-            if (dist > 100000){
-                dist = Math.round(dist / 1000)
-            }
-            else{
-                dist = Math.round(dist / 100)
-                dist = dist / 10
-            }
-            dist = dist + " km"
-        }
-        else{
-            dist = dist + " m"
-        }
-        return dist
-    }
-
-        onWidthChanged: {
-            scaleTimer.restart()
-        }
-
-        onHeightChanged: {
-            scaleTimer.restart()
-        }
-
-        onZoomLevelChanged:{
-            scaleTimer.restart()
-        }
-
-        function calculateScale() {
-            var coord1, coord2, dist, text, f
-            f = 0
-            coord1 = map.toCoordinate(Qt.point(0,scale.y))
-            coord2 = map.toCoordinate(Qt.point(0+scaleImage.sourceSize.width,scale.y))
-            dist = Math.round(coord1.distanceTo(coord2))
-            if (dist === 0) {
-                // not visible
-            } else {
-                for (var i = 0; i < scaleLengths.length-1; i++) {
-                    if (dist < (scaleLengths[i] + scaleLengths[i+1]) / 2 ) {
-                        f = scaleLengths[i] / dist
-                        dist = scaleLengths[i]
-                        break;
-                    }
-                }
-                if (f === 0) {
-                    f = dist / scaleLengths[i]
-                    dist = scaleLengths[i]
-                }
-            }
-            text = formatDistance(dist)
-            scaleImage.width = (scaleImage.sourceSize.width * f) - 2 * scaleImageLeft.sourceSize.width
-            scaleText.text = text
-        }
-
     QGCSlider {
         id: zoomSlider;
         minimum: map.minimumZoomLevel;
@@ -242,9 +287,9 @@ Map {
         z: 1000
         anchors {
             bottom: parent.bottom;
-            bottomMargin:   ScreenTools.defaultFontPixelSize * (1.25)
-            rightMargin:    ScreenTools.defaultFontPixelSize * (1.66)
-            leftMargin:     ScreenTools.defaultFontPixelSize * (1.66)
+            bottomMargin:   ScreenTools.defaultFontPixelHeight * (1.25)
+            rightMargin:    ScreenTools.defaultFontPixelHeight * (1.66)
+            leftMargin:     ScreenTools.defaultFontPixelHeight * (1.66)
             left: parent.left
         }
         width: parent.width - anchors.rightMargin - anchors.leftMargin
@@ -256,60 +301,6 @@ Map {
             map.zoomLevel = value
         }
     }
-
-    Item {
-        id: scale
-        parent: zoomSlider.parent
-        visible: scaleText.text !== "0 m"
-        z: map.z + 20
-        opacity: 1
-        anchors {
-            bottom: zoomSlider.top;
-            bottomMargin: ScreenTools.defaultFontPixelSize * (0.66);
-            left: zoomSlider.left
-            leftMargin: ScreenTools.defaultFontPixelSize * (0.33)
-        }
-        Image {
-            id: scaleImageLeft
-            source: "/qmlimages/scale_end.png"
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-        }
-        Image {
-            id: scaleImage
-            source: "/qmlimages/scale.png"
-            anchors.bottom: parent.bottom
-            anchors.left: scaleImageLeft.right
-        }
-        Image {
-            id: scaleImageRight
-            source: "/qmlimages/scale_end.png"
-            anchors.bottom: parent.bottom
-            anchors.left: scaleImage.right
-        }
-        QGCLabel {
-            id: scaleText
-            color: "white"
-            font.weight: Font.DemiBold
-            horizontalAlignment: Text.AlignHCenter
-            anchors.bottom: parent.bottom
-            anchors.left:   parent.left
-            anchors.bottomMargin: ScreenTools.defaultFontPixelSize * (0.83)
-            text: "0 m"
-        }
-        Component.onCompleted: {
-            map.calculateScale();
-        }
-    }
-
-    Timer {
-        id: scaleTimer
-        interval: 100
-        running:  false
-        repeat:   false
-        onTriggered: {
-            map.calculateScale()
-        }
-    }
 */
+
 } // Map

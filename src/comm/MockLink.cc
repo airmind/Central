@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
- QGroundControl Open Source Ground Control Station
-
- (c) 2009 - 2014 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
- This file is part of the QGROUNDCONTROL project
-
- QGROUNDCONTROL is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- QGROUNDCONTROL is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
- ======================================================================*/
 
 #include "MockLink.h"
 #include "QGCLoggingCategory.h"
@@ -803,6 +790,10 @@ void MockLink::_handleCommandLong(const mavlink_message_t& msg)
     case MAV_CMD_PREFLIGHT_STORAGE:
         commandResult = MAV_RESULT_ACCEPTED;
         break;
+    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
+        commandResult = MAV_RESULT_ACCEPTED;
+        _respondWithAutopilotVersion();
+        break;
     }
 
     mavlink_message_t commandAck;
@@ -812,6 +803,31 @@ void MockLink::_handleCommandLong(const mavlink_message_t& msg)
                                  request.command,
                                  commandResult);
     respondWithMavlinkMessage(commandAck);
+}
+
+void MockLink::_respondWithAutopilotVersion(void)
+{
+    mavlink_message_t msg;
+
+    uint8_t customVersion[8];
+    memset(customVersion, 0, sizeof(customVersion));
+
+    // Only flight_sw_version is supported a this point
+    mavlink_msg_autopilot_version_pack(_vehicleSystemId,
+                                       _vehicleComponentId,
+                                       &msg,
+                                       0,                                           // capabilities,
+                                       (1 << (8*3)) | FIRMWARE_VERSION_TYPE_DEV,    // flight_sw_version,
+                                       0,                                           // middleware_sw_version,
+                                       0,                                           // os_sw_version,
+                                       0,                                           // board_version,
+                                       (uint8_t *)&customVersion,                   // flight_custom_version,
+                                       (uint8_t *)&customVersion,                   // middleware_custom_version,
+                                       (uint8_t *)&customVersion,                   // os_custom_version,
+                                       0,                                           // vendor_id,
+                                       0,                                           // product_id,
+                                       0);                                          // uid
+    respondWithMavlinkMessage(msg);
 }
 
 void MockLink::setMissionItemFailureMode(MockLinkMissionItemHandler::FailureMode_t failureMode)

@@ -19,55 +19,58 @@ TextField {
 
     property var __qgcPal: QGCPalette { colorGroupEnabled: enabled }
 
-    textColor: __qgcPal.textFieldText
-    height: ScreenTools.isMobile ? ScreenTools.defaultFontPixelHeight * 3 * 0.75 : implicitHeight
+    textColor:          __qgcPal.textFieldText
+    height:             ScreenTools.isMobile ? Math.max(25, Math.round(ScreenTools.defaultFontPixelHeight * 2)) : Math.max(25, Math.round(ScreenTools.defaultFontPixelHeight * 1.2))
 
     Label {
-        id: unitsLabelWidthGenerator
-        text: unitsLabel
-        width: contentWidth + ((parent.__contentHeight/3)*2)
-        visible: false
-        antialiasing: true
+        id:             unitsLabelWidthGenerator
+        text:           unitsLabel
+        width:          contentWidth + parent.__contentHeight * 0.666
+        visible:        false
+        antialiasing:   true
+        font.family:    ScreenTools.normalFontFamily
     }
 
     style: TextFieldStyle {
+        font.pointSize: ScreenTools.defaultFontPointSize
         background: Item {
             id: backgroundItem
 
             Rectangle {
-                anchors.fill: parent
-                anchors.bottomMargin: -1
-                color: "#44ffffff"
+                anchors.fill:           parent
+                anchors.bottomMargin:   -1
+                color:                  "#44ffffff"
             }
 
             Rectangle {
-                anchors.fill: parent
-                border.color: control.activeFocus ? "#47b" : "#999"
-                color: __qgcPal.textField
+                anchors.fill:           parent
+                border.color:           control.activeFocus ? "#47b" : "#999"
+                color:                  __qgcPal.textField
             }
 
             Text {
                 id: unitsLabel
 
-                anchors.top: parent.top
+                anchors.top:    parent.top
                 anchors.bottom: parent.bottom
 
-                verticalAlignment: Text.AlignVCenter
-                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment:  Text.AlignVCenter
+                horizontalAlignment:Text.AlignHCenter
 
-                x: parent.width - width
-                width: unitsLabelWidthGenerator.width
+                x:              parent.width - width
+                width:          unitsLabelWidthGenerator.width
 
-                text: control.unitsLabel
-                font.pixelSize: ScreenTools.defaultFontPixelSize
+                text:           control.unitsLabel
+                font.pointSize: ScreenTools.defaultFontPointSize
+                font.family:    ScreenTools.normalFontFamily
                 antialiasing:   true
 
-                color: control.textColor
-                visible: control.showUnits
+                color:          control.textColor
+                visible:        control.showUnits
             }
         }
 
-        padding.right: control.showUnits ? unitsLabelWidthGenerator.width : control.__contentHeight/3
+        padding.right: control.showUnits ? unitsLabelWidthGenerator.width : control.__contentHeight * 0.333
     }
 
     onActiveFocusChanged: {

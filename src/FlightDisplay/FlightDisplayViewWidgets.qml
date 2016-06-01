@@ -1,25 +1,12 @@
-/*=====================================================================
+/****************************************************************************
+ *
+ *   (c) 2009-2016 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ *
+ * QGroundControl is licensed according to the terms in the file
+ * COPYING.md in the root of the source code directory.
+ *
+ ****************************************************************************/
 
-QGroundControl Open Source Ground Control Station
-
-(c) 2009, 2015 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
-
-This file is part of the QGROUNDCONTROL project
-
-    QGROUNDCONTROL is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    QGROUNDCONTROL is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with QGROUNDCONTROL. If not, see <http://www.gnu.org/licenses/>.
-
-======================================================================*/
 
 import QtQuick                  2.4
 import QtQuick.Controls         1.3
@@ -51,8 +38,6 @@ Item {
 
     function getGadgetWidth() {
         if(ScreenTools.isMobile) {
-            if(ScreenTools.isTinyScreen)
-                return mainWindow.width * 0.2
             return mainWindow.width * 0.15
         }
         var w = mainWindow.width * 0.15
@@ -61,6 +46,10 @@ Item {
 
     ExclusiveGroup {
         id: _dropButtonsExclusiveGroup
+    }
+
+    ExclusiveGroup {
+        id: _mapTypeButtonsExclusiveGroup
     }
 
     //-- Map warnings
@@ -74,7 +63,7 @@ Item {
             visible:                    _activeVehicle && !_activeVehicle.coordinateValid && _mainIsMap
             z:                          QGroundControl.zOrderTopMost
             color:                      mapPal.text
-            font.pixelSize:             ScreenTools.largeFontPixelSize
+            font.pointSize:             ScreenTools.largeFontPointSize
             text:                       qsTr("No GPS Lock for Vehicle")
         }
 
@@ -83,7 +72,7 @@ Item {
             visible:                    _activeVehicle && !_activeVehicle.coordinateValid
             z:                          QGroundControl.zOrderTopMost
             color:                      mapPal.text
-            font.pixelSize:             ScreenTools.largeFontPixelSize
+            font.pointSize:             ScreenTools.largeFontPointSize
             text:                       _activeVehicle ? _activeVehicle.prearmError : ""
         }
     }
@@ -125,7 +114,7 @@ Item {
         anchors.top:            parent.top
         anchors.right:          altitudeSlider.visible ? altitudeSlider.left : parent.right
         visible:                QGroundControl.virtualTabletJoystick
-        width:                  getGadgetWidth()
+        width:                  ScreenTools.isTinyScreen ? getGadgetWidth() * 2 : getGadgetWidth()
         active:                 _activeVehicle != null
         heading:                _heading
         rollAngle:              _roll
@@ -219,12 +208,14 @@ Item {
                             model: QGroundControl.flightMapSettings.mapTypes
 
                             QGCButton {
-                                checkable:  true
-                                checked:    _flightMap ? _flightMap.mapType == text : false
-                                text:       modelData
-
+                                checkable:      true
+                                checked:        _flightMap ? _flightMap.mapType === text : false
+                                text:               modelData
+                                width:          clearButton.width
+                                exclusiveGroup: _mapTypeButtonsExclusiveGroup
                                 onClicked: {
                                     _flightMap.mapType = text
+                                    checked = true
                                     _dropButtonsExclusiveGroup.current = null
                                 }
                             }
@@ -232,9 +223,9 @@ Item {
                     }
 
                     QGCButton {
-                        text:       qsTr("Clear flight trails")
+                        id:         clearButton
+                        text:       qsTr("Clear Flight Trails")
                         enabled:    QGroundControl.multiVehicleManager.activeVehicle
-
                         onClicked: {
                             QGroundControl.multiVehicleManager.activeVehicle.clearTrajectoryPoints()
                             _dropButtonsExclusiveGroup.current = null
@@ -247,12 +238,11 @@ Item {
         //-- Zoom Map In
         RoundButton {
             id:                 mapZoomPlus
-            visible:            _mainIsMap && !ScreenTools.isTinyScreen
+            visible:            _mainIsMap
             buttonImage:        "/qmlimages/ZoomPlus.svg"
             exclusiveGroup:     _dropButtonsExclusiveGroup
             z:                  QGroundControl.zOrderWidgets
             lightBorders:       _lightWidgetBorders
-
             onClicked: {
                 if(_flightMap)
                     _flightMap.zoomLevel += 0.5
@@ -263,12 +253,11 @@ Item {
         //-- Zoom Map Out
         RoundButton {
             id:                 mapZoomMinus
-            visible:            _mainIsMap && !ScreenTools.isTinyScreen
+            visible:            _mainIsMap
             buttonImage:        "/qmlimages/ZoomMinus.svg"
             exclusiveGroup:     _dropButtonsExclusiveGroup
             z:                  QGroundControl.zOrderWidgets
             lightBorders:       _lightWidgetBorders
-
             onClicked: {
                 if(_flightMap)
                     _flightMap.zoomLevel -= 0.5
@@ -283,7 +272,7 @@ Item {
         anchors.margins:            _barMargin
         anchors.bottom:             parent.bottom
         anchors.horizontalCenter:   parent.horizontalCenter
-        width:                      guidedModeColumn.width + (_margins * 2)
+        width:                      guidedModeColumn.width  + (_margins * 2)
         height:                     guidedModeColumn.height + (_margins * 2)
         radius:                     _margins
         color:                      _lightWidgetBorders ? qgcPal.mapWidgetBorderLight : qgcPal.mapWidgetBorderDark
@@ -328,7 +317,6 @@ Item {
             id:             guidedModeHideTimer
             interval:       7000
             running:        true
-
             onTriggered: {
                 if (ScreenTools.isShortScreen) {
                     _guidedModeBar.state = "Hidden"
@@ -360,9 +348,9 @@ Item {
                 _activeVehicle.guidedModeLand()
                 break;
             case confirmTakeoff:
-                var altitude = altitudeSlider.getValue()
-                if (!isNaN(altitude)) {
-                    _activeVehicle.guidedModeTakeoff(altitude)
+                var altitude1 = altitudeSlider.getValue()
+                if (!isNaN(altitude1)) {
+                    _activeVehicle.guidedModeTakeoff(altitude1)
                 }
                 break;
             case confirmArm:
@@ -375,9 +363,9 @@ Item {
                 _activeVehicle.emergencyStop()
                 break;
             case confirmChangeAlt:
-                var altitude = altitudeSlider.getValue()
-                if (!isNaN(altitude)) {
-                    _activeVehicle.guidedModeChangeAltitude(altitude)
+                var altitude2 = altitudeSlider.getValue()
+                if (!isNaN(altitude2)) {
+                    _activeVehicle.guidedModeChangeAltitude(altitude2)
                 }
                 break;
             case confirmGoTo:
@@ -421,7 +409,7 @@ Item {
                 guidedModeConfirm.confirmText = qsTr("land")
                 break;
             case confirmHome:
-                guidedModeConfirm.confirmText = qsTr("return to launch")
+                guidedModeConfirm.confirmText = qsTr("return to land")
                 break;
             case confirmChangeAlt:
                 altitudeSlider.visible = true
@@ -432,7 +420,7 @@ Item {
                 guidedModeConfirm.confirmText = qsTr("move vehicle")
                 break;
             case confirmRetask:
-                _guidedModeBar.confirmText = qsTr("active waypoint change")
+                _guidedModeBar.confirmText    = qsTr("active waypoint change")
                 break;
             }
             guidedModeBar.visible = false
@@ -446,17 +434,25 @@ Item {
             anchors.left:       parent.left
             spacing:            _margins
 
+            QGCLabel {
+                anchors.horizontalCenter: parent.horizontalCenter
+                color:      qgcPal.button
+                text:       "Click in map to move vehicle"
+                visible:    _activeVehicle && _activeVehicle.guidedMode && _activeVehicle.flying
+            }
+
             Row {
                 spacing: _margins
 
                 QGCButton {
                     text:       (_activeVehicle && _activeVehicle.armed) ? (_activeVehicle.flying ? qsTr("Emergency Stop") : qsTr("Disarm")) :  qsTr("Arm")
+                    visible: (_activeVehicle && _activeVehicle.coordinateValid)
                     onClicked:  _guidedModeBar.confirmAction(_activeVehicle.armed ? (_activeVehicle.flying ? _guidedModeBar.confirmEmergencyStop : _guidedModeBar.confirmDisarm) : _guidedModeBar.confirmArm)
                 }
 
                 QGCButton {
                     text:       qsTr("RTL")
-                    visible:    _activeVehicle && _activeVehicle.guidedModeSupported && _activeVehicle.flying
+                    visible:    (_activeVehicle && _activeVehicle.armed) && _activeVehicle.guidedModeSupported && _activeVehicle.flying
                     onClicked:  _guidedModeBar.confirmAction(_guidedModeBar.confirmHome)
                 }
 
@@ -468,7 +464,7 @@ Item {
 
                 QGCButton {
                     text:       qsTr("Pause")
-                    visible:    _activeVehicle && _activeVehicle.pauseVehicleSupported && _activeVehicle.flying
+                    visible:    (_activeVehicle && _activeVehicle.armed) && _activeVehicle.pauseVehicleSupported && _activeVehicle.flying
                     onClicked:  {
                         guidedModeHideTimer.restart()
                         _activeVehicle.pauseVehicle()
@@ -477,17 +473,10 @@ Item {
 
                 QGCButton {
                     text:       qsTr("Change Altitude")
-                    visible:    _activeVehicle && _activeVehicle.guidedModeSupported && _activeVehicle.armed
+                    visible:    (_activeVehicle && _activeVehicle.flying) && _activeVehicle.guidedModeSupported && _activeVehicle.armed
                     onClicked:  _guidedModeBar.confirmAction(_guidedModeBar.confirmChangeAlt)
                 }
             } // Row
-
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                color:      qgcPal.button
-                text:       "Click in map to move vehicle"
-                visible:    _activeVehicle && _activeVehicle.guidedMode && _activeVehicle.flying
-            }
         } // Column
     } // Rectangle - Guided mode buttons
 
@@ -581,8 +570,8 @@ Item {
             anchors.left:       parent.left
             anchors.right:      parent.right
             orientation:        Qt.Vertical
-            minimumValue:       0
-            maximumValue:       QGroundControl.metersToAppSettingsDistanceUnits(100)
+            minimumValue:       QGroundControl.metersToAppSettingsDistanceUnits((_activeVehicle && _activeVehicle.flying) ? -15 : 0)
+            maximumValue:       QGroundControl.metersToAppSettingsDistanceUnits((_activeVehicle && _activeVehicle.flying) ? 15 : 60)
         }
     }
 }
