@@ -91,20 +91,12 @@ LinkManager::LinkManager(QGCApplication* app)
 
 LinkManager::~LinkManager()
 {
-<<<<<<< HEAD
-    // Clear configuration list
-    while(_linkConfigurations.count()) {
-        LinkConfiguration* pLink = _linkConfigurations.at(0);
-        if(pLink) delete pLink;
-        _linkConfigurations.removeAt(0);
-    }
-    Q_ASSERT_X(_links.count() == 0, "LinkManager", "LinkManager::_shutdown should have been called previously");
 #ifdef __mindskin__
     delete blehelper;
 #endif
-=======
 
->>>>>>> upstream/master
+
+
 }
 
 void LinkManager::setToolbox(QGCToolbox *toolbox)
@@ -305,18 +297,33 @@ void LinkManager::_addLink(LinkInterface* link)
         emit newLink(link);
     }
 
+
+#ifndef __mindskin__  //?__ios__
     connect(link, &LinkInterface::communicationError,   _app,               &QGCApplication::criticalMessageBoxOnMainThread);
     connect(link, &LinkInterface::bytesReceived,        _mavlinkProtocol,   &MAVLinkProtocol::receiveBytes);
-
-<<<<<<< HEAD
-#ifndef __mindskin__  //?__ios__
-    connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
-    connect(link, &LinkInterface::connected,        _mavlinkProtocol, &MAVLinkProtocol::linkConnected);
-    connect(link, &LinkInterface::disconnected,     _mavlinkProtocol, &MAVLinkProtocol::linkDisconnected);
+    
     _mavlinkProtocol->resetMetadataForLink(link);
+    
+    connect(link, &LinkInterface::connected,            this, &LinkManager::_linkConnected);
+    connect(link, &LinkInterface::disconnected,         this, &LinkManager::_linkDisconnected);
+    
+    // This connection is queued since it will cloe the link. So we want the link emitter to return otherwise we would
+    // close the link our from under itself.
+    connect(link, &LinkInterface::connectionRemoved,    this, &LinkManager::_linkConnectionRemoved, Qt::QueuedConnection);
+#else
+    
+    connect(link, &LinkInterface::communicationError,   _app,               &QGCApplication::criticalMessageBoxOnMainThread);
+    connect(link, &LinkInterface::bytesReceived,        _mavlinkProtocol,   static_cast<void (MAVLinkProtocol::*)(LinkInterface*, QByteArray)>(&MAVLinkProtocol::receiveBytes));
+   
+    _mavlinkProtocol->resetMetadataForLink(link);
+    
+    connect(link, &LinkInterface::connected,            this, &LinkManager::_linkConnected);
+    connect(link, &LinkInterface::disconnected,         this, &LinkManager::_linkDisconnected);
+    
+    // This connection is queued since it will cloe the link. So we want the link emitter to return otherwise we would
+    // close the link our from under itself.
+    connect(link, &LinkInterface::connectionRemoved,    this, &LinkManager::_linkConnectionRemoved, Qt::QueuedConnection);
 
-    connect(link, &LinkInterface::connected,    this, &LinkManager::_linkConnected);
-    connect(link, &LinkInterface::disconnected, this, &LinkManager::_linkDisconnected);
     
 #endif
     
@@ -344,7 +351,7 @@ bool LinkManager::containsLink(BTSerialLink* link) {
 void LinkManager::_deleteLink(BTSerialLink* link) {
     Q_ASSERT(link);
     
-    _bleLinkListMutex.lock();
+    //_bleLinkListMutex.lock();
     
     // Free up the mavlink channel associated with this link
     _mavlinkChannelsUsedBitMask &= ~(1 << link->getMavlinkChannel());
@@ -361,7 +368,7 @@ void LinkManager::_deleteLink(BTSerialLink* link) {
     Q_UNUSED(found);
     Q_ASSERT(found);
     
-    _bleLinkListMutex.unlock();
+    //_bleLinkListMutex.unlock();
     
     // Emit removal of link
     emit linkDeleted(link);
@@ -371,7 +378,7 @@ void LinkManager::_deleteLink(BTSerialLink* link) {
 void LinkManager::_addLink(BTSerialLink* link) {
     Q_ASSERT(link);
     
-    _bleLinkListMutex.lock();
+   // _bleLinkListMutex.lock();
     
     if (!containsLink(link)) {
         // Find a mavlink channel to use for this link
@@ -385,17 +392,17 @@ void LinkManager::_addLink(BTSerialLink* link) {
         }
         
         _blelinks.append(link);
-        _bleLinkListMutex.unlock();
+        //_bleLinkListMutex.unlock();
         //why we emit a newLink signal here but no receiving slot?
         emit newLink(link);
     } else {
-        _bleLinkListMutex.unlock();
+        //_bleLinkListMutex.unlock();
     }
     
     // MainWindow may be around when doing things like running unit tests
-    if (MainWindow::instance()) {
+    //if (MainWindow::instance()) {
         //connect(link, &BTSerialLink::communicationError, _app, &QGCApplication::criticalMessageBoxOnMainThread);
-    }
+    //}
     
     ///We do not need signal here, use didConnected call back instead;
     //connect(link, &LinkInterface::bytesReceived,    _mavlinkProtocol, &MAVLinkProtocol::receiveBytes);
@@ -437,7 +444,7 @@ BLEDebugTextView* LinkManager::openDebugView(){
 }
 #endif
 
-
+/*
 bool LinkManager::connectAll()
 {
     if (_connectionsSuspendedMsg()) {
@@ -445,17 +452,18 @@ bool LinkManager::connectAll()
     }
 
     bool allConnected = true;
-=======
+//=======
     _mavlinkProtocol->resetMetadataForLink(link);
 
     connect(link, &LinkInterface::connected,            this, &LinkManager::_linkConnected);
     connect(link, &LinkInterface::disconnected,         this, &LinkManager::_linkDisconnected);
->>>>>>> upstream/master
+//>>>>>>> upstream/master
 
     // This connection is queued since it will cloe the link. So we want the link emitter to return otherwise we would
     // close the link our from under itself.
     connect(link, &LinkInterface::connectionRemoved,    this, &LinkManager::_linkConnectionRemoved, Qt::QueuedConnection);
 }
+*/
 
 void LinkManager::disconnectAll(void)
 {

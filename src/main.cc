@@ -207,6 +207,12 @@ int main(int argc, char *argv[])
     }
 #endif
 #endif // QT_DEBUG
+    
+    
+    /* mark Roland:
+     Should we cut QGCApplication (QGuiApplication) off from here, or we let it do its initilization and get a QWindow to proceed?
+     - keep it for now.
+     */
 
     QGCApplication* app = new QGCApplication(argc, argv, runUnitTests);
     Q_CHECK_PTR(app);

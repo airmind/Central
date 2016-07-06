@@ -612,14 +612,14 @@ signals:
 
 private slots:
     void _mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message);
-<<<<<<< HEAD
+//<<<<<<< HEAD
 #ifdef __ios__
     void _mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message);
 #endif
     void _linkDisconnected(LinkInterface* link);
-=======
+//=======
     void _linkInactiveOrDeleted(LinkInterface* link);
->>>>>>> upstream/master
+//>>>>>>> upstream/master
     void _sendMessage(mavlink_message_t message);
     void _sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
     void _sendMessageMultipleNext(void);
@@ -688,19 +688,19 @@ private:
     AutoPilotPlugin*    _autopilotPlugin;
     MAVLinkProtocol*    _mavlink;
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
     /// List of all links associated with this vehicle. We keep SharedLinkInterface objects
     /// which are QSharedPointer's in order to maintain reference counts across threads.
     /// This way Link deletion works correctly.
-    QList<SharedLinkInterface> _links;
+    //QList<SharedLinkInterface> _links;
     
 #ifdef __ios__
     QList<BTSerialLink*> _blelinks;
     
 #endif
-=======
+//=======
     QList<LinkInterface*> _links;
->>>>>>> upstream/master
+//>>>>>>> upstream/master
 
     JoystickMode_t  _joystickMode;
     bool            _joystickEnabled;

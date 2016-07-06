@@ -32,8 +32,8 @@
 #ifndef __ios__
     #include "SerialLink.h"
 #endif
-<<<<<<< HEAD
-<<<<<<< account //switch 7
+//<<<<<<< HEAD
+//<<<<<<< account //switch 7
 
 #ifdef __mindskin__
 #include "BTSerialLink.h"
@@ -45,9 +45,8 @@
 
 #include "UDPLink.h"
 #include "TCPLink.h"
-#include "LogReplayLink.h"
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
 
 #ifdef QT_DEBUG
     #include "MockLink.h"
@@ -136,7 +135,7 @@ public:
     /// Suspend automatic confguration updates (during link maintenance for instance)
     void suspendConfigurationUpdates(bool suspend);
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
     /// Returns list of all links
     const QList<LinkInterface*> getLinks();
 
@@ -184,8 +183,8 @@ public:
     BLEDebugTextView* openDebugView();
 #endif
     
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
     /// Sets the flag to suspend the all new connections
     ///     @param reason User visible reason to suspend connections
     void setConnectionsSuspended(QString reason);
@@ -200,7 +199,7 @@ public:
     /// Creates, connects (and adds) a link  based on the given configuration name.
     LinkInterface* createConnectedLink(const QString& name);
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
     /// Returns true if the link manager is holding this link
     bool containsLink(LinkInterface* link);
 
@@ -215,8 +214,8 @@ public:
     /// Re-connects all existing links
     bool connectAll();
 
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
     /// Disconnects all existing links
     void disconnectAll(void);
 
@@ -231,13 +230,13 @@ public:
     void _deleteLink(LinkInterface* link);
     void _addLink(LinkInterface* link);
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 #ifdef __mindskin__
     void _deleteLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
 #endif
     
-=======
+//=======
     // Called to signal app shutdown. Disconnects all links while turning off auto-connect.
     Q_INVOKABLE void shutdown(void);
 
@@ -249,7 +248,7 @@ public:
     /// @return true: specified link is an autoconnect link
     bool isAutoconnectLink(LinkInterface* link);
 
->>>>>>> upstream/master
+//>>>>>>> upstream/master
     // Override from QGCTool
     virtual void setToolbox(QGCToolbox *toolbox);
 
@@ -270,7 +269,7 @@ signals:
 
     // Link disconnected, all vehicles on link should be gone as well.
     void linkDisconnected(LinkInterface* link);
-<<<<<<< HEAD
+//<<<<<<< HEAD
     void linkConfigurationChanged();
     
 #ifdef __mindskin__
@@ -283,7 +282,7 @@ signals:
     void bleLinkRSSIUpdated (void* peripheral_link_list);
 #endif
     
-=======
+//=======
 
     // New vehicle has been seen on the link.
     void linkActive(LinkInterface* link, int vehicleId, int vehicleFirmwareType, int vehicleType);
@@ -295,7 +294,7 @@ signals:
     void commPortsChanged();
     void linkConfigurationsChanged();
 
->>>>>>> upstream/master
+//>>>>>>> upstream/master
 private slots:
     
     
@@ -322,50 +321,47 @@ private:
 #ifndef __ios__
     SerialConfiguration* _autoconnectConfigurationsContainsPort(const QString& portName);
 #endif
-<<<<<<< HEAD
+//<<<<<<< HEAD
     
 #ifdef __mindskin__
     BLEHelper* blehelper = NULL;
 #endif
     
-    QList<LinkConfiguration*>   _linkConfigurations;    ///< List of configured links
     
-    /// List of available links kept as QSharedPointers. We use QSharedPointer since
-    /// there are other objects that maintain copies of these links in other threads.
-    /// The reference counting allows for orderly deletion.
-    QList<SharedLinkInterface>  _links;
-    
-#ifdef __mindskin__
-    //BTSerialLink is not a Qthread, so need to be handled seperately.
-    QList<BTSerialLink*> _blelinks;
-    QMutex                      _bleLinkListMutex;         ///< Mutex for thread safe access to _blelinks list
 
-#endif
     
-    QMutex                      _linkListMutex;         ///< Mutex for thread safe access to _links list
-=======
->>>>>>> upstream/master
+    //QMutex                      _linkListMutex;         ///< Mutex for thread safe access to _links list
+//=======
+//>>>>>>> upstream/master
 
     bool    _configUpdateSuspended;                     ///< true: stop updating configuration list
     bool    _configurationsLoaded;                      ///< true: Link configurations have been loaded
     bool    _connectionsSuspended;                      ///< true: all new connections should not be allowed
     QString _connectionsSuspendedReason;                ///< User visible reason for suspension
     QTimer  _portListTimer;
-<<<<<<< HEAD
-#endif
+//<<<<<<< HEAD
+//#endif
 
 #ifdef _BLE_DEBUG_
     BLEDebugTextView* bledebugview=NULL;
 #endif
 
     
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
     uint32_t _mavlinkChannelsUsedBitMask;
 
     MAVLinkProtocol*    _mavlinkProtocol;
 
     QmlObjectListModel  _links;
+#ifdef __mindskin__
+    //BTSerialLink is not a Qthread, so need to be handled seperately.
+    QList<BTSerialLink*> _blelinks;
+    //QMutex                      _bleLinkListMutex;         ///< Mutex for thread safe access to _blelinks list
+    
+#endif
+    
+    
     QmlObjectListModel  _linkConfigurations;
     QmlObjectListModel  _autoconnectConfigurations;
 

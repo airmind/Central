@@ -1468,6 +1468,12 @@ void BTSerialConfiguration::setAddress(const QHostAddress& address)
 }
 */
 
+
+QString BTSerialConfiguration::settingsURL() {
+    //for the moments;
+    return "";
+}
+
 void BTSerialConfiguration::saveSettings(QSettings& settings, const QString& root)
 {
     settings.beginGroup(root);

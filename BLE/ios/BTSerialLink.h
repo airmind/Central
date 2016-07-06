@@ -107,7 +107,7 @@ public:
     ~BTSerialConfiguration();
     
     /// From LinkConfiguration
-    int  type() { return LinkConfiguration::TypeBLESerial; }
+    LinkType  type() { return LinkConfiguration::TypeBLESerial; }
     void copyFrom(LinkConfiguration* source);
     void loadSettings(QSettings& settings, const QString& root);
     void saveSettings(QSettings& settings, const QString& root);
@@ -121,6 +121,8 @@ public:
     QString getBLEPeripheralCharacteristicID();
     
     BLE_LINK_CONNECT_STAGE getBLELinkConnectStage();
+    QString settingsURL();
+
 
 
 };

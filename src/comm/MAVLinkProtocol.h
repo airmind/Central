@@ -130,7 +130,7 @@ public:
      */
     virtual void resetMetadataForLink(const LinkInterface *link);
     
-#ifdef __ios__
+#ifdef __mindskin__
     void resetMetadataForLink(const BTSerialLink *link);
     
     void linkConnected(BTSerialLink* link);
@@ -146,11 +146,12 @@ public:
 public slots:
     /** @brief Receive bytes from a communication interface */
     void receiveBytes(LinkInterface* link, QByteArray b);
-#ifdef __ios__
+    
+#ifdef __mindskin__
     void receiveBytes(BTSerialLink* link, QByteArray b);
 #endif
     
-<<<<<<< HEAD
+//<<<<<<< HEAD
     void linkConnected(void);
     void linkDisconnected(void);
 
@@ -176,8 +177,8 @@ public slots:
     
     /** @brief Set the rate at which heartbeats are emitted */
     void setHeartbeatRate(int rate);
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
     /** @brief Set the system id of this application */
     void setSystemId(int id);
 
@@ -303,16 +304,16 @@ private slots:
     void _vehicleCountChanged(int count);
     
 private:
-<<<<<<< HEAD
+//<<<<<<< HEAD
     void _linkStatusChanged(LinkInterface* link, bool connected);
 #ifdef __ios__
     void _linkStatusChanged(BTSerialLink* link, bool connected);
 #endif
-=======
+//=======
     void _sendMessage(mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
->>>>>>> upstream/master
+//>>>>>>> upstream/master
 
 #ifndef __mobile__
     bool _closeLogFile(void);
@@ -327,7 +328,7 @@ private:
     static const char*  _tempLogFileTemplate;    ///< Template for temporary log file
     static const char*  _logFileExtension;       ///< Extension for log files
 #endif
-<<<<<<< HEAD
+//<<<<<<< HEAD
     
     /// List of all links connected to protocol. We keep SharedLinkInterface objects
     /// which are QSharedPointer's in order to maintain reference counts across threads.
@@ -340,8 +341,8 @@ private:
     QTimer  _heartbeatTimer;    ///< Timer to emit heartbeats
     int     _heartbeatRate;     ///< Heartbeat rate, controls the timer interval
     bool    _heartbeatsEnabled; ///< Enabled/disable heartbeat emission
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
 
     LinkManager*            _linkMgr;
     MultiVehicleManager*    _multiVehicleManager;

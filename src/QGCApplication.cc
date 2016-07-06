@@ -29,6 +29,10 @@
 #include <QBluetoothLocalDevice>
 #endif
 
+#ifdef __mindskin__
+#include "MindSkinRootView.h"
+#endif
+
 #include <QDebug>
 
 #include "VideoStreaming.h"
@@ -412,11 +416,58 @@ bool QGCApplication::_initForNormalAppBoot(void)
     connect(this, &QGCApplication::lastWindowClosed, this, QGCApplication::quit);
 
 #ifdef __mobile__
+
+#ifdef __mindskin__
+    //mindskin entry;
+    //load root window for mindskin;
+    _qmlAppEngine = new QQmlApplicationEngine(this);
+    _qmlAppEngine->addImportPath("qrc:/qml");
+    _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
+    _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
+    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
+    
+
+#ifdef __ios__
+    //launch mindskin;
+    
+    MindSkinRootView* skinroot ＝ MindSkinRootView::sharedInstance();
+    
+    skinroot -> launchMindskinUI();
+    
+    /*
+    self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
+    
+    // Override point for customization after application launch.
+    self.window.backgroundColor = [UIColor whiteColor];
+    
+    loginViewController=[[MainLoginViewController alloc] initWithNibName:@"VehicleSelectionViewController" bundle:nil];
+    loginViewController.managedObjectContext=self.managedObjectContext;
+    
+    
+    
+    self.navController = [[UINavigationController alloc]
+                          initWithRootViewController:loginViewController];
+    self.navController.navigationBar.barStyle= UIBarStyleBlackTranslucent;
+    //[navController setNavigationBarHidden:YES animated:YES];
+    
+    
+    window.rootViewController=self.navController;
+    //[window addSubview:navController.view];
+    
+    
+    [window makeKeyAndVisible];
+*/
+    
+#endif
+#ifdef __android__
+#endif
+#else
     _qmlAppEngine = new QQmlApplicationEngine(this);
     _qmlAppEngine->addImportPath("qrc:/qml");
     _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
     _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
     _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
+#endif //__mindskin__
 #else
     // Start the user interface
     MainWindow* mainWindow = MainWindow::_create();
@@ -425,7 +476,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
     // Now that main window is up check for lost log files
     connect(this, &QGCApplication::checkForLostLogFiles, toolbox()->mavlinkProtocol(), &MAVLinkProtocol::checkForLostLogFiles);
     emit checkForLostLogFiles();
-#endif
+#endif //__mobile__
 
     // Load known link configurations
     toolbox()->linkManager()->loadLinkConfigurationList();

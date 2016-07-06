@@ -182,7 +182,7 @@ void MAVLinkProtocol::resetMetadataForLink(const LinkInterface *link)
     currLossCounter[channel] = 0;
 }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 void MAVLinkProtocol::linkConnected(void)
 {
     LinkInterface* link = qobject_cast<LinkInterface*>(QObject::sender());
@@ -511,8 +511,8 @@ void MAVLinkProtocol::_linkStatusChanged(LinkInterface* link, bool connected)
 
 
 
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
 /**
  * This method parses all incoming bytes and constructs a MAVLink packet.
  * It can handle multiple links in parallel, as each link has it's own buffer/

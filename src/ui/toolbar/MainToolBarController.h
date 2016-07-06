@@ -98,7 +98,7 @@ signals:
 
 private slots:
     void _activeVehicleChanged          (Vehicle* vehicle);
-<<<<<<< HEAD
+//<<<<<<< HEAD
     void _updateConfigurations          ();
     void _linkConnected                 (LinkInterface* link);
     void _linkDisconnected              (LinkInterface* link);
@@ -110,8 +110,8 @@ private slots:
     void _bleLinkRSSIUpdated (void* peripheral_link_list);
 #endif
     void _leaveMessageView              ();
-=======
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
     void _setProgressBarValue           (float value);
     void _telemetryChanged              (LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise);
 
