@@ -767,7 +767,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         }
         else {
             //menutoolbar call back;
-            ((MainToolBarController*)delegate)->onConnect(QString::fromNSString([conarray objectAtIndex:idx]));
+            //((MainToolBarController*)delegate)->onConnect(QString::fromNSString([conarray objectAtIndex:idx]));
         }
         
     }

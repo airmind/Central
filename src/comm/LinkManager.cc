@@ -166,7 +166,7 @@ bool LinkManager::disconnectBLELink(BTSerialLink* link) {
 
 
 
-//mew signal - have a try;
+//new signal - have a try;
 void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
     //inrangelist/outrangelist have platform dependent types so can not use directly in implementation. needs type conversion.
     emit peripheralsDiscovered(inrangelist, outrangelist);
@@ -330,11 +330,7 @@ void LinkManager::_addLink(LinkInterface* link)
 }
 
 #ifdef __mindskin__
-
-const QList<BTSerialLink*> LinkManager::getBTSerialLinks() {
-    return _blelinks;
-}
-
+/*
 
 bool LinkManager::containsLink(BTSerialLink* link) {
     bool found = false;
@@ -346,9 +342,10 @@ bool LinkManager::containsLink(BTSerialLink* link) {
     }
     return found;
 }
-
+*/
 
 void LinkManager::_deleteLink(BTSerialLink* link) {
+    /*
     Q_ASSERT(link);
     
     //_bleLinkListMutex.lock();
@@ -372,6 +369,24 @@ void LinkManager::_deleteLink(BTSerialLink* link) {
     
     // Emit removal of link
     emit linkDeleted(link);
+*/
+    if (thread() != QThread::currentThread()) {
+        qWarning() << "_deleteLink called from incorrect thread";
+        return;
+    }
+    
+    if (!link) {
+        return;
+    }
+    
+    // Free up the mavlink channel associated with this link
+    _mavlinkChannelsUsedBitMask &= ~(1 << link->getMavlinkChannel());
+    
+    _blelinks.removeOne(link);
+    delete link;
+    
+    // Emit removal of link
+    emit linkDeleted(link);
 
 }
 
@@ -380,7 +395,8 @@ void LinkManager::_addLink(BTSerialLink* link) {
     
    // _bleLinkListMutex.lock();
     
-    if (!containsLink(link)) {
+    //if (!containsLink(link)) {
+    if (_blelinks.contains(link)) {
         // Find a mavlink channel to use for this link
         for (int i=0; i<32; i++) {
             if (!(_mavlinkChannelsUsedBitMask && 1 << i)) {

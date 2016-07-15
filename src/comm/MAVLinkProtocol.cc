@@ -183,43 +183,23 @@ void MAVLinkProtocol::resetMetadataForLink(const LinkInterface *link)
 }
 
 //<<<<<<< HEAD
-void MAVLinkProtocol::linkConnected(void)
-{
-    LinkInterface* link = qobject_cast<LinkInterface*>(QObject::sender());
-    Q_ASSERT(link);
-    
-    _linkStatusChanged(link, true);
-}
-
-void MAVLinkProtocol::linkDisconnected(void)
-{
-    LinkInterface* link = qobject_cast<LinkInterface*>(QObject::sender());
-    Q_ASSERT(link);
-    
-    _linkStatusChanged(link, false);
-}
-
 #ifdef __mindskin__
-void MAVLinkProtocol::linkConnected(BTSerialLink* link) {
-    Q_ASSERT(link);
-    
-    _linkStatusChanged(link, true);
-
-}
-
-
-void MAVLinkProtocol::linkDisconnected(BTSerialLink* link) {
-    Q_ASSERT(link);
-    
-    _linkStatusChanged(link, false);
-
-}
 
 void MAVLinkProtocol::resetMetadataForLink(const BTSerialLink *link) {
     
 }
 
+void MAVLinkProtocol::linkConnected(BTSerialLink* link) {
+    
+    
+}
 
+void MAVLinkProtocol::linkDisconnected(BTSerialLink* link) {
+    
+}
+
+
+/*
 void MAVLinkProtocol::_linkStatusChanged(BTSerialLink* link, bool connected)
 {
     qCDebug(MAVLinkProtocolLog) << "_linkStatusChanged" << QString("%1").arg((long)link, 0, 16) << connected;
@@ -256,7 +236,7 @@ void MAVLinkProtocol::_linkStatusChanged(BTSerialLink* link, bool connected)
         Q_ASSERT(found);
     }
 }
-
+*/
 
 /**
  * This method parses all incoming bytes and constructs a MAVLink packet.
@@ -270,7 +250,7 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
     // Since receiveBytes signals cross threads we can end up with signals in the queue
     // that come through after the link is disconnected. For these we just drop the data
     // since the link is closed.
-    if (!_linkMgr->containsLink(link)) {
+    if (!_linkMgr->getBTSeriallinks()->contains(link)) {
         return;
     }
     
@@ -334,7 +314,7 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 {
                     mavlink_message_t msg;
                     mavlink_msg_ping_pack(getSystemId(), getComponentId(), &msg, ping.time_usec, ping.seq, message.sysid, message.compid);
-                    sendMessage(msg);
+                    _sendMessage(msg);
                 }
             }
             
@@ -343,8 +323,28 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 // process telemetry status message
                 mavlink_radio_status_t rstatus;
                 mavlink_msg_radio_status_decode(&message, &rstatus);
+                int rssi = rstatus.rssi,
+                remrssi = rstatus.remrssi;
+                // 3DR Si1k radio needs rssi fields to be converted to dBm
+                if (message.sysid == '3' && message.compid == 'D') {
+                    /* Per the Si1K datasheet figure 23.25 and SI AN474 code
+                     * samples the relationship between the RSSI register
+                     * and received power is as follows:
+                     *
+                     *                       10
+                     * inputPower = rssi * ------ 127
+                     *                       19
+                     *
+                     * Additionally limit to the only realistic range [-120,0] dBm
+                     */
+                    rssi    = qMin(qMax(qRound(static_cast<qreal>(rssi)    / 1.9 - 127.0), - 120), 0);
+                    remrssi = qMin(qMax(qRound(static_cast<qreal>(remrssi) / 1.9 - 127.0), - 120), 0);
+                } else {
+                    rssi = (int8_t) rstatus.rssi;
+                    remrssi = (int8_t) rstatus.remrssi;
+                }
                 
-                emit radioStatusChanged(link, rstatus.rxerrors, rstatus.fixed, rstatus.rssi, rstatus.remrssi,
+                emit radioStatusChanged(link, rstatus.rxerrors, rstatus.fixed, rssi, remrssi,
                                         rstatus.txbuf, rstatus.noise, rstatus.remnoise);
             }
             
@@ -377,11 +377,11 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 }
                 
                 // Check for the vehicle arming going by. This is used to trigger log save.
-                if (!_logWasArmed && message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
+                if (!_logPromptForSave && message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
                     mavlink_heartbeat_t state;
                     mavlink_msg_heartbeat_decode(&message, &state);
                     if (state.base_mode & MAV_MODE_FLAG_DECODE_POSITION_SAFETY) {
-                        _logWasArmed = true;
+                        _logPromptForSave = true;
                     }
                 }
             }
@@ -393,12 +393,9 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 _startLogging();
 #endif
                 
-                // Notify the vehicle manager of the heartbeat. This will create/update vehicles as needed.
                 mavlink_heartbeat_t heartbeat;
                 mavlink_msg_heartbeat_decode(&message, &heartbeat);
-                if (!_multiVehicleManager->notifyHeartbeatInfo(link, message.sysid, heartbeat)) {
-                    continue;
-                }
+                emit vehicleHeartbeatInfo(link, message.sysid, heartbeat.mavlink_version, heartbeat.autopilot, heartbeat.type);
             }
             
             // Increase receive counter
@@ -436,11 +433,12 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
             {
                 // Calculate new loss ratio
                 // Receive loss
-                float receiveLoss = (double)currLossCounter[mavlinkChannel]/(double)(currReceiveCounter[mavlinkChannel]+currLossCounter[mavlinkChannel]);
-                receiveLoss *= 100.0f;
+                float receiveLossPercent = (double)currLossCounter[mavlinkChannel]/(double)(currReceiveCounter[mavlinkChannel]+currLossCounter[mavlinkChannel]);
+                receiveLossPercent *= 100.0f;
                 currLossCounter[mavlinkChannel] = 0;
                 currReceiveCounter[mavlinkChannel] = 0;
-                emit receiveLossChanged(message.sysid, receiveLoss);
+                emit receiveLossPercentChanged(message.sysid, receiveLossPercent);
+                emit receiveLossTotalChanged(message.sysid, totalLossCounter[mavlinkChannel]);
             }
             
             // The packet is emitted as a whole, as it is only 255 - 261 bytes short
@@ -451,15 +449,13 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
             // Multiplex message if enabled
             if (m_multiplexingEnabled)
             {
-                // Get all links connected to this unit
-                QList<BTSerialLink*> links = _linkMgr->getBTSerialLinks();
-                
                 // Emit message on all links that are currently connected
-                foreach (BTSerialLink* currLink, links)
-                {
+                for (int i=0; i<_linkMgr->getBTSeriallinks()->count(); i++) {
+                    BTSerialLink* currLink = _linkMgr->getBTSeriallinks()->value<BTSerialLink*>(i);
+                    
                     // Only forward this message to the other links,
                     // not the link the message was received on
-                    if (currLink != link) sendMessage(currLink, message, message.sysid, message.compid);
+                    if (currLink && currLink != link) _sendMessage(currLink, message, message.sysid, message.compid);
                 }
             }
         }
@@ -469,7 +465,7 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
 
 #endif
 
-
+/*
 void MAVLinkProtocol::_linkStatusChanged(LinkInterface* link, bool connected)
 {
     qCDebug(MAVLinkProtocolLog) << "_linkStatusChanged" << QString("%1").arg((long)link, 0, 16) << connected;
@@ -507,7 +503,7 @@ void MAVLinkProtocol::_linkStatusChanged(LinkInterface* link, bool connected)
     }
 }
 
-
+*/
 
 
 
@@ -767,29 +763,22 @@ int MAVLinkProtocol::getComponentId()
  */
 void MAVLinkProtocol::_sendMessage(mavlink_message_t message)
 {
-<<<<<<< HEAD
-#ifndef __ios__
-    // Get all links connected to this unit
-    QList<LinkInterface*> links = _linkMgr->getLinks();
-
-    // Emit message on all links that are currently connected
-    QList<LinkInterface*>::iterator i;
-#else
-    QList<BTSerialLink*> links = _linkMgr->getBTSerialLinks();
-    
-    QList<BTSerialLink*>::iterator i;
-#endif
-    
-    for (i = links.begin(); i != links.end(); ++i)
-    {
-        sendMessage(*i, message);
-//        qDebug() << __FILE__ << __LINE__ << "SENT MESSAGE OVER" << ((LinkInterface*)*i)->getName() << "LIST SIZE:" << links.size();
-=======
     for (int i=0; i<_linkMgr->links()->count(); i++) {
+        
         LinkInterface* link = _linkMgr->links()->value<LinkInterface*>(i);
         _sendMessage(link, message);
->>>>>>> upstream/master
     }
+    
+#ifdef __mindskin__
+
+    for (int i=0; i<_linkMgr->getBTSeriallinks()->count(); i++) {
+        
+        BTSerialLink* link = _linkMgr->getBTSeriallinks()->value<BTSerialLink*>(i);
+        _sendMessage(link, message);
+
+    }
+#endif
+
 }
 
 /**
@@ -836,7 +825,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
     }
 }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 
 
 #ifdef __mindskin__
@@ -844,7 +833,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
  * @param link the link to send the message over
  * @param message message to send
  */
-void MAVLinkProtocol::sendMessage(BTSerialLink* link, mavlink_message_t message)
+void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message)
 {
     // Create buffer
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
@@ -876,7 +865,7 @@ void MAVLinkProtocol::sendMessage(BTSerialLink* link, mavlink_message_t message)
  * @param systemid id of the system the message is originating from
  * @param componentid id of the component the message is originating from
  */
-void MAVLinkProtocol::sendMessage(BTSerialLink* link, mavlink_message_t message, quint8 systemid, quint8 componentid)
+void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message, quint8 systemid, quint8 componentid)
 {
     // Create buffer
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
@@ -899,6 +888,7 @@ void MAVLinkProtocol::sendMessage(BTSerialLink* link, mavlink_message_t message,
  * periodic heartbeat emission. It will be just sent in addition.
  * @return mavlink_message_t heartbeat message sent on serial link
  */
+/*
 void MAVLinkProtocol::sendHeartbeat()
 {
     if (_heartbeatsEnabled)
@@ -919,6 +909,7 @@ void MAVLinkProtocol::sendHeartbeat()
 }
 
 /** @param enabled true to enable heartbeats emission at _heartbeatRate, false to disable */
+/*
 void MAVLinkProtocol::enableHeartbeats(bool enabled)
 {
     _heartbeatsEnabled = enabled;
@@ -927,6 +918,8 @@ void MAVLinkProtocol::enableHeartbeats(bool enabled)
 
 =======
 >>>>>>> upstream/master
+*/
+
 void MAVLinkProtocol::enableMultiplexing(bool enabled)
 {
     bool changed = false;

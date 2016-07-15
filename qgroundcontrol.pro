@@ -346,6 +346,8 @@ iOSBuild {
         mindskin/ios/ConnectPopoverViewController.h \
         mindskin/ios/MindStickButton.h \
         mindskin/ios/MindStickButtonViewController.h \
+        mindskin/MindSkinRootView.h \
+        mindskin/ios/MindSkinRootView_impl_objc.h \
 
     SOURCES += \
         mindskin/ios/MindStickButton.cpp \
@@ -354,6 +356,8 @@ iOSBuild {
         BLE/ios/BTSerialLink.mm \
         mindskin/ios/ConnectPopoverViewController.mm \
         mindskin/ios/MindStickButtonViewController.mm \
+        mindskin/ios/MindSkinRootView_impl_objc.mm \
+
 
     DebugBuild {
         HEADERS += \

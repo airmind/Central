@@ -13,6 +13,36 @@
 #include "MindSkinRootView_impl_objc.h"
 
 /// ///////////////////////////////////////////////
+///     @brief MindSkinRootView
+///
+///     @author Roland
+
+
+MindSkinRootView::MindSkinRootView() {
+    
+}
+
+
+MindSkinRootView* MindSkinRootView::sharedInstance() {
+    
+    static MindSkinRootView* instance;
+
+    if (!instance)
+        instance = new MindSkinRootView;
+    return instance;
+}
+
+void MindSkinRootView::launchMindskinUI(){
+    
+}
+
+void MindSkinRootView::shutdown(){
+    
+}
+
+
+
+/// ///////////////////////////////////////////////
 ///     @brief MindSkinRootView_wrapper
 ///
 ///     @author
@@ -26,7 +56,7 @@ public:
     MindSkinRootView_wrapper();
     ~MindSkinRootView_wrapper();
     
-    -(void)presentMindSkinRootUI();
+    void presentMindSkinRootUI();
     
 };
 
@@ -38,7 +68,7 @@ MindSkinRootView_wrapper::~MindSkinRootView_wrapper () {
     
 }
 
-MindSkinRootView_wrapper::presentMindSkinRootUI() {
+void MindSkinRootView_wrapper::presentMindSkinRootUI() {
     [skinroot_objc presentMindSkinRootUI];
 }
 
@@ -65,7 +95,7 @@ MindSkinRootView_wrapper::presentMindSkinRootUI() {
     
 }
 
--(void)presentMindSkinRootUI() {
+-(void)presentMindSkinRootUI {
     UIViewController* rootcontroller = [self getUIViewRootController];
     
     //present Mindskin UI entry;

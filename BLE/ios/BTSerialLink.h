@@ -9,7 +9,7 @@
 #ifndef qgroundcontrol_BTSerialLink_h
 #define qgroundcontrol_BTSerialLink_h
 
-
+#include <QObject>
 #include <QString>
 #include <QList>
 #include <QMap>
@@ -134,9 +134,9 @@ public:
  
  **/
 
-class BTSerialLink //: public LinkInterface
+class BTSerialLink : public QObject//: public LinkInterface
 {
-    //Q_OBJECT ??
+    Q_OBJECT
     
     //friend class TCPLinkUnitTest;
     friend class BTSerialConfiguration;
@@ -152,11 +152,25 @@ private:
     //for connected link;
     int filteredLinkRSSI;
     
+    //from LinkInterface
+    bool _active;       ///< true: link is actively receiving mavlink messages
+    
+    bool _mavlinkChannelSet;    ///< true: _mavlinkChannel has been set
+    uint8_t _mavlinkChannel;    ///< mavlink channel to use for this link, as used by mavlink_parse_char
+
+
 public:
     
     //set link operation call backs;
     void setLinkCallbackDelegte(void*);
     void setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler);
+    
+    Q_PROPERTY(bool active      READ active         WRITE setActive         NOTIFY activeChanged)
+
+    // Property accessors
+    bool active(void)                       { return _active; }
+    void setActive(bool active)             { _active = active; emit activeChanged(active); }
+
     
     
     //QTcpSocket* getSocket(void) { return _socket; }
@@ -187,7 +201,7 @@ public:
     uint8_t getMavlinkChannel(void) const { Q_ASSERT(_mavlinkChannelSet); return _mavlinkChannel; }
 
     
-    public slots:
+public slots:
     
     // From LinkInterface
     //void waitForBytesWritten(int msecs);
@@ -212,10 +226,10 @@ public:
     void didConnect();
     void didDisconnect();
     
-    protected slots:
+protected slots:
     void _socketError(QAbstractSocket::SocketError socketError);
     
-    // From LinkInterface
+
     virtual void readBytes(void);
     
     virtual bool isLogReplay(void) { return false; }
@@ -223,10 +237,14 @@ public:
     /// Sets the mavlink channel to use for this link
     void _setMavlinkChannel(uint8_t channel) { Q_ASSERT(!_mavlinkChannelSet); _mavlinkChannelSet = true; _mavlinkChannel = channel; }
 
-    bool _mavlinkChannelSet;    ///< true: _mavlinkChannel has been set
-    uint8_t _mavlinkChannel;    ///< mavlink channel to use for this link, as used by mavlink_parse_char
 
+signals:
+    // From LinkInterface
+    void autoconnectChanged(bool autoconnect);
+    void activeChanged(bool active);
+    void _invokeWriteBytes(QByteArray);
     
+
 
 protected:
     // From LinkInterface->QThread

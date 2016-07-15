@@ -152,31 +152,24 @@ public slots:
 #endif
     
 //<<<<<<< HEAD
-    void linkConnected(void);
-    void linkDisconnected(void);
+    //void linkConnected(void);
+    //void linkDisconnected(void);
 
 
  
 
     
     /** @brief Send MAVLink message through serial interface */
-    void sendMessage(mavlink_message_t message);
+    //void sendMessage(mavlink_message_t message);
     /** @brief Send MAVLink message */
-    void sendMessage(LinkInterface* link, mavlink_message_t message);
+    //void sendMessage(LinkInterface* link, mavlink_message_t message);
     /** @brief Send MAVLink message with correct system / component ID */
-    void sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
+    //void sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
     
     
-#ifdef __ios__
-    /** @brief Send MAVLink message */
-    void sendMessage(BTSerialLink* link, mavlink_message_t message);
-    /** @brief Send MAVLink message with correct system / component ID */
-    void sendMessage(BTSerialLink* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
-  
-#endif
     
     /** @brief Set the rate at which heartbeats are emitted */
-    void setHeartbeatRate(int rate);
+    //void setHeartbeatRate(int rate);
 //=======
 //>>>>>>> upstream/master
     /** @brief Set the system id of this application */
@@ -248,6 +241,10 @@ signals:
     /// Heartbeat received on link
     void vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 
+#ifdef __mindskin__
+    void vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
+#endif
+    
     /** @brief Message received and directly copied via signal */
     void messageReceived(LinkInterface* link, mavlink_message_t message);
     /** @brief Emitted if multiplexing is started / stopped */
@@ -289,7 +286,7 @@ signals:
      */
     void radioStatusChanged(LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi,
     unsigned txbuf, unsigned noise, unsigned remnoise);
-#ifdef __ios__
+#ifdef __mindskin__
     void radioStatusChanged(BTSerialLink* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
                             unsigned txbuf, unsigned noise, unsigned remnoise);
     
@@ -305,16 +302,25 @@ private slots:
     
 private:
 //<<<<<<< HEAD
-    void _linkStatusChanged(LinkInterface* link, bool connected);
-#ifdef __ios__
-    void _linkStatusChanged(BTSerialLink* link, bool connected);
-#endif
+    //void _linkStatusChanged(LinkInterface* link, bool connected);
+//#ifdef __ios__
+    //void _linkStatusChanged(BTSerialLink* link, bool connected);
+//#endif
 //=======
     void _sendMessage(mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
 //>>>>>>> upstream/master
 
+#ifdef __mindskin__
+    /** @brief Send MAVLink message */
+    void _sendMessage(BTSerialLink* link, mavlink_message_t message);
+    /** @brief Send MAVLink message with correct system / component ID */
+    void _sendMessage(BTSerialLink* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
+    
+#endif
+
+    
 #ifndef __mobile__
     bool _closeLogFile(void);
     void _startLogging(void);
@@ -333,14 +339,14 @@ private:
     /// List of all links connected to protocol. We keep SharedLinkInterface objects
     /// which are QSharedPointer's in order to maintain reference counts across threads.
     /// This way Link deletion works correctly.
-    QList<SharedLinkInterface> _connectedLinks;
-#ifdef __ios__
-    QList<BTSerialLink*> _connectedBLELinks;
-#endif
+    //QList<SharedLinkInterface> _connectedLinks;
+//#ifdef __ios__
+    //QList<BTSerialLink*> _connectedBLELinks;
+//#endif
     
-    QTimer  _heartbeatTimer;    ///< Timer to emit heartbeats
-    int     _heartbeatRate;     ///< Heartbeat rate, controls the timer interval
-    bool    _heartbeatsEnabled; ///< Enabled/disable heartbeat emission
+    //QTimer  _heartbeatTimer;    ///< Timer to emit heartbeats
+    //int     _heartbeatRate;     ///< Heartbeat rate, controls the timer interval
+    //bool    _heartbeatsEnabled; ///< Enabled/disable heartbeat emission
 //=======
 //>>>>>>> upstream/master
 

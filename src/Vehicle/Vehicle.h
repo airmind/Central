@@ -224,9 +224,9 @@ public:
             FirmwarePluginManager*  firmwarePluginManager,
             AutoPilotPluginManager* autopilotPluginManager,
             JoystickManager*        joystickManager);
-<<<<<<< HEAD
+//<<<<<<< HEAD
     
-#ifdef __ios__
+#ifdef __mindskin__
     Vehicle(BTSerialLink*          link,
             int                     vehicleId,
             MAV_AUTOPILOT           firmwareType,
@@ -236,13 +236,13 @@ public:
             JoystickManager*        joystickManager);
     
 #endif
-=======
+//=======
 
     // The following is used to create a disconnected Vehicle. A disconnected vehicle is primarily used to access FactGroup information
     // without needing a real connection.
     Vehicle(QObject* parent = NULL);
 
->>>>>>> upstream/master
+//>>>>>>> upstream/master
     ~Vehicle();
 
     Q_PROPERTY(int                  id                      READ id                                     CONSTANT)
@@ -613,10 +613,12 @@ signals:
 private slots:
     void _mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message);
 //<<<<<<< HEAD
-#ifdef __ios__
+#ifdef __mindskin__
     void _mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message);
+    void _linkInactiveOrDeleted(BTSerialLink* link);
+
 #endif
-    void _linkDisconnected(LinkInterface* link);
+    //void _linkDisconnected(LinkInterface* link);
 //=======
     void _linkInactiveOrDeleted(LinkInterface* link);
 //>>>>>>> upstream/master
@@ -650,7 +652,7 @@ private:
     bool _containsLink(LinkInterface* link);
     void _addLink(LinkInterface* link);
     
-#ifdef __ios__
+#ifdef __mindskin__
     bool _containsLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
     
@@ -694,7 +696,7 @@ private:
     /// This way Link deletion works correctly.
     //QList<SharedLinkInterface> _links;
     
-#ifdef __ios__
+#ifdef __mindskin__
     QList<BTSerialLink*> _blelinks;
     
 #endif

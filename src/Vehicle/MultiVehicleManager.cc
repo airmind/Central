@@ -65,8 +65,18 @@ void MultiVehicleManager::setToolbox(QGCToolbox *toolbox)
 
    QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
    qmlRegisterUncreatableType<MultiVehicleManager>("QGroundControl.MultiVehicleManager", 1, 0, "MultiVehicleManager", "Reference only");
+    
+#ifndef __mindskin__
+    connect(_mavlinkProtocol, &MAVLinkProtocol::vehicleHeartbeatInfo, this, &MultiVehicleManager::_vehicleHeartbeatInfo);
+#else 
+    
+    connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(LinkInterface*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
+    connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(BTSerialLink*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
 
-   connect(_mavlinkProtocol, &MAVLinkProtocol::vehicleHeartbeatInfo, this, &MultiVehicleManager::_vehicleHeartbeatInfo);
+    
+#endif
+    
+    
 }
 
 void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
@@ -120,13 +130,67 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
 
 }
 
-#ifdef __ios__
 
+#ifdef __mindskin__
+
+void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
+{
+    if (_ignoreVehicleIds.contains(vehicleId) || getVehicleById(vehicleId)
+        || vehicleId == 0) {
+        return;
+    }
+    
+    qCDebug(MultiVehicleManagerLog()) << "Adding new vehicle link:vehicleId:vehicleMavlinkVersion:vehicleFirmwareType:vehicleType "
+    << link->getName()
+    << vehicleId
+    << vehicleMavlinkVersion
+    << vehicleFirmwareType
+    << vehicleType;
+    
+    if (vehicleId == _mavlinkProtocol->getSystemId()) {
+        _app->showMessage(QString("Warning: A vehicle is using the same system id as QGroundControl: %1").arg(vehicleId));
+    }
+    
+    QSettings settings;
+    bool mavlinkVersionCheck = settings.value("VERSION_CHECK_ENABLED", true).toBool();
+    if (mavlinkVersionCheck && vehicleMavlinkVersion != MAVLINK_VERSION) {
+        _ignoreVehicleIds += vehicleId;
+        _app->showMessage(QString("The MAVLink protocol version on vehicle #%1 and QGroundControl differ! "
+                                  "It is unsafe to use different MAVLink versions. "
+                                  "QGroundControl therefore refuses to connect to vehicle #%1, which sends MAVLink version %2 (QGroundControl uses version %3).").arg(vehicleId).arg(vehicleMavlinkVersion).arg(MAVLINK_VERSION));
+        return;
+    }
+    
+    Vehicle* vehicle = new Vehicle(link, vehicleId, (MAV_AUTOPILOT)vehicleFirmwareType, (MAV_TYPE)vehicleType, _firmwarePluginManager, _autopilotPluginManager, _joystickManager);
+    connect(vehicle, &Vehicle::allLinksInactive, this, &MultiVehicleManager::_deleteVehiclePhase1);
+    connect(vehicle->autopilotPlugin(), &AutoPilotPlugin::parametersReadyChanged, this, &MultiVehicleManager::_autopilotParametersReadyChanged);
+    
+    _vehicles.append(vehicle);
+    
+    emit vehicleAdded(vehicle);
+    
+    setActiveVehicle(vehicle);
+    
+    // Mark link as active
+    link->setActive(true);
+    
+#ifdef __mobile__
+    if(_vehicles.count() == 1) {
+        //-- Once a vehicle is connected, keep screen from going off
+        qCDebug(MultiVehicleManagerLog) << "QAndroidJniObject::keepScreenOn";
+        MobileScreenMgr::setKeepScreenOn(true);
+    }
+#endif
+    
+}
+
+
+/*
 bool MultiVehicleManager::notifyHeartbeatInfo(BTSerialLink* link, int vehicleId, mavlink_heartbeat_t& heartbeat)
 {
     if (!getVehicleById(vehicleId) && !_ignoreVehicleIds.contains(vehicleId)) {
         if (vehicleId == _mavlinkProtocol->getSystemId()) {
-            _app->showToolBarMessage(QString("Warning: A vehicle is using the same system id as QGroundControl: %1").arg(vehicleId));
+            //_app->showToolBarMessage(QString("Warning: A vehicle is using the same system id as QGroundControl: %1").arg(vehicleId));
         }
         
         QSettings settings;
@@ -158,6 +222,7 @@ bool MultiVehicleManager::notifyHeartbeatInfo(BTSerialLink* link, int vehicleId,
     
     return true;
 }
+*/
 
 #endif
 

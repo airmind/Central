@@ -137,7 +137,7 @@ public:
 
 //<<<<<<< HEAD
     /// Returns list of all links
-    const QList<LinkInterface*> getLinks();
+    //const QList<LinkInterface*> getLinks();
 
     // Returns list of all serial links
 #ifndef __ios__
@@ -146,7 +146,9 @@ public:
     
 #ifdef __mindskin__
     //BTSerialLink* getlink();
-    const QList<BTSerialLink*> getBTSerialLinks();
+    //const QList<BTSerialLink*> getBTSerialLinks();
+    QmlObjectListModel* getBTSeriallinks               (void) { return &_blelinks; }
+
     //for link operation call backs;
     void setCallbackDelegate(void*);
     bool discoverBTLinks(void * delegate);
@@ -201,10 +203,10 @@ public:
 
 //<<<<<<< HEAD
     /// Returns true if the link manager is holding this link
-    bool containsLink(LinkInterface* link);
+    //bool containsLink(LinkInterface* link);
 
 #ifdef __mindskin__
-    bool containsLink(BTSerialLink* link);
+    //bool containsLink(BTSerialLink* link);
 #endif
     
     /// Returns the QSharedPointer for this link. You must use SharedLinkInterface if you are going to
@@ -280,6 +282,12 @@ signals:
     //new signal for discovering;
     void peripheralsDiscovered(void* inrangelist, void* outrangelist);
     void bleLinkRSSIUpdated (void* peripheral_link_list);
+    
+    // New vehicle has been seen on the link.
+    void linkActive(BTSerialLink* link, int vehicleId, int vehicleFirmwareType, int vehicleType);
+    // No longer hearing from any vehicles on this link.
+    void linkInactive(BTSerialLink* link);
+
 #endif
     
 //=======
@@ -356,8 +364,12 @@ private:
     QmlObjectListModel  _links;
 #ifdef __mindskin__
     //BTSerialLink is not a Qthread, so need to be handled seperately.
-    QList<BTSerialLink*> _blelinks;
+    //QList<BTSerialLink*> _blelinks;
     //QMutex                      _bleLinkListMutex;         ///< Mutex for thread safe access to _blelinks list
+    
+    //change blelinks type according to master update;
+    QmlObjectListModel  _blelinks;
+    
     
 #endif
     

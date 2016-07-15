@@ -41,19 +41,23 @@ MainToolBarController::MainToolBarController(QObject* parent)
     , _telemetryLRSSI(0)
 {
     _activeVehicleChanged(qgcApp()->toolbox()->multiVehicleManager()->activeVehicle());
-<<<<<<< HEAD
+//<<<<<<< HEAD
     
     // Link signals
-    connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConfigurationChanged, this, &MainToolBarController::_updateConfigurations);
+    //connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConfigurationChanged, this, &MainToolBarController::_updateConfigurations);
 #ifndef __mindskin__
-    connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConnected,            this, &MainToolBarController::_linkConnected);
-    connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkDisconnected,         this, &MainToolBarController::_linkDisconnected);
+    //connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkConnected,            this, &MainToolBarController::_linkConnected);
+    //connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::linkDisconnected,         this, &MainToolBarController::_linkDisconnected);
+    connect(qgcApp()->toolbox()->mavlinkProtocol(),     &MAVLinkProtocol::radioStatusChanged, this, &MainToolBarController::_telemetryChanged);
+
 #else
     //has to use static cast for overloaded signals. Qt is terrible ...
-    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkConnected));
+    /*connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkConnected));
     
-    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected),         this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkDisconnected));
+    connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDisconnected),         this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkDisconnected));*/
+    connect(qgcApp()->toolbox()->mavlinkProtocol(),     static_cast<void (MAVLinkProtocol::*)(LinkInterface*,unsigned, unsigned, int, int, unsigned, unsigned, unsigned)>(&MAVLinkProtocol::radioStatusChanged), this, static_cast<void (MainToolBarController::*)(LinkInterface*, unsigned, unsigned, int, int, unsigned, unsigned, unsigned)>(&MainToolBarController::_telemetryChanged)); //telemetryChanged overload?
 
+    
     //for ble link;
     connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(BTSerialLink*)>(&MainToolBarController::_linkConnected));
     
@@ -61,17 +65,19 @@ MainToolBarController::MainToolBarController(QObject* parent)
 
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::peripheralsDiscovered,      this, &MainToolBarController::_peripheralsDiscovered);
     connect(qgcApp()->toolbox()->linkManager(),     &LinkManager::bleLinkRSSIUpdated,      this, &MainToolBarController::_bleLinkRSSIUpdated);
+    
+    connect(qgcApp()->toolbox()->mavlinkProtocol(),     static_cast<void (MAVLinkProtocol::*)(BTSerialLink*,unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)>(&MAVLinkProtocol::radioStatusChanged), this, static_cast<void (MainToolBarController::*)(BTSerialLink*, unsigned, unsigned, int, int, unsigned, unsigned, unsigned)>(&MainToolBarController::_telemetryChanged));
+    
 
 #endif
     
     // RSSI (didn't like standard connection)
-    connect(qgcApp()->toolbox()->mavlinkProtocol(),
+    /*connect(qgcApp()->toolbox()->mavlinkProtocol(),
         SIGNAL(radioStatusChanged(LinkInterface*, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)), this,
-        SLOT(_telemetryChanged(LinkInterface*, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)));
+        SLOT(_telemetryChanged(LinkInterface*, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)));*/
     
-=======
-    connect(qgcApp()->toolbox()->mavlinkProtocol(),     &MAVLinkProtocol::radioStatusChanged, this, &MainToolBarController::_telemetryChanged);
->>>>>>> upstream/master
+//=======
+//>>>>>>> upstream/master
     connect(qgcApp()->toolbox()->multiVehicleManager(), &MultiVehicleManager::activeVehicleChanged, this, &MainToolBarController::_activeVehicleChanged);
     
 #ifdef __mindskin__
@@ -84,7 +90,7 @@ MainToolBarController::~MainToolBarController()
 {
 
 }
-
+/*
 <<<<<<< HEAD
 void MainToolBarController::onSetupView()
 {
@@ -148,11 +154,21 @@ void MainToolBarController::onConnect(QString conf)
         qgcApp()->toolbox()->linkManager()->suspendConfigurationUpdates(false);
     }
 }
+*/
 
 #ifdef __mindskin__
+void MainToolBarController::onConnectTapped(QString conf)
+{
+}
+
+void MainToolBarController::onConnectTappedDismiss(QString conf)
+{
+}
+
 /***
  for iOS hook in MainToolBar.qml
  ****/
+/*
 void MainToolBarController::onConnectTapped(QString conf)
 {
     // show iOS popover from right side;
@@ -181,9 +197,6 @@ void MainToolBarController::onConnectTappedDismiss(QString conf)
     
 }
 
-void MainToolBarController::_peripheralsDiscovered(void* inrangelist, void* outrangelist) {
-    popover->peripheralsDiscovered(inrangelist, outrangelist);
-}
 
 
 void _bleLinkRSSIUpdated (void* peripheral_link_list) {
@@ -191,8 +204,88 @@ void _bleLinkRSSIUpdated (void* peripheral_link_list) {
 }
 
 
+*/
+
+void MainToolBarController::_linkConnected                 (BTSerialLink* link) {
+    //_updateConnection();
+    //dismiss popover;
+    popover->dismissPopover();
+    
+    //show mindstick button;
+    mindstickButton = new MindStickButton();
+    mindstickButton->showButton();
+    
+#ifdef _BLE_DEBUG_
+    //pop up debug view;
+    BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
+    debugview->presentDebugView();
+    QString line ="BLE link connected.";
+    debugview->addline(line);
+    
+#endif
+    
+    
+}
+
+void MainToolBarController::_linkDisconnected              (BTSerialLink* link) {
+    //_updateConnection();
+    
+    //delete mindstick button;
+    if (mindstickButton!=NULL) {
+        mindstickButton->removeButton();
+        delete mindstickButton;
+        mindstickButton = NULL;
+    }
+    
+    
+}
+
+
+void MainToolBarController::_peripheralsDiscovered(void* inrangelist, void* outrangelist) {
+    popover->peripheralsDiscovered(inrangelist, outrangelist);
+}
+
+
+void MainToolBarController::_bleLinkRSSIUpdated (void* peripheral_link_list) {
+    //update RSSI value in UI;
+}
+
+
+void MainToolBarController::_telemetryChanged(BTSerialLink*, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise)
+{
+    if(_telemetryLRSSI != rssi) {
+        _telemetryLRSSI = rssi;
+        emit telemetryLRSSIChanged(_telemetryLRSSI);
+    }
+    if(_telemetryRRSSI != remrssi) {
+        _telemetryRRSSI = remrssi;
+        emit telemetryRRSSIChanged(_telemetryRRSSI);
+    }
+    if(_telemetryRXErrors != rxerrors) {
+        _telemetryRXErrors = rxerrors;
+        emit telemetryRXErrorsChanged(_telemetryRXErrors);
+    }
+    if(_telemetryFixed != fixed) {
+        _telemetryFixed = fixed;
+        emit telemetryFixedChanged(_telemetryFixed);
+    }
+    if(_telemetryTXBuffer != txbuf) {
+        _telemetryTXBuffer = txbuf;
+        emit telemetryTXBufferChanged(_telemetryTXBuffer);
+    }
+    if(_telemetryLNoise != noise) {
+        _telemetryLNoise = noise;
+        emit telemetryLNoiseChanged(_telemetryLNoise);
+    }
+    if(_telemetryRNoise != remnoise) {
+        _telemetryRNoise = remnoise;
+        emit telemetryRNoiseChanged(_telemetryRNoise);
+    }
+}
+
 #endif
 
+/*
 void MainToolBarController::onEnterMessageArea(int x, int y)
 {
     Q_UNUSED(x);
@@ -231,6 +324,8 @@ void MainToolBarController::_leaveMessageView()
 
 =======
 >>>>>>> upstream/master
+ */
+
 void MainToolBarController::_activeVehicleChanged(Vehicle* vehicle)
 {
     // Disconnect the previous one (if any)
@@ -255,6 +350,8 @@ void MainToolBarController::_telemetryChanged(LinkInterface*, unsigned rxerrors,
         _telemetryLRSSI = rssi;
         emit telemetryLRSSIChanged(_telemetryLRSSI);
     }
+    
+    /*
 <<<<<<< HEAD
 }
 
@@ -269,40 +366,6 @@ void MainToolBarController::_linkDisconnected(LinkInterface* link)
 }
 
 
-#ifdef __mindskin__
-void MainToolBarController::_linkConnected                 (BTSerialLink* link) {
-    _updateConnection();
-    //dismiss popover;
-    popover->dismissPopover();
-    
-    //show mindstick button;
-    mindstickButton = new MindStickButton();
-    mindstickButton->showButton();
-    
-#ifdef _BLE_DEBUG_
-    //pop up debug view;
-    BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
-    debugview->presentDebugView();
-    QString line ="BLE link connected.";
-    debugview->addline(line);
-    
-#endif
-
-    
-}
-
-void MainToolBarController::_linkDisconnected              (BTSerialLink* link) {
-    _updateConnection();
-    
-    //delete mindstick button;
-    if (mindstickButton!=NULL) {
-        mindstickButton->removeButton();
-        delete mindstickButton;
-        mindstickButton = NULL;
-    }
-    
-    
-}
 
 void MainToolBarController::_bleLinkRSSIUpdated (void* peripheral_link_list) {
     //update RSSI value in UI;
@@ -330,7 +393,9 @@ void MainToolBarController::_updateConnection(LinkInterface *disconnectedLink)
         _telemetryRRSSI = remrssi;
         emit telemetryRRSSIChanged(_telemetryRRSSI);
 >>>>>>> upstream/master
-    }
+     
+     
+    }*/
     if(_telemetryRXErrors != rxerrors) {
         _telemetryRXErrors = rxerrors;
         emit telemetryRXErrorsChanged(_telemetryRXErrors);

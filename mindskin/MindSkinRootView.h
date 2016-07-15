@@ -15,8 +15,12 @@ class MindSkinRootView_wrapper;
 class MindSkinRootView {
     
 private:
+    
+ 
 #ifdef __ios__
-    MindSkinRootView_wrapper* skinroot;
+    MindSkinRootView_wrapper* skinroot_wrapper;
+    
+    
     
 #endif
     
@@ -30,7 +34,7 @@ private:
     
 public:
     static MindSkinRootView* sharedInstance();
-    void launchMindskinUI(qmlroot);
+    void launchMindskinUI();
     void shutdown();
     
 };

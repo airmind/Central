@@ -1243,13 +1243,22 @@ void BTSerialLink::writeBytes(QString characteristic, const char* data, qint64 s
     
 }
 
+void BTSerialLink::writeBytesNeedsAck(QString characteristic, const char* data, qint64 size) {
+    
+}
 
+void BTSerialLink::writeBytesNeedsAck(const char* data, qint64 size) {
+    
+}
+
+
+/*
 void writeBytes(QString characteristic, const char* data, qint64 size);
 void writeBytesNeedsAck(QString characteristic, const char* data, qint64 size);
 
 void writeBytes(const char* data, qint64 size);
 void writeBytesNeedsAck(const char* data, qint64 size);
-
+*/
 
 /**
  * @brief Read a number of bytes from the interface.

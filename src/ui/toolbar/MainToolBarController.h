@@ -47,17 +47,12 @@ class MainToolBarController : public QObject
 public:
     MainToolBarController(QObject* parent = NULL);
     ~MainToolBarController();
-
+/*
 <<<<<<< HEAD
     Q_INVOKABLE void    onSetupView();
     Q_INVOKABLE void    onPlanView();
     Q_INVOKABLE void    onFlyView();
     Q_INVOKABLE void    onConnect(QString conf);
-#ifdef __mindskin__
-    Q_INVOKABLE void    onConnectTapped(QString conf);
-    Q_INVOKABLE void    onConnectTappedDismiss(QString conf);
-
-#endif
     Q_INVOKABLE void    onDisconnect(QString conf);
     Q_INVOKABLE void    onEnterMessageArea(int x, int y);
     Q_INVOKABLE void    onToolBarMessageClosed(void);
@@ -65,6 +60,13 @@ public:
 
 =======
 >>>>>>> upstream/master
+    */
+#ifdef __mindskin__
+    Q_INVOKABLE void    onConnectTapped(QString conf);
+    Q_INVOKABLE void    onConnectTappedDismiss(QString conf);
+    
+#endif
+
     Q_PROPERTY(double       height              MEMBER _toolbarHeight           NOTIFY heightChanged)
     Q_PROPERTY(float        progressBarValue    MEMBER _progressBarValue        NOTIFY progressBarValueChanged)
     Q_PROPERTY(int          telemetryRRSSI      READ telemetryRRSSI             NOTIFY telemetryRRSSIChanged)
@@ -98,10 +100,13 @@ signals:
 
 private slots:
     void _activeVehicleChanged          (Vehicle* vehicle);
+    
 //<<<<<<< HEAD
+    /*
     void _updateConfigurations          ();
     void _linkConnected                 (LinkInterface* link);
     void _linkDisconnected              (LinkInterface* link);
+    */
 #ifdef __mindskin__
     void _linkConnected                 (BTSerialLink* link);
     void _linkDisconnected              (BTSerialLink* link);
@@ -109,12 +114,18 @@ private slots:
     void _peripheralsDiscovered(void* inrangelist, void* outrangelist);
     void _bleLinkRSSIUpdated (void* peripheral_link_list);
 #endif
-    void _leaveMessageView              ();
+    //void _leaveMessageView              ();
 //=======
 //>>>>>>> upstream/master
+    
     void _setProgressBarValue           (float value);
     void _telemetryChanged              (LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise);
+    
+#ifdef __mindskin__
+    void _telemetryChanged              (BTSerialLink* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise);
 
+#endif
+    
 private:
     Vehicle*        _vehicle;
     UASInterface*   _mav;

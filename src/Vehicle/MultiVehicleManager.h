@@ -52,21 +52,21 @@ public:
     /// A disconnected vehicle is used to access FactGroup information for the Vehicle object when no active vehicle is available
     Q_PROPERTY(Vehicle*             disconnectedVehicle             MEMBER _disconnectedVehicle                                         CONSTANT)
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
     /// Called to notify that a heartbeat was received with the specified information. MultiVehicleManager
     /// will create/update Vehicles as necessary.
     ///     @param link Heartbeat came through on this link
     ///     @param vehicleId Mavlink system id for vehicle
     ///     @param heartbeat Mavlink heartbeat message
     /// @return true: continue further processing of this message, false: disregard this message
-    bool notifyHeartbeatInfo(LinkInterface* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
-#ifdef __ios__
-    bool notifyHeartbeatInfo(BTSerialLink* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
-=======
+    //bool notifyHeartbeatInfo(LinkInterface* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
+//#ifdef __mindskin__
+    //bool notifyHeartbeatInfo(BTSerialLink* link, int vehicleId, mavlink_heartbeat_t& heartbeat);
+//=======
     // Methods
->>>>>>> upstream/master
+//>>>>>>> upstream/master
 
-#endif
+//#endif
     
     Q_INVOKABLE Vehicle* getVehicleById(int vehicleId);
 
@@ -112,7 +112,10 @@ private slots:
     void _autopilotParametersReadyChanged(bool parametersReady);
     void _sendGCSHeartbeat(void);
     void _vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
-
+#ifdef __mindskin__
+    void _vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
+#endif
+    
 private:
     bool _vehicleExists(int vehicleId);
 
