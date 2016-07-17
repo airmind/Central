@@ -401,7 +401,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
         }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
         QGCToolBarButton {
             id:             connectButton
             width:          mainWindow.tbButtonWidth
@@ -438,7 +438,7 @@ Rectangle {
                 */
             }
         }
-=======
+//=======
         QGCLabel {
             id:                     connectionLost
             text:                   qsTr("COMMUNICATION LOST")
@@ -449,7 +449,7 @@ Rectangle {
             anchors.right:          disconnectButton.left
             anchors.verticalCenter: parent.verticalCenter
             visible:                parent.vehicleConnectionLost
->>>>>>> upstream/master
+//>>>>>>> upstream/master
 
         }
 

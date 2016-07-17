@@ -12,7 +12,7 @@
 #import <UIKit/UIKit.h>
 #include "MindSkinRootView.h"
 
-@interface MindSkinRootView_impl_objc {
+@interface MindSkinRootView_impl_objc : NSObject{
     BOOL presented;
 
 };

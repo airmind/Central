@@ -14,68 +14,9 @@ import QtQuick.Dialogs  1.2
 
 import QGroundControl   1.0
 
-/// Native QML top level window as Mindskin root
 Window {
     id:         _rootWindow
     visible:    true
 
-    property bool _forceClose: false
-
-    onClosing: {
-        if (!_forceClose) {
-            mainWindowInner.item.attemptWindowClose()
-            close.accepted = false
-        }
-    }
-/*
-    function showFlyView() {
-        mainWindowInner.item.showFlyView()
-    }
-
-    function showPlanView() {
-        mainWindowInner.item.showPlanView()
-    }
-
-    function showSetupView() {
-        mainWindowInner.item.showSetupView()
-    }
-
-    // The following are use for unit testing only
-
-    function showSetupFirmware() {
-        mainWindowInner.item.showSetupFirmware()
-    }
-
-    function showSetupParameters() {
-        mainWindowInner.item.showSetupParameters()
-    }
-
-    function showSetupSummary() {
-        mainWindowInner.item.showSetupSummary()
-    }
-
-    function showSetupVehicleComponent(vehicleComponent) {
-        mainWindowInner.showSetupVehicleComponent(vehicleComponent)
-    }
-
-    function showMessage(message) {
-        mainWindowInner.item.showMessage(message)
-    }
-
-    Loader {
-        id:             mainWindowInner
-        anchors.fill:   parent
-        source:         "MainWindowInner.qml"
-
-        Connections {
-            target: mainWindowInner.item
-
-            onReallyClose: {
-                _forceClose = true
-                _rootWindow.close()
-            }
-        }
-    }
-*/
 }
 

@@ -126,7 +126,14 @@ equals(QT_MAJOR_VERSION, 5) | greaterThan(QT_MINOR_VERSION, 5) {
 
 iOSBuild {
     BUNDLE.files        = $$files($$PWD/ios/AppIcon*.png) $$PWD/ios/QGCLaunchScreen.xib
+
+contains (DEFINES, __mindskin__) {
+    BUNDLE.files       += $$PWD/mindskin/ios/TagNodesViewController.xib
+    LIBS               += -framework CoreBluetooth
+
+}
     QMAKE_BUNDLE_DATA  += BUNDLE
+
     LIBS               += -framework AVFoundation
     #-- Info.plist (need an "official" one for the App Store)
     ForAppStore {
@@ -348,6 +355,8 @@ iOSBuild {
         mindskin/ios/MindStickButtonViewController.h \
         mindskin/MindSkinRootView.h \
         mindskin/ios/MindSkinRootView_impl_objc.h \
+        mindskin/ios/tagNodesViewController.h \
+
 
     SOURCES += \
         mindskin/ios/MindStickButton.cpp \
@@ -357,6 +366,7 @@ iOSBuild {
         mindskin/ios/ConnectPopoverViewController.mm \
         mindskin/ios/MindStickButtonViewController.mm \
         mindskin/ios/MindSkinRootView_impl_objc.mm \
+        mindskin/ios/tagNodesViewController.m \
 
 
     DebugBuild {

@@ -425,7 +425,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
     _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
     _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
     _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
-    
+    //_qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
 
 #ifdef __ios__
     //launch mindskin;
@@ -479,8 +479,9 @@ bool QGCApplication::_initForNormalAppBoot(void)
 #endif //__mobile__
 
     // Load known link configurations
-    toolbox()->linkManager()->loadLinkConfigurationList();
+    //toolbox()->linkManager()->loadLinkConfigurationList();
 
+    
     // Show user an upgrade message if the settings version has been bumped up
     bool settingsUpgraded = false;
     if (settings.contains(_settingsVersionKey)) {
@@ -497,12 +498,16 @@ bool QGCApplication::_initForNormalAppBoot(void)
     if (settingsUpgraded) {
         settings.clear();
         settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
+#ifndef __mindskin__
+
         showMessage("The format for QGroundControl saved settings has been modified. "
                     "Your saved settings have been reset to defaults.");
+#endif
+
     }
 
     settings.sync();
-
+    
     return true;
 }
 

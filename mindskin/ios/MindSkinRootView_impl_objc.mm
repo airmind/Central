@@ -8,38 +8,10 @@
 
 #import <Foundation/Foundation.h>
 
+#import "tagNodesViewController.h"
 
 #include "MindSkinRootView.h"
 #include "MindSkinRootView_impl_objc.h"
-
-/// ///////////////////////////////////////////////
-///     @brief MindSkinRootView
-///
-///     @author Roland
-
-
-MindSkinRootView::MindSkinRootView() {
-    
-}
-
-
-MindSkinRootView* MindSkinRootView::sharedInstance() {
-    
-    static MindSkinRootView* instance;
-
-    if (!instance)
-        instance = new MindSkinRootView;
-    return instance;
-}
-
-void MindSkinRootView::launchMindskinUI(){
-    
-}
-
-void MindSkinRootView::shutdown(){
-    
-}
-
 
 
 /// ///////////////////////////////////////////////
@@ -72,6 +44,41 @@ void MindSkinRootView_wrapper::presentMindSkinRootUI() {
     [skinroot_objc presentMindSkinRootUI];
 }
 
+
+
+
+
+/// ///////////////////////////////////////////////
+///     @brief MindSkinRootView
+///
+///     @author Roland
+
+
+MindSkinRootView::MindSkinRootView() {
+    skinroot_wrapper = new MindSkinRootView_wrapper();
+}
+
+
+MindSkinRootView* MindSkinRootView::sharedInstance() {
+    
+    static MindSkinRootView* instance;
+    
+    if (!instance)
+        instance = new MindSkinRootView;
+    return instance;
+}
+
+void MindSkinRootView::launchMindskinUI(){
+    skinroot_wrapper->presentMindSkinRootUI();
+}
+
+void MindSkinRootView::shutdown(){
+    
+}
+
+
+
+
 /// ///////////////////////////////////////////////
 ///     @brief MindSkinRootView_impl_objc
 ///
@@ -96,9 +103,15 @@ void MindSkinRootView_wrapper::presentMindSkinRootUI() {
 }
 
 -(void)presentMindSkinRootUI {
-    UIViewController* rootcontroller = [self getUIViewRootController];
+    UIViewController* rootcontroller = (UIViewController*)[self getUIViewRootController];
     
     //present Mindskin UI entry;
+    UIViewController* tagnodesctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
+    //[tagnodesctlr.view setFrame:CGRectMake(00, 60, 200, 200)];
+    //[rootcontroller.view setFrame:CGRectMake(00, 60, 200, 200)];
+    //[rootcontroller.view addSubview:tagnodesctlr.view];
+
+    [rootcontroller presentViewController:tagnodesctlr animated:YES completion:nil];
     
 }
 
@@ -123,6 +136,8 @@ void MindSkinRootView_wrapper::presentMindSkinRootUI() {
             break;
         }
     }
+    
+    return responder;
 
 }
 
