@@ -17,12 +17,41 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
+    [self presentTagNodesDiscoveryUI];
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+
+
+- (void)presentTagNodesDiscoveryUI {
+    
+}
+
+
+- (int)checkNFCStatus {
+    
+}
+
+
+- (void)getTagNodesList {
+    
+}
+
+- (void)loadTagNodesTableView {
+    
+}
+
+- (void)switchToWifiConnection {
+    
+}
+
+- (void)switchToTagNodesConnection {
+    
+}
+
 
 /*
 #pragma mark - Navigation
