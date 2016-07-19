@@ -53,6 +53,11 @@
 }
 
 
+-(IBAction)onWifiButtonTapped:(id)sender {
+    
+}
+
+
 /*
 #pragma mark - Navigation
 
