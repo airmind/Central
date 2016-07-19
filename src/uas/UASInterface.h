@@ -119,7 +119,8 @@ public:
         StartCalibrationLevel,
         StartCalibrationEsc,
         StartCalibrationCopyTrims,
-        StartCalibrationUavcanEsc
+        StartCalibrationUavcanEsc,
+        StartCalibrationCompassMot,
     };
 
     enum StartBusConfigType {
@@ -302,9 +303,6 @@ signals:
     void nameChanged(QString newName);
     /** @brief Core specifications have changed */
     void systemSpecsChanged(int uasId);
-
-    // HOME POSITION / ORIGIN CHANGES
-    void homePositionChanged(int uas, double lat, double lon, double alt);
 
     // Log Download Signals
     void logEntry   (UASInterface* uas, uint32_t time_utc, uint32_t size, uint16_t id, uint16_t num_logs, uint16_t last_log_num);

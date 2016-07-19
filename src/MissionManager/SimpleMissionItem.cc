@@ -191,7 +191,7 @@ void SimpleMissionItem::_setupMetaData(void)
 
     if (!_altitudeMetaData) {
         _altitudeMetaData = new FactMetaData(FactMetaData::valueTypeDouble);
-        _altitudeMetaData->setRawUnits("meters");
+        _altitudeMetaData->setRawUnits("m");
         _altitudeMetaData->setDecimalPlaces(2);
         _altitudeMetaData->setAppSettingsTranslators();
 
@@ -593,5 +593,10 @@ void SimpleMissionItem::setCoordinate(const QGeoCoordinate& coordinate)
 
 void SimpleMissionItem::setSequenceNumber(int sequenceNumber)
 {
-    _missionItem.setSequenceNumber(sequenceNumber);
+    if (_missionItem.sequenceNumber() != sequenceNumber) {
+        _missionItem.setSequenceNumber(sequenceNumber);
+        emit sequenceNumberChanged(sequenceNumber);
+        // This is too likely to ignore
+        emit abbreviationChanged();
+    }
 }

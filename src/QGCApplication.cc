@@ -76,13 +76,13 @@
 #include "PX4/PX4FirmwarePlugin.h"
 #include "Vehicle.h"
 #include "MavlinkQmlSingleton.h"
+#include "JoystickConfigController.h"
 #include "JoystickManager.h"
 #include "QmlObjectListModel.h"
 #include "MissionManager.h"
 #include "QGroundControlQmlGlobal.h"
 #include "HomePositionManager.h"
 #include "FlightMapSettings.h"
-#include "QGCQGeoCoordinate.h"
 #include "CoordinateVector.h"
 #include "MainToolBarController.h"
 #include "MissionController.h"
@@ -106,7 +106,6 @@
     #include "QGCFileDialog.h"
     #include "QGCMessageBox.h"
     #include "FirmwareUpgradeController.h"
-    #include "JoystickConfigController.h"
     #include "MainWindow.h"
 #endif
 
@@ -120,6 +119,8 @@
 #include <sys/types.h>
 #endif
 #endif
+
+#include "QGCMapEngine.h"
 
 QGCApplication* QGCApplication::_app = NULL;
 
@@ -185,6 +186,7 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
     , _styleIsDark(true)
 #endif
     , _fakeMobile(false)
+    , _settingsUpgraded(false)
 #ifdef QT_DEBUG
     , _testHighDPI(false)
 #endif
@@ -199,6 +201,9 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
 #ifndef __android__
     setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 #endif
+
+    // Setup for network proxy support
+    QNetworkProxyFactory::setUseSystemConfiguration(true);
 
 #ifdef Q_OS_LINUX
 #ifndef __mobile__
@@ -275,13 +280,7 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
     setOrganizationName(QGC_ORG_NAME);
     setOrganizationDomain(QGC_ORG_DOMAIN);
 
-    QString versionString(GIT_TAG);
-    // stable versions are on tags (v1.2.3)
-    // development versions are full git describe versions (v1.2.3-18-g879e8b3)
-    if (versionString.length() > 8) {
-        versionString.append(" (Development)");
-    }
-    this->setApplicationVersion(versionString);
+    this->setApplicationVersion(QString(GIT_VERSION));
 
     // Set settings format
     QSettings::setDefaultFormat(QSettings::IniFormat);
@@ -311,6 +310,19 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
         QDir paramDir(ParameterLoader::parameterCacheDir());
         paramDir.removeRecursively();
         paramDir.mkpath(paramDir.absolutePath());
+    } else {
+        // Determine if upgrade message for settings version bump is required. Check must happen before toolbox is started since
+        // that will write some settings.
+        if (settings.contains(_settingsVersionKey)) {
+            if (settings.value(_settingsVersionKey).toInt() != QGC_SETTINGS_VERSION) {
+                _settingsUpgraded = true;
+            }
+        } else if (settings.allKeys().count()) {
+            // Settings version key is missing and there are settings. This is an upgrade scenario.
+            _settingsUpgraded = true;
+        } else {
+            settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
+        }
     }
 
     // Set up our logging filters
@@ -358,7 +370,6 @@ void QGCApplication::_initCommon(void)
 
     qmlRegisterUncreatableType<CoordinateVector>    ("QGroundControl",                  1, 0, "CoordinateVector",       "Reference only");
     qmlRegisterUncreatableType<MissionCommands>     ("QGroundControl",                  1, 0, "MissionCommands",        "Reference only");
-    qmlRegisterUncreatableType<QGCQGeoCoordinate>   ("QGroundControl",                  1, 0, "QGCQGeoCoordinate",      "Reference only");
     qmlRegisterUncreatableType<QmlObjectListModel>  ("QGroundControl",                  1, 0, "QmlObjectListModel",     "Reference only");
     qmlRegisterUncreatableType<VideoReceiver>       ("QGroundControl",                  1, 0, "VideoReceiver",          "Reference only");
     qmlRegisterUncreatableType<VideoSurface>        ("QGroundControl",                  1, 0, "VideoSurface",           "Reference only");
@@ -390,12 +401,11 @@ void QGCApplication::_initCommon(void)
     qmlRegisterType<ValuesWidgetController>             ("QGroundControl.Controllers", 1, 0, "ValuesWidgetController");
     qmlRegisterType<QGCMobileFileDialogController>      ("QGroundControl.Controllers", 1, 0, "QGCMobileFileDialogController");
     qmlRegisterType<RCChannelMonitorController>         ("QGroundControl.Controllers", 1, 0, "RCChannelMonitorController");
-
+    qmlRegisterType<JoystickConfigController>           ("QGroundControl.Controllers", 1, 0, "JoystickConfigController");
 #ifndef __mobile__
     qmlRegisterType<ViewWidgetController>           ("QGroundControl.Controllers", 1, 0, "ViewWidgetController");
     qmlRegisterType<CustomCommandWidgetController>  ("QGroundControl.Controllers", 1, 0, "CustomCommandWidgetController");
     qmlRegisterType<FirmwareUpgradeController>      ("QGroundControl.Controllers", 1, 0, "FirmwareUpgradeController");
-    qmlRegisterType<JoystickConfigController>       ("QGroundControl.Controllers", 1, 0, "JoystickConfigController");
     qmlRegisterType<LogDownloadController>          ("QGroundControl.Controllers", 1, 0, "LogDownloadController");
 #endif
 
@@ -481,6 +491,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
     // Load known link configurations
     //toolbox()->linkManager()->loadLinkConfigurationList();
 
+<<<<<<< HEAD
     
     // Show user an upgrade message if the settings version has been bumped up
     bool settingsUpgraded = false;
@@ -496,6 +507,9 @@ bool QGCApplication::_initForNormalAppBoot(void)
     }
 
     if (settingsUpgraded) {
+=======
+    if (_settingsUpgraded) {
+>>>>>>> master
         settings.clear();
         settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
 #ifndef __mindskin__
@@ -504,6 +518,11 @@ bool QGCApplication::_initForNormalAppBoot(void)
                     "Your saved settings have been reset to defaults.");
 #endif
 
+    }
+
+    if (getQGCMapEngine()->wasCacheReset()) {
+        showMessage("The Offline Map Cache database has been upgraded. "
+                    "Your old map cache sets have been reset.");
     }
 
     settings.sync();

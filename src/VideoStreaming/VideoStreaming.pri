@@ -57,7 +57,23 @@ LinuxBuild {
             $$GST_ROOT/include/gstreamer-1.0 \
             $$GST_ROOT/include/glib-2.0 \
             $$GST_ROOT/lib/gstreamer-1.0/include \
-            $$GST_ROOT/lib/glib-2.0/include
+            $$GST_ROOT/lib/glib-2.0/include        
+        COPY_FILE_LIST = \
+            $$GST_ROOT\\bin\\libffi-6.dll \
+            $$GST_ROOT\\bin\\libglib-2.0-0.dll \
+            $$GST_ROOT\\bin\\libgmodule-2.0-0.dll \
+            $$GST_ROOT\\bin\\libgobject-2.0-0.dll \
+            $$GST_ROOT\\bin\\libgstbase-1.0-0.dll \
+            $$GST_ROOT\\bin\\libgstreamer-1.0-0.dll \
+            $$GST_ROOT\\bin\\libgstvideo-1.0-0.dll \
+            $$GST_ROOT\\bin\\libintl-8.dll \
+            $$GST_ROOT\\bin\\liborc-0.4-0.dll \
+            $$GST_ROOT\\bin\\libwinpthread-1.dll
+        DESTDIR_WIN = $$replace(DESTDIR, "/", "\\")
+        for(COPY_FILE, COPY_FILE_LIST) {
+            QMAKE_POST_LINK += $$escape_expand(\\n) $$QMAKE_COPY \"$$COPY_FILE\" \"$$DESTDIR_WIN\"
+        }
+        QMAKE_POST_LINK += $$escape_expand(\\n)
     }
 } else:AndroidBuild {
     #- gstreamer assumed to be installed in $$PWD/../../android/gstreamer-1.0-android-armv7-1.5.2
@@ -164,8 +180,7 @@ VideoEnabled {
         }
         LinuxBuild {
             message("  You can install it using apt-get")
-            message("  sudo apt-get install gstreamer1.0*")
-            message("  sudo apt-get install libgstreamer1.0*")
+            message("  sudo apt-get install libgstreamer-plugins-base1.0-dev libgstreamer1.0-0:amd64 libgstreamer1.0-dev")
         }
         WindowsBuild {
             message("  You can download it from http://gstreamer.freedesktop.org/data/pkg/windows/")

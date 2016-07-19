@@ -17,6 +17,7 @@
 #include "SimpleMissionItem.h"
 #include "ComplexMissionItem.h"
 #include "JsonHelper.h"
+#include "ParameterLoader.h"
 
 #ifndef __mobile__
 #include "QGCFileDialog.h"
@@ -76,10 +77,10 @@ void MissionController::_newMissionItemsAvailableFromVehicle(void)
 
     if (!_editMode || _missionItemsRequested || _visualItems->count() == 1) {
         // Fly Mode:
-        //      - Always accepts new items fromthe vehicle so Fly view is kept up to date
+        //      - Always accepts new items from the vehicle so Fly view is kept up to date
         // Edit Mode:
         //      - Either a load from vehicle was manually requested or
-        //      - The initial automatic load from a vehicle completed and the current editor it empty
+        //      - The initial automatic load from a vehicle completed and the current editor is empty
 
         QmlObjectListModel* newControllerMissionItems = new QmlObjectListModel(this);
         const QList<MissionItem*>& newMissionItems = _activeVehicle->missionManager()->missionItems();
@@ -174,11 +175,13 @@ int MissionController::insertSimpleMissionItem(QGeoCoordinate coordinate, int i)
     newItem->setDefaultsForCommand();
     if ((MAV_CMD)newItem->command() == MAV_CMD_NAV_WAYPOINT) {
         double lastValue;
+        MAV_FRAME lastFrame;
 
         if (_findLastAcceptanceRadius(&lastValue)) {
             newItem->missionItem().setParam2(lastValue);
         }
-        if (_findLastAltitude(&lastValue)) {
+        if (_findLastAltitude(&lastValue, &lastFrame)) {
+            newItem->missionItem().setFrame(lastFrame);
             newItem->missionItem().setParam7(lastValue);
         }
     }
@@ -186,7 +189,7 @@ int MissionController::insertSimpleMissionItem(QGeoCoordinate coordinate, int i)
 
     _recalcAll();
 
-    return sequenceNumber;
+    return newItem->sequenceNumber();
 }
 
 int MissionController::insertComplexMissionItem(QGeoCoordinate coordinate, int i)
@@ -202,7 +205,7 @@ int MissionController::insertComplexMissionItem(QGeoCoordinate coordinate, int i
 
     _recalcAll();
 
-    return sequenceNumber;
+    return newItem->sequenceNumber();
 }
 
 void MissionController::removeMissionItem(int index)
@@ -595,7 +598,7 @@ void MissionController::_calcPrevWaypointValues(double homeAlt, VisualMissionIte
     } else {
         *altDifference = 0.0;
         *azimuth = 0.0;
-        *distance = -1.0;   // Signals no values
+        *distance = 0.0;
     }
 }
 
@@ -608,12 +611,97 @@ void MissionController::_recalcWaypointLines(void)
 
     if (!homeItem) {
         qWarning() << "Home item is not SimpleMissionItem";
+    } else {
+        connect(homeItem, &VisualMissionItem::coordinateChanged, this, &MissionController::_recalcAltitudeRangeBearing);
     }
 
     bool    showHomePosition =  homeItem->showHomePosition();
-    double  homeAlt =           homeItem->coordinate().altitude();
 
     qCDebug(MissionControllerLog) << "_recalcWaypointLines";
+
+    CoordVectHashTable old_table = _linesTable;
+    _linesTable.clear();
+    _waypointLines.clear();
+
+    bool linkBackToHome = false;
+    for (int i=1; i<_visualItems->count(); i++) {
+        VisualMissionItem* item = qobject_cast<VisualMissionItem*>(_visualItems->get(i));
+
+
+        // If we still haven't found the first coordinate item and we hit a a takeoff command link back to home
+        if (firstCoordinateItem &&
+                item->isSimpleItem() &&
+                qobject_cast<SimpleMissionItem*>(item)->command() == MavlinkQmlSingleton::MAV_CMD_NAV_TAKEOFF) {
+            linkBackToHome = true;
+        }
+
+        if (item->specifiesCoordinate()) {
+            if (!item->isStandaloneCoordinate()) {
+                firstCoordinateItem = false;
+                VisualItemPair pair(lastCoordinateItem, item);
+                if (lastCoordinateItem != homeItem || (showHomePosition && linkBackToHome)) {
+                    if (old_table.contains(pair)) {
+                        // Do nothing, this segment already exists and is wired up
+                        _linesTable[pair] = old_table.take(pair);
+                    } else {
+                        // Create a new segment and wire update notifiers
+                        auto linevect       = new CoordinateVector(lastCoordinateItem->isSimpleItem() ? lastCoordinateItem->coordinate() : lastCoordinateItem->exitCoordinate(), item->coordinate(), this);
+                        auto originNotifier = lastCoordinateItem->isSimpleItem() ? &VisualMissionItem::coordinateChanged : &VisualMissionItem::exitCoordinateChanged,
+                             endNotifier    = &VisualMissionItem::coordinateChanged;
+                        // Use signals/slots to update the coordinate endpoints
+                        connect(lastCoordinateItem, originNotifier, linevect, &CoordinateVector::setCoordinate1);
+                        connect(item,               endNotifier,    linevect, &CoordinateVector::setCoordinate2);
+
+                        // FIXME: We should ideally have signals for 2D position change, alt change, and 3D position change
+                        // Not optimal, but still pretty fast, do a full update of range/bearing/altitudes
+                        connect(item, &VisualMissionItem::coordinateChanged, this, &MissionController::_recalcAltitudeRangeBearing);
+                        _linesTable[pair] = linevect;
+                    }
+                }
+                lastCoordinateItem = item;
+            }
+        }
+    }
+
+
+    {
+        // Create a temporary QObjectList and replace the model data
+        QObjectList objs;
+        objs.reserve(_linesTable.count());
+        foreach(CoordinateVector *vect, _linesTable.values()) {
+            objs.append(vect);
+        }
+
+        // We don't delete here because many links may still be valid
+        _waypointLines.swapObjectList(objs);
+    }
+
+
+    // Anything left in the old table is an obsolete line object that can go
+    qDeleteAll(old_table);
+
+    _recalcAltitudeRangeBearing();
+
+    emit waypointLinesChanged();
+}
+
+void MissionController::_recalcAltitudeRangeBearing()
+{
+    if (!_visualItems->count())
+        return;
+
+    bool                firstCoordinateItem =   true;
+    VisualMissionItem*  lastCoordinateItem =    qobject_cast<VisualMissionItem*>(_visualItems->get(0));
+
+    SimpleMissionItem*  homeItem = qobject_cast<SimpleMissionItem*>(lastCoordinateItem);
+
+    if (!homeItem) {
+        qWarning() << "Home item is not SimpleMissionItem";
+    }
+
+    bool    showHomePosition =  homeItem->showHomePosition();
+
+    qCDebug(MissionControllerLog) << "_recalcAltitudeRangeBearing";
 
     // If home position is valid we can calculate distances between all waypoints.
     // If home position is not valid we can only calculate distances between waypoints which are
@@ -622,14 +710,12 @@ void MissionController::_recalcWaypointLines(void)
     // No values for first item
     lastCoordinateItem->setAltDifference(0.0);
     lastCoordinateItem->setAzimuth(0.0);
-    lastCoordinateItem->setDistance(-1.0);
+    lastCoordinateItem->setDistance(0.0);
 
     double minAltSeen = 0.0;
     double maxAltSeen = 0.0;
-    double homePositionAltitude = homeItem->coordinate().altitude();
+    const double homePositionAltitude = homeItem->coordinate().altitude();
     minAltSeen = maxAltSeen = homeItem->coordinate().altitude();
-
-    _waypointLines.clear();
 
     bool linkBackToHome = false;
     for (int i=1; i<_visualItems->count(); i++) {
@@ -637,7 +723,7 @@ void MissionController::_recalcWaypointLines(void)
 
         // Assume the worst
         item->setAzimuth(0.0);
-        item->setDistance(-1.0);
+        item->setDistance(0.0);
 
         // If we still haven't found the first coordinate item and we hit a a takeoff command link back to home
         if (firstCoordinateItem &&
@@ -672,11 +758,10 @@ void MissionController::_recalcWaypointLines(void)
 
                     // Subsequent coordinate items link to last coordinate item. If the last coordinate item
                     // is an invalid home position we skip the line
-                    _calcPrevWaypointValues(homeAlt, item, lastCoordinateItem, &azimuth, &distance, &altDifference);
+                    _calcPrevWaypointValues(homePositionAltitude, item, lastCoordinateItem, &azimuth, &distance, &altDifference);
                     item->setAltDifference(altDifference);
                     item->setAzimuth(azimuth);
                     item->setDistance(distance);
-                    _waypointLines.append(new CoordinateVector(lastCoordinateItem->isSimpleItem() ? lastCoordinateItem->coordinate() : lastCoordinateItem->exitCoordinate(), item->coordinate()));
                 }
                 lastCoordinateItem = item;
             }
@@ -700,8 +785,6 @@ void MissionController::_recalcWaypointLines(void)
             }
         }
     }
-
-    emit waypointLinesChanged();
 }
 
 // This will update the sequence numbers to be sequential starting from 0
@@ -822,7 +905,6 @@ void MissionController::_initVisualItem(VisualMissionItem* visualItem)
 {
     _visualItems->setDirty(false);
 
-    connect(visualItem, &VisualMissionItem::coordinateChanged,                          this, &MissionController::_itemCoordinateChanged);
     connect(visualItem, &VisualMissionItem::specifiesCoordinateChanged,                 this, &MissionController::_recalcWaypointLines);
     connect(visualItem, &VisualMissionItem::coordinateHasRelativeAltitudeChanged,       this, &MissionController::_recalcWaypointLines);
     connect(visualItem, &VisualMissionItem::exitCoordinateHasRelativeAltitudeChanged,   this, &MissionController::_recalcWaypointLines);
@@ -848,12 +930,6 @@ void MissionController::_deinitVisualItem(VisualMissionItem* visualItem)
     disconnect(visualItem, 0, 0, 0);
 }
 
-void MissionController::_itemCoordinateChanged(const QGeoCoordinate& coordinate)
-{
-    Q_UNUSED(coordinate);
-    _recalcWaypointLines();
-}
-
 void MissionController::_itemCommandChanged(void)
 {
     _recalcChildItems();
@@ -875,6 +951,10 @@ void MissionController::_activeVehicleChanged(Vehicle* activeVehicle)
         _activeVehicle = NULL;
     }
 
+    // We always remove all items on vehicle change. This leaves a user model hole:
+    //      If the user has unsaved changes in the Plan view they will lose them
+    removeAllMissionItems();
+
     _activeVehicle = activeVehicle;
 
     if (_activeVehicle) {
@@ -886,8 +966,10 @@ void MissionController::_activeVehicleChanged(Vehicle* activeVehicle)
         connect(_activeVehicle, &Vehicle::homePositionAvailableChanged,     this, &MissionController::_activeVehicleHomePositionAvailableChanged);
         connect(_activeVehicle, &Vehicle::homePositionChanged,              this, &MissionController::_activeVehicleHomePositionChanged);
 
-        if (!_editMode) {
-            removeAllMissionItems();
+        if (_activeVehicle->getParameterLoader()->parametersAreReady() && !syncInProgress()) {
+            // We are switching between two previously existing vehicles. We have to manually ask for the items from the Vehicle.
+            // We don't request mission items for new vehicles since that will happen autamatically.
+            getMissionItems();
         }
 
         _activeVehicleHomePositionChanged(_activeVehicle->homePosition());
@@ -967,23 +1049,24 @@ void MissionController::_inProgressChanged(bool inProgress)
     }
 }
 
-bool MissionController::_findLastAltitude(double* lastAltitude)
+bool MissionController::_findLastAltitude(double* lastAltitude, MAV_FRAME* frame)
 {
-    bool found = false;
+    bool found = false;    
     double foundAltitude;
+    MAV_FRAME foundFrame;
 
     // Don't use home position
     for (int i=1; i<_visualItems->count(); i++) {
         VisualMissionItem* visualItem = qobject_cast<VisualMissionItem*>(_visualItems->get(i));
 
         if (visualItem->specifiesCoordinate() && !visualItem->isStandaloneCoordinate()) {
-            foundAltitude = visualItem->exitCoordinate().altitude();
-            found = true;
 
             if (visualItem->isSimpleItem()) {
                 SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(visualItem);
-                if ((MAV_CMD)simpleItem->command() == MAV_CMD_NAV_TAKEOFF) {
-                    found = false;
+                if ((MAV_CMD)simpleItem->command() != MAV_CMD_NAV_TAKEOFF) {
+                    foundAltitude = simpleItem->exitCoordinate().altitude();
+                    foundFrame = simpleItem->missionItem().frame();
+                    found = true;
                 }
             }
         }
@@ -991,6 +1074,7 @@ bool MissionController::_findLastAltitude(double* lastAltitude)
 
     if (found) {
         *lastAltitude = foundAltitude;
+        *frame = foundFrame;
     }
 
     return found;

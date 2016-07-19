@@ -23,6 +23,10 @@ FactPanel {
     id:     _root
     height: monitorColumn.height
 
+    readonly property int _pwmMin:      800
+    readonly property int _pwmMax:      2200
+    readonly property int _pwmRange:    _pwmMax - _pwmMin
+
     QGCPalette { id: qgcPal; colorGroupEnabled: panel.enabled }
 
     RCChannelMonitorController {
@@ -36,7 +40,6 @@ FactPanel {
 
         Item {
             property int    rcValue:    1500
-
 
             property int            __lastRcValue:      1500
             readonly property int   __rcValueMaxJitter: 2
@@ -64,7 +67,7 @@ FactPanel {
                 anchors.verticalCenter: parent.verticalCenter
                 width:                  parent.height * 0.75
                 height:                 width
-                x:                      ((Math.abs((rcValue - 1000) - (reversed ? 1000 : 0)) / 1000) * parent.width) - (width / 2)
+                x:                      (((reversed ? _pwmMax - rcValue : rcValue - _pwmMin) / _pwmRange) * parent.width) - (width / 2)
                 radius:                 width / 2
                 color:                  qgcPal.text
                 visible:                mapped
@@ -92,7 +95,7 @@ FactPanel {
     Column {
         id:         monitorColumn
         width:      parent.width
-        spacing:    5
+        spacing:    ScreenTools.defaultFontPixelHeight / 2
 
         QGCLabel { text: "Channel Monitor" }
 
@@ -107,12 +110,12 @@ FactPanel {
         }
 
         Repeater {
-            id:     channelMonitorRepeater
-            model:  controller.channelCount
-            width:  parent.width
+            id:         channelMonitorRepeater
+            model:      controller.channelCount
 
-            Row {
-                spacing:    5
+            Item {
+                width:  monitorColumn.width
+                height: ScreenTools.defaultFontPixelHeight
 
                 // Need this to get to loader from Connections above
                 property Item loader: theLoader
@@ -124,9 +127,11 @@ FactPanel {
 
                 Loader {
                     id:                     theLoader
+                    anchors.leftMargin:     ScreenTools.defaultFontPixelWidth / 2
+                    anchors.left:           channelLabel.right
                     anchors.verticalCenter: channelLabel.verticalCenter
-                    height:                 qgcView.defaultTextHeight
-                    width:                  200
+                    height:                 ScreenTools.defaultFontPixelHeight
+                    width:                  parent.width - anchors.leftMargin - ScreenTools.defaultFontPixelWidth
                     sourceComponent:        channelMonitorDisplayComponent
 
                     property bool mapped:               true

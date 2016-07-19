@@ -133,12 +133,12 @@ void ArduCopterFirmwarePlugin::guidedModeTakeoff(Vehicle* vehicle, double altitu
     cmd.param6 = 0.0f;
     cmd.param7 = vehicle->altitudeAMSL()->rawValue().toFloat() +  altitudeRel; // AMSL meters
     cmd.target_system = vehicle->id();
-    cmd.target_component = 0;
+    cmd.target_component = vehicle->defaultComponentId();
 
     MAVLinkProtocol* mavlink = qgcApp()->toolbox()->mavlinkProtocol();
     mavlink_msg_command_long_encode(mavlink->getSystemId(), mavlink->getComponentId(), &msg, &cmd);
 
-    vehicle->sendMessage(msg);
+    vehicle->sendMessageOnPriorityLink(msg);
 }
 
 void ArduCopterFirmwarePlugin::guidedModeGotoLocation(Vehicle* vehicle, const QGeoCoordinate& gotoCoord)
@@ -148,7 +148,6 @@ void ArduCopterFirmwarePlugin::guidedModeGotoLocation(Vehicle* vehicle, const QG
         return;
     }
 
-    vehicle->setFlightMode("Guided");
     QGeoCoordinate coordWithAltitude = gotoCoord;
     coordWithAltitude.setAltitude(vehicle->altitudeRelative()->rawValue().toDouble());
     vehicle->missionManager()->writeArduPilotGuidedMissionItem(coordWithAltitude, false /* altChangeOnly */);
@@ -167,7 +166,7 @@ void ArduCopterFirmwarePlugin::guidedModeChangeAltitude(Vehicle* vehicle, double
     memset(&cmd, 0, sizeof(mavlink_set_position_target_local_ned_t));
 
     cmd.target_system = vehicle->id();
-    cmd.target_component = 0;
+    cmd.target_component = vehicle->defaultComponentId();
     cmd.coordinate_frame = MAV_FRAME_LOCAL_OFFSET_NED;
     cmd.type_mask = 0xFFF8; // Only x/y/z valid
     cmd.x = 0.0f;
@@ -177,7 +176,7 @@ void ArduCopterFirmwarePlugin::guidedModeChangeAltitude(Vehicle* vehicle, double
     MAVLinkProtocol* mavlink = qgcApp()->toolbox()->mavlinkProtocol();
     mavlink_msg_set_position_target_local_ned_encode(mavlink->getSystemId(), mavlink->getComponentId(), &msg, &cmd);
 
-    vehicle->sendMessage(msg);
+    vehicle->sendMessageOnPriorityLink(msg);
 }
 
 bool ArduCopterFirmwarePlugin::isPaused(const Vehicle* vehicle) const
@@ -197,4 +196,15 @@ void ArduCopterFirmwarePlugin::setGuidedMode(Vehicle* vehicle, bool guidedMode)
     } else {
         pauseVehicle(vehicle);
     }
+}
+
+bool ArduCopterFirmwarePlugin::multiRotorCoaxialMotors(Vehicle* vehicle)
+{
+    Q_UNUSED(vehicle);
+    return _coaxialMotors;
+}
+
+bool ArduCopterFirmwarePlugin::multiRotorXConfig(Vehicle* vehicle)
+{
+    return vehicle->autopilotPlugin()->getParameterFact(FactSystem::defaultComponentId, "FRAME")->rawValue().toInt() != 0;
 }

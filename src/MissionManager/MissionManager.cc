@@ -44,6 +44,11 @@ MissionManager::~MissionManager()
 
 void MissionManager::writeMissionItems(const QList<MissionItem*>& missionItems)
 {
+    if (inProgress()) {
+        qCDebug(MissionManagerLog) << "writeMissionItems called while transaction in progress";
+        return;
+    }
+
     bool skipFirstItem = !_vehicle->firmwarePlugin()->sendHomePositionToVehicle();
 
     _missionItems.clear();
@@ -68,11 +73,6 @@ void MissionManager::writeMissionItems(const QList<MissionItem*>& missionItems)
 
     qCDebug(MissionManagerLog) << "writeMissionItems count:" << _missionItems.count();
     
-    if (inProgress()) {
-        qCDebug(MissionManagerLog) << "writeMissionItems called while transaction in progress";
-        return;
-    }
-
     // Prime write list
     for (int i=0; i<_missionItems.count(); i++) {
         _itemIndicesToWrite << i;
@@ -107,7 +107,7 @@ void MissionManager::writeArduPilotGuidedMissionItem(const QGeoCoordinate& gotoC
     mavlink_mission_item_t  missionItem;
 
     missionItem.target_system =     _vehicle->id();
-    missionItem.target_component =  0;
+    missionItem.target_component =  _vehicle->defaultComponentId();
     missionItem.seq =               0;
     missionItem.command =           MAV_CMD_NAV_WAYPOINT;
     missionItem.param1 =            0;
@@ -132,6 +132,11 @@ void MissionManager::writeArduPilotGuidedMissionItem(const QGeoCoordinate& gotoC
 void MissionManager::requestMissionItems(void)
 {
     qCDebug(MissionManagerLog) << "requestMissionItems read sequence";
+
+    if (inProgress()) {
+        qCDebug(MissionManagerLog) << "requestMissionItems called while transaction in progress";
+        return;
+    }
     
     mavlink_message_t               message;
     mavlink_mission_request_list_t  request;
@@ -184,8 +189,13 @@ bool MissionManager::_stopAckTimeout(AckType_t expectedAck)
     _ackTimeoutTimer->stop();
     
     if (savedRetryAck != expectedAck) {
-        _sendError(ProtocolOrderError, QString("Vehicle responded incorrectly to mission item protocol sequence: %1:%2").arg(_ackTypeToString(savedRetryAck)).arg(_ackTypeToString(expectedAck)));
-        _finishTransaction(false);
+        if (savedRetryAck == AckNone) {
+            // Don't annoy the user with warnings about unexpected mission commands, just ignore them; ArduPilot updates home position using
+            // spurious MISSION_ITEMs.
+        } else {
+            _sendError(ProtocolOrderError, QString("Vehicle responded incorrectly to mission item protocol sequence: %1:%2").arg(_ackTypeToString(savedRetryAck)).arg(_ackTypeToString(expectedAck)));
+            _finishTransaction(false);
+        }
         success = false;
     } else {
         success = true;

@@ -107,6 +107,7 @@ void APMAirframeComponentController::_loadParametersFromDownloadFile(const QStri
         }
     }
     qgcApp()->restoreOverrideCursor();
+    _autopilot->refreshAllParameters();
 }
 
 APMAirframeType::APMAirframeType(const QString& name, const QString& imageResource, int type, QObject* parent) :
@@ -231,7 +232,7 @@ void APMAirframeComponentController::_githubJsonDownloadFinished(QString remoteF
 
 void APMAirframeComponentController::_githubJsonDownloadError(QString errorMsg)
 {
-    qgcApp()->showMessage(tr("Param file github json download failed: % 1").arg(errorMsg));
+    qgcApp()->showMessage(tr("Param file github json download failed: %1").arg(errorMsg));
     qgcApp()->restoreOverrideCursor();
 }
 
@@ -244,6 +245,6 @@ void APMAirframeComponentController::_paramFileDownloadFinished(QString remoteFi
 
 void APMAirframeComponentController::_paramFileDownloadError(QString errorMsg)
 {
-    qgcApp()->showMessage(tr("Param file download failed: % 1").arg(errorMsg));
+    qgcApp()->showMessage(tr("Param file download failed: %1").arg(errorMsg));
     qgcApp()->restoreOverrideCursor();
 }

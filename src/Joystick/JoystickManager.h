@@ -20,14 +20,13 @@
 
 Q_DECLARE_LOGGING_CATEGORY(JoystickManagerLog)
 
-class QGCApplicaiton;
-
 class JoystickManager : public QGCTool
 {
     Q_OBJECT
     
 public:
     JoystickManager(QGCApplication* app);
+    ~JoystickManager();
 
     /// List of available joysticks
     Q_PROPERTY(QVariantList joysticks READ joysticks CONSTANT)

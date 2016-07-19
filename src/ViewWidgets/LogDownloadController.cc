@@ -129,19 +129,18 @@ LogDownloadController::_processDownload()
 void
 LogDownloadController::_setActiveVehicle(Vehicle* vehicle)
 {
-    if((_uas && vehicle && _uas == vehicle->uas()) || !vehicle ) {
-        return;
-    }
-    _vehicle = vehicle;
-    if (_uas) {
+    if(_uas) {
         _logEntriesModel.clear();
         disconnect(_uas, &UASInterface::logEntry, this, &LogDownloadController::_logEntry);
         disconnect(_uas, &UASInterface::logData,  this, &LogDownloadController::_logData);
         _uas = NULL;
     }
-    _uas = vehicle->uas();
-    connect(_uas, &UASInterface::logEntry, this, &LogDownloadController::_logEntry);
-    connect(_uas, &UASInterface::logData,  this, &LogDownloadController::_logData);
+    _vehicle = vehicle;
+    if(_vehicle) {
+        _uas = vehicle->uas();
+        connect(_uas, &UASInterface::logEntry, this, &LogDownloadController::_logEntry);
+        connect(_uas, &UASInterface::logData,  this, &LogDownloadController::_logData);
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -448,7 +447,7 @@ LogDownloadController::_requestLogData(uint8_t id, uint32_t offset, uint32_t cou
             qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
             qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
             &msg,
-            qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()->id(), MAV_COMP_ID_ALL,
+            qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()->id(), qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()->defaultComponentId(),
             id, offset, count);
         _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
     }
@@ -476,7 +475,7 @@ LogDownloadController::_requestLogList(uint32_t start, uint32_t end)
             qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
             &msg,
             _vehicle->id(),
-            MAV_COMP_ID_ALL,
+            _vehicle->defaultComponentId(),
             start,
             end);
         _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
@@ -621,7 +620,7 @@ LogDownloadController::eraseAll(void)
             qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
             qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
             &msg,
-            qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()->id(), MAV_COMP_ID_ALL);
+            qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()->id(), qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()->defaultComponentId());
         _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
         refresh();
     }
@@ -675,6 +674,7 @@ void
 QGCLogModel::append(QGCLogEntry* object)
 {
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
+    QQmlEngine::setObjectOwnership(object, QQmlEngine::CppOwnership);
     _logEntries.append(object);
     endInsertRows();
     emit countChanged();
@@ -688,7 +688,7 @@ QGCLogModel::clear(void)
         beginRemoveRows(QModelIndex(), 0, _logEntries.count());
         while (_logEntries.count()) {
             QGCLogEntry* entry = _logEntries.last();
-            if(entry) delete entry;
+            if(entry) entry->deleteLater();
             _logEntries.removeLast();
         }
         endRemoveRows();

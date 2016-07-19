@@ -29,19 +29,19 @@ Item {
     //property var qgcView      - QGCView control
     //property var qgcViewPanel - QGCViewPanel control
 
-    readonly property int monitorThresholdCharWidth: 8  // Character width of Monitor and Threshold labels
+    readonly property bool _shortText: ScreenTools.isTinyScreen
 
     // User visible strings
 
     readonly property string title:                     qsTr("FLIGHT MODES")
 
-
-    property string topHelpText:                        qsTr("Assign Flight Modes to radio control channels and adjust the thresholds for triggering them. ") +
-                                                        qsTr("You can assign multiple flight modes to a single channel. ") +
-                                                        qsTr("Turn your radio control on to test switch settings. ") +
-                                                        qsTr("The following channels: ") + controller.reservedChannels +
-                                                        qsTr(" are not available for Flight Modes since they are already in use for other functions.")
-
+    property string topHelpText: ScreenTools.isTinyScreen ?
+                                     qsTr("Assign Flight Modes to radio control channels and adjust the thresholds for triggering them.") :
+                                     (qsTr("Assign Flight Modes to radio control channels and adjust the thresholds for triggering them. ") +
+                                      qsTr("You can assign multiple flight modes to a single channel. ") +
+                                      qsTr("Turn your radio control on to test switch settings. ") +
+                                      qsTr("The following channels: ") + controller.reservedChannels +
+                                      qsTr(" are not available for Flight Modes since they are already in use for other functions."))
 
     readonly property string fwManualModeName:          qsTr("Manual/Main")
     readonly property string mrManualModeName:          qsTr("Stabilized/Main")
@@ -63,7 +63,7 @@ Item {
     readonly property string fwAcroModeDescription:     qsTr("The angular rates are controlled, but not the attitude. ")
     readonly property string mrAcroModeDescription:     qsTr("The angular rates are controlled, but not the attitude. ")
 
-    readonly property string altCtlModeName:            qsTr("Altitude Control")
+    readonly property string altCtlModeName:            qsTr("Altitude")
     readonly property string fwAltCtlModeDescription:   qsTr("Roll stick controls banking, pitch stick altitude ") +
                                                         qsTr("Throttle stick controls speed. ") +
                                                         qsTr("With no stick inputs the plane holds heading, but drifts off in wind. ")
@@ -76,10 +76,10 @@ Item {
     readonly property string mrPosCtlModeDescription:   qsTr("Roll and Pitch sticks control sideways and forward speed ") +
                                                         qsTr("Throttle stick controls climb / sink rade. ")
 
-    readonly property string missionModeName:           qsTr("Auto Mission")
+    readonly property string missionModeName:           qsTr("Mission")
     readonly property string missionModeDescription:    qsTr("The aircraft obeys the programmed mission sent by QGroundControl. ")
 
-    readonly property string loiterModeName:            qsTr("Auto Pause")
+    readonly property string loiterModeName:            qsTr("Hold")
     readonly property string fwLoiterModeDescription:   qsTr("The aircraft flies in a circle around the current position at the current altitude. ")
     readonly property string mrLoiterModeDescription:   qsTr("The multirotor hovers at the current position and altitude. ")
 

@@ -26,7 +26,6 @@ FlightMap {
     id:             flightMap
     anchors.fill:   parent
     mapName:        _mapName
-    showScale:      QGroundControl.flightMapSettings.showScaleOnFlyView
 
     property alias  missionController: _missionController
     property var    flightWidgets
@@ -68,8 +67,8 @@ FlightMap {
             line.color: "red"
             z:          QGroundControl.zOrderMapItems - 1
             path: [
-                { latitude: object.coordinate1.latitude, longitude: object.coordinate1.longitude },
-                { latitude: object.coordinate2.latitude, longitude: object.coordinate2.longitude },
+                object.coordinate1,
+                object.coordinate2,
             ]
         }
     }
@@ -109,6 +108,16 @@ FlightMap {
             isCurrentItem:  true
             label:          qsTr("G", "Goto here waypoint") // second string is translator's hint.
         }
+    }    
+
+    MapScale {
+        anchors.bottomMargin:   ScreenTools.defaultFontPixelHeight * (0.66)
+        anchors.rightMargin:    ScreenTools.defaultFontPixelHeight * (0.33)
+        anchors.bottom:         parent.bottom
+        anchors.right:          parent.right
+        z:                      QGroundControl.zOrderWidgets
+        mapControl:             flightMap
+        visible:                !ScreenTools.isTinyScreen
     }
 
     // Handle guided mode clicks
@@ -117,11 +126,13 @@ FlightMap {
 
         onClicked: {
             if (_activeVehicle) {
-                if (_activeVehicle.guidedMode && flightWidgets.guidedModeBar.state == "Shown") {
-                    _gotoHereCoordinate = flightMap.toCoordinate(Qt.point(mouse.x, mouse.y))
-                    flightWidgets.guidedModeBar.confirmAction(flightWidgets.guidedModeBar.confirmGoTo)
-                } else {
+                if (flightWidgets.guidedModeBar.state != "Shown") {
                     flightWidgets.guidedModeBar.state = "Shown"
+                } else {
+                    if (flightWidgets.gotoEnabled) {
+                        _gotoHereCoordinate = flightMap.toCoordinate(Qt.point(mouse.x, mouse.y))
+                        flightWidgets.guidedModeBar.confirmAction(flightWidgets.guidedModeBar.confirmGoTo)
+                    }
                 }
             }
         }

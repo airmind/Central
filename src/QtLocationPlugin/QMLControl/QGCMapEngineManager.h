@@ -37,7 +37,6 @@ public:
     Q_PROPERTY(QString              tileCountStr    READ    tileCountStr    NOTIFY tileCountChanged)
     Q_PROPERTY(quint64              tileSize        READ    tileSize        NOTIFY tileSizeChanged)
     Q_PROPERTY(QString              tileSizeStr     READ    tileSizeStr     NOTIFY tileSizeChanged)
-    Q_PROPERTY(bool                 crazySize       READ    crazySize       NOTIFY crazySizeChanged)
     Q_PROPERTY(QmlObjectListModel*  tileSets        READ    tileSets        NOTIFY tileSetsChanged)
     Q_PROPERTY(QStringList          mapList         READ    mapList         CONSTANT)
     Q_PROPERTY(QString              mapboxToken     READ    mapboxToken     WRITE   setMapboxToken  NOTIFY  mapboxTokenChanged)
@@ -50,7 +49,7 @@ public:
 
     Q_INVOKABLE void                loadTileSets            ();
     Q_INVOKABLE void                updateForCurrentView    (double lon0, double lat0, double lon1, double lat1, int minZoom, int maxZoom, const QString& mapName);
-    Q_INVOKABLE void                startDownload           (const QString& name, const QString& description, const QString& mapType, const QImage& image = QImage());
+    Q_INVOKABLE void                startDownload           (const QString& name, const QString& mapType);
     Q_INVOKABLE void                saveSetting             (const QString& key,  const QString& value);
     Q_INVOKABLE QString             loadSetting             (const QString& key,  const QString& defaultValue);
     Q_INVOKABLE void                deleteTileSet           (QGCCachedTileSet* tileSet);
@@ -65,7 +64,6 @@ public:
     QString                         tileCountStr            ();
     quint64                         tileSize                () { return _totalSet.tileSize; }
     QString                         tileSizeStr             ();
-    bool                            crazySize               () { return _crazySize; }
     QStringList                     mapList                 ();
     QString                         mapboxToken             ();
     QmlObjectListModel*             tileSets                () { return &_tileSets; }
@@ -91,7 +89,6 @@ signals:
     void tileY1Changed          ();
     void tileCountChanged       ();
     void tileSizeChanged        ();
-    void crazySizeChanged       ();
     void mapboxTokenChanged     ();
     void tileSetsChanged        ();
     void maxMemCacheChanged     ();
@@ -114,7 +111,6 @@ private:
 
 private:
     QGCTileSet  _totalSet;
-    bool        _crazySize;
     double      _topleftLat;
     double      _topleftLon;
     double      _bottomRightLat;

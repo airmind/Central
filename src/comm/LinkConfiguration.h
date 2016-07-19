@@ -183,9 +183,9 @@ public:
 
 signals:
     void nameChanged        (const QString& name);
-    void linkChanged        (LinkInterface* link);
     void dynamicChanged     ();
     void autoConnectChanged ();
+    void linkChanged        (LinkInterface* link);
 
 protected:
     LinkInterface* _link; ///< Link currently using this configuration (if any)

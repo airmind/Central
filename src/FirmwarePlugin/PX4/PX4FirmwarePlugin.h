@@ -23,6 +23,8 @@ class PX4FirmwarePlugin : public FirmwarePlugin
     Q_OBJECT
 
 public:
+    PX4FirmwarePlugin(void);
+
     // Overrides from FirmwarePlugin
 
     QList<VehicleComponent*> componentsForVehicle(AutoPilotPlugin* vehicle) final;
@@ -50,6 +52,7 @@ public:
     QString     internalParameterMetaDataFile   (void) final { return QString(":/FirmwarePlugin/PX4/PX4ParameterFactMetaData.xml"); }
     void        getParameterMetaDataVersionInfo (const QString& metaDataFile, int& majorVersion, int& minorVersion) final { PX4ParameterMetaData::getParameterMetaDataVersionInfo(metaDataFile, majorVersion, minorVersion); }
     QObject*    loadParameterMetaData           (const QString& metaDataFile);
+    bool        adjustIncomingMavlinkMessage(Vehicle* vehicle, mavlink_message_t* message);
 
     // Use these constants to set flight modes using setFlightMode method. Don't use hardcoded string names since the
     // names may change.
@@ -63,12 +66,17 @@ public:
     static const char* offboardFlightMode;
     static const char* readyFlightMode;
     static const char* takeoffFlightMode;
-    static const char* pauseFlightMode;
+    static const char* holdFlightMode;
     static const char* missionFlightMode;
     static const char* rtlFlightMode;
     static const char* landingFlightMode;
     static const char* rtgsFlightMode;
     static const char* followMeFlightMode;
+
+private:
+    void _handleAutopilotVersion(Vehicle* vehicle, mavlink_message_t* message);
+
+    bool _versionNotified;  ///< true: user notified over version issue
 };
 
 #endif
