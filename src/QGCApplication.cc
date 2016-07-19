@@ -490,7 +490,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
 
     // Load known link configurations
     //toolbox()->linkManager()->loadLinkConfigurationList();
-
+/*
 <<<<<<< HEAD
     
     // Show user an upgrade message if the settings version has been bumped up
@@ -507,9 +507,10 @@ bool QGCApplication::_initForNormalAppBoot(void)
     }
 
     if (settingsUpgraded) {
-=======
+=======*/
+    
     if (_settingsUpgraded) {
->>>>>>> master
+//>>>>>>> master
         settings.clear();
         settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
 #ifndef __mindskin__
@@ -521,8 +522,12 @@ bool QGCApplication::_initForNormalAppBoot(void)
     }
 
     if (getQGCMapEngine()->wasCacheReset()) {
+#ifndef __mindskin__
+
         showMessage("The Offline Map Cache database has been upgraded. "
                     "Your old map cache sets have been reset.");
+#endif
+
     }
 
     settings.sync();

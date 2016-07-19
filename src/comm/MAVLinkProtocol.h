@@ -310,6 +310,7 @@ private:
     void _sendMessage(mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
+
 //>>>>>>> upstream/master
 
 #ifdef __mindskin__

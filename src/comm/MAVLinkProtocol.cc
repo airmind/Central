@@ -791,7 +791,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
     // Rewriting header to ensure correct link ID is set
     static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
-    mavlink_finalize_message_chan(&message, this->getSystemId(), this->getComponentId(), link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
+    mavlink_finalize_message_chan(&message, this->getSystemId(), this->getComponentId(), link->getMavlinkChannel(), message.len, messageKeys[message.msgid]);
     // Write message into buffer, prepending start sign
     int len = mavlink_msg_to_send_buffer(buffer, &message);
     // If link is connected
@@ -814,7 +814,8 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
     // Rewriting header to ensure correct link ID is set
     static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
-    mavlink_finalize_message_chan(&message, systemid, componentid, link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
+    
+    mavlink_finalize_message_chan(&message, systemid, componentid, link->getMavlinkChannel(), message.len, messageKeys[message.msgid]);
     // Write message into buffer, prepending start sign
     int len = mavlink_msg_to_send_buffer(buffer, &message);
     // If link is connected
@@ -824,6 +825,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
         link->writeBytesSafe((const char*)buffer, len);
     }
 }
+
 
 //<<<<<<< HEAD
 
@@ -882,7 +884,8 @@ void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message
     }
 }
 
-#endif
+#endif //__mindskin__
+
 /**
  * The heartbeat is sent out of order and does not reset the
  * periodic heartbeat emission. It will be just sent in addition.

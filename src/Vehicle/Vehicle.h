@@ -641,11 +641,11 @@ private slots:
     //void _linkDisconnected(LinkInterface* link);
 //=======
     void _linkInactiveOrDeleted(LinkInterface* link);
-<<<<<<< HEAD
+//<<<<<<< HEAD
 //>>>>>>> upstream/master
-    void _sendMessage(mavlink_message_t message);
-=======
->>>>>>> master
+    //void _sendMessage(mavlink_message_t message);
+//=======
+//>>>>>>> master
     void _sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
     void _sendMessageMultipleNext(void);
     void _addNewMapTrajectoryPoint(void);

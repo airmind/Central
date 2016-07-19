@@ -426,7 +426,7 @@ Vehicle::Vehicle(BTSerialLink*             link,
     
     connect(_mavlink, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this, static_cast<void (Vehicle::*)(BTSerialLink*, mavlink_message_t)>(&Vehicle::_mavlinkMessageReceived));
     
-    connect(this, &Vehicle::_sendMessageOnThread,       this, &Vehicle::_sendMessage, Qt::QueuedConnection);
+    //connect(this, &Vehicle::_sendMessageOnLinkOnThread,       this, &Vehicle::_sendMessage, Qt::QueuedConnection);
     connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, &Vehicle::_sendMessageOnLink, Qt::QueuedConnection);
     connect(this, &Vehicle::flightModeChanged,          this, &Vehicle::_handleFlightModeChanged);
     connect(this, &Vehicle::armedChanged,               this, &Vehicle::_announceArmedChanged);
@@ -1134,7 +1134,7 @@ void Vehicle::_linkInactiveOrDeleted(LinkInterface* link)
     }
 }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 #ifdef __mindskin__
 void Vehicle::_linkInactiveOrDeleted(BTSerialLink* link)
 {
@@ -1151,13 +1151,14 @@ void Vehicle::_linkInactiveOrDeleted(BTSerialLink* link)
 }
 #endif
 
+/*
 void Vehicle::sendMessage(mavlink_message_t message)
 {
     emit _sendMessageOnThread(message);
 }
-
-=======
->>>>>>> master
+*/
+//=======
+//>>>>>>> master
 bool Vehicle::sendMessageOnLink(LinkInterface* link, mavlink_message_t message)
 {
     if (!link || !_links.contains(link) || !link->isConnected()) {
@@ -1180,8 +1181,8 @@ void Vehicle::_sendMessageOnLink(LinkInterface* link, mavlink_message_t message)
     _firmwarePlugin->adjustOutgoingMavlinkMessage(this, &message);
 
     static const uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
-    mavlink_finalize_message_chan(&message, _mavlink->getSystemId(), _mavlink->getComponentId(), link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
-
+    mavlink_finalize_message_chan(&message, _mavlink->getSystemId(), _mavlink->getComponentId(), link->getMavlinkChannel(), message.len, messageKeys[message.msgid]);
+    
     // Write message into buffer, prepending start sign
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
     int len = mavlink_msg_to_send_buffer(buffer, &message);
