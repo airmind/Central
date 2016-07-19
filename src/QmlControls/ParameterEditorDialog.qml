@@ -36,11 +36,10 @@ QGCViewDialog {
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
 
     function accept() {
-        /*
-        if (bitmaskEditor.visible) {
+        if (bitmaskColumn.visible) {
             var value = 0;
             for (var i = 0; i < fact.bitmaskValues.length; ++i) {
-                var checkbox = bitmaskEditor.itemAt(i)
+                var checkbox = bitmaskRepeater.itemAt(i)
                 if (checkbox.checked) {
                     value |= fact.bitmaskValues[i];
                 }
@@ -48,8 +47,7 @@ QGCViewDialog {
             fact.value = value;
             fact.valueChanged(fact.value)
             hideDialog();
-        }
-        else */ if (factCombo.visible) {
+        } else if (factCombo.visible) {
             fact.enumIndex = factCombo.currentIndex
             hideDialog()
         } else {
@@ -106,8 +104,9 @@ QGCViewDialog {
                     visible:    fact.enumStrings.length == 0 || validate
                     //focus:  true
 
-                    // At this point all Facts are numeric
-                    inputMethodHints:   Qt.ImhFormattedNumbersOnly
+                    inputMethodHints:   ScreenTools.isiOS ?
+                                            Qt.ImhNone :                // iOS numeric keyboard has not done button, we can't use it
+                                            Qt.ImhFormattedNumbersOnly  // Forces use of virtual numeric keyboard
                 }
 
                 QGCButton {
@@ -142,11 +141,13 @@ QGCViewDialog {
             }
 
             Column {
-                spacing: ScreenTools.defaultFontPixelHeight / 2
-                visible: fact.bitmaskStrings.length > 0 ? true : false;
+                id:         bitmaskColumn
+                spacing:    ScreenTools.defaultFontPixelHeight / 2
+                visible:    fact.bitmaskStrings.length > 0 ? true : false;
+
                 Repeater {
-                    id: bitmaskEditor
-                    model: fact.bitmaskStrings
+                    id:     bitmaskRepeater
+                    model:  fact.bitmaskStrings
 
                     delegate : QGCCheckBox {
                         text : modelData
@@ -157,35 +158,46 @@ QGCViewDialog {
 
             QGCLabel { text: fact.name }
 
-            Row {
-                spacing: defaultTextWidth
+            Column {
+                spacing:        defaultTextHeight / 2
+                anchors.left:   parent.left
+                anchors.right:  parent.right
 
-                QGCLabel { text: qsTr("Units:") }
-                QGCLabel { text: fact.units ? fact.units : qsTr("none") }
-            }
+                Row {
+                    spacing: defaultTextWidth
 
-            Row {
-                spacing: defaultTextWidth
-                visible: !fact.minIsDefaultForType
+                    QGCLabel { text: qsTr("Units:") }
+                    QGCLabel { text: fact.units ? fact.units : qsTr("none") }
+                }
 
-                QGCLabel { text: qsTr("Minimum value:") }
-                QGCLabel { text: fact.minString }
-            }
+                Row {
+                    spacing: defaultTextWidth
+                    visible: !fact.minIsDefaultForType
 
-            Row {
-                spacing: defaultTextWidth
-                visible: !fact.maxIsDefaultForType
+                    QGCLabel { text: qsTr("Minimum value:") }
+                    QGCLabel { text: fact.minString }
+                }
 
-                QGCLabel { text: qsTr("Maximum value:") }
-                QGCLabel { text: fact.maxString }
-            }
+                Row {
+                    spacing: defaultTextWidth
+                    visible: !fact.maxIsDefaultForType
 
-            Row {
-                spacing: defaultTextWidth
+                    QGCLabel { text: qsTr("Maximum value:") }
+                    QGCLabel { text: fact.maxString }
+                }
 
-                QGCLabel { text: qsTr("Default value:") }
-                QGCLabel { text: fact.defaultValueAvailable ? fact.defaultValueString : qsTr("none") }
-            }
+                Row {
+                    spacing: defaultTextWidth
+
+                    QGCLabel { text: qsTr("Default value:") }
+                    QGCLabel { text: fact.defaultValueAvailable ? fact.defaultValueString : qsTr("none") }
+                }
+
+                QGCLabel {
+                    visible:    fact.rebootRequired
+                    text:       "Reboot required after change"
+                }
+            } // Column
 
             QGCLabel {
                 width:      parent.width

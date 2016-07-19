@@ -19,7 +19,7 @@ message(Qt version $$[QT_VERSION])
 
 include(QGCCommon.pri)
 
-TARGET   = qgroundcontrol
+TARGET   = QGroundControl
 TEMPLATE = app
 
 DebugBuild {
@@ -138,6 +138,12 @@ contains (DEFINES, __mindskin__) {
     #-- Info.plist (need an "official" one for the App Store)
     ForAppStore {
         message(App Store Build)
+        #-- Create official, versioned Info.plist
+        APP_STORE = $$system(cd $${BASEDIR} && $${BASEDIR}/tools/update_ios_version.sh $${BASEDIR}/ios/iOSForAppStore-Info-Source.plist $${BASEDIR}/ios/iOSForAppStore-Info.plist)
+        APP_ERROR = $$find(APP_STORE, "Error")
+        count(APP_ERROR, 1) {
+            error("Error building .plist file. 'ForAppStore' builds are only possible through the official build system.")
+        }
         QMAKE_INFO_PLIST  = $${BASEDIR}/ios/iOSForAppStore-Info.plist
         OTHER_FILES      += $${BASEDIR}/ios/iOSForAppStore-Info.plist
     } else {
@@ -155,7 +161,7 @@ RC_ICONS = resources/icons/qgroundcontrol.ico
 QMAKE_TARGET_COMPANY = "qgroundcontrol.org"
 QMAKE_TARGET_DESCRIPTION = "Open source ground control app provided by QGroundControl dev team"
 QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2016 QGroundControl Development Team. All rights reserved."
-QMAKE_TARGET_PRODUCT = "qgroundcontrol"
+QMAKE_TARGET_PRODUCT = "QGroundControl"
 
 #
 # Build-specific settings
@@ -277,6 +283,7 @@ HEADERS += \
     src/HomePositionManager.h \
     src/Joystick/Joystick.h \
     src/Joystick/JoystickManager.h \
+    src/VehicleSetup/JoystickConfigController.h \
     src/FollowMe/FollowMe.h \
     src/PositionManager/SimulatedPosition.h \
     src/JsonHelper.h \
@@ -311,7 +318,6 @@ HEADERS += \
     src/QmlControls/ParameterEditorController.h \
     src/QmlControls/RCChannelMonitorController.h \
     src/QmlControls/ScreenToolsController.h \
-    src/QmlControls/QGCQGeoCoordinate.h \
     src/QmlControls/QGroundControlQmlGlobal.h \
     src/QmlControls/QmlObjectListModel.h \
     src/uas/UAS.h \
@@ -323,6 +329,10 @@ HEADERS += \
     src/QmlControls/QGCImageProvider.h \
     src/QtLocationPlugin/QMLControl/QGCMapEngineManager.h \
     src/PositionManager/PositionManager.h
+
+AndroidBuild {
+HEADERS += \
+}
 
 DebugBuild {
 HEADERS += \
@@ -401,6 +411,7 @@ HEADERS += \
     src/comm/QGCHilLink.h \
     src/comm/QGCJSBSimLink.h \
     src/comm/QGCXPlaneLink.h \
+    src/Joystick/JoystickSDL.h \
     src/QGCFileDialog.h \
     src/QGCMessageBox.h \
     src/uas/FileManager.h \
@@ -445,7 +456,6 @@ HEADERS += \
     src/GPS/GPSManager.h \
     src/GPS/GPSPositionMessage.h \
     src/GPS/GPSProvider.h \
-    src/VehicleSetup/JoystickConfigController.h \
     src/ViewWidgets/CustomCommandWidget.h \
     src/ViewWidgets/CustomCommandWidgetController.h \
     src/ViewWidgets/LogDownload.h \
@@ -458,6 +468,7 @@ iOSBuild {
         src/audio/QGCAudioWorker_iOS.mm \
         src/MobileScreenMgr.mm \
 }
+
 AndroidBuild {
     SOURCES += src/MobileScreenMgr.cc \
 }
@@ -478,6 +489,7 @@ SOURCES += \
     src/HomePositionManager.cc \
     src/Joystick/Joystick.cc \
     src/Joystick/JoystickManager.cc \
+    src/VehicleSetup/JoystickConfigController.cc \
     src/JsonHelper.cc \
     src/FollowMe/FollowMe.cc \
     src/LogCompressor.cc \
@@ -509,7 +521,6 @@ SOURCES += \
     src/QmlControls/ParameterEditorController.cc \
     src/QmlControls/RCChannelMonitorController.cc \
     src/QmlControls/ScreenToolsController.cc \
-    src/QmlControls/QGCQGeoCoordinate.cc \
     src/QmlControls/QGroundControlQmlGlobal.cc \
     src/QmlControls/QmlObjectListModel.cc \
     src/uas/UAS.cc \
@@ -555,6 +566,7 @@ SOURCES += \
     src/comm/QGCFlightGearLink.cc \
     src/comm/QGCJSBSimLink.cc \
     src/comm/QGCXPlaneLink.cc \
+    src/Joystick/JoystickSDL.cc \
     src/ui/HILDockWidget.cc \
     src/ui/linechart/ChartPlot.cc \
     src/ui/linechart/IncrementalPlot.cc \
@@ -585,7 +597,6 @@ SOURCES += \
     src/GPS/RTCM/RTCMMavlink.cc \
     src/GPS/GPSManager.cc \
     src/GPS/GPSProvider.cc \
-    src/VehicleSetup/JoystickConfigController.cc \
     src/ViewWidgets/CustomCommandWidget.cc \
     src/ViewWidgets/CustomCommandWidgetController.cc \
     src/ViewWidgets/LogDownload.cc \
@@ -626,6 +637,7 @@ HEADERS += \
     src/qgcunittest/MavlinkLogTest.h \
     src/qgcunittest/MessageBoxTest.h \
     src/qgcunittest/MultiSignalSpy.h \
+    src/qgcunittest/ParameterLoaderTest.h \
     src/qgcunittest/RadioConfigTest.h \
     src/qgcunittest/TCPLinkTest.h \
     src/qgcunittest/TCPLoopBackServer.h \
@@ -651,6 +663,7 @@ SOURCES += \
     src/qgcunittest/MavlinkLogTest.cc \
     src/qgcunittest/MessageBoxTest.cc \
     src/qgcunittest/MultiSignalSpy.cc \
+    src/qgcunittest/ParameterLoaderTest.cc \
     src/qgcunittest/RadioConfigTest.cc \
     src/qgcunittest/TCPLinkTest.cc \
     src/qgcunittest/TCPLoopBackServer.cc \
@@ -691,6 +704,7 @@ HEADERS+= \
     src/AutoPilotPlugins/APM/APMSensorsComponent.h \
     src/AutoPilotPlugins/APM/APMSensorsComponentController.h \
     src/AutoPilotPlugins/APM/APMTuningComponent.h \
+    src/AutoPilotPlugins/Common/MotorComponent.h \
     src/AutoPilotPlugins/Common/RadioComponentController.h \
     src/AutoPilotPlugins/Common/ESP8266ComponentController.h \
     src/AutoPilotPlugins/Common/ESP8266Component.h \
@@ -717,6 +731,7 @@ HEADERS+= \
     src/FirmwarePlugin/APM/ArduCopterFirmwarePlugin.h \
     src/FirmwarePlugin/APM/ArduPlaneFirmwarePlugin.h \
     src/FirmwarePlugin/APM/ArduRoverFirmwarePlugin.h \
+    src/FirmwarePlugin/PX4/px4_custom_mode.h \
     src/FirmwarePlugin/PX4/PX4FirmwarePlugin.h \
     src/FirmwarePlugin/PX4/PX4ParameterMetaData.h \
     src/Vehicle/MultiVehicleManager.h \
@@ -748,6 +763,7 @@ SOURCES += \
     src/AutoPilotPlugins/APM/APMSensorsComponent.cc \
     src/AutoPilotPlugins/APM/APMSensorsComponentController.cc \
     src/AutoPilotPlugins/APM/APMTuningComponent.cc \
+    src/AutoPilotPlugins/Common/MotorComponent.cc \
     src/AutoPilotPlugins/Common/RadioComponentController.cc \
     src/AutoPilotPlugins/Common/ESP8266ComponentController.cc \
     src/AutoPilotPlugins/Common/ESP8266Component.cc \
@@ -835,9 +851,8 @@ SOURCES += \
     src/VideoStreaming/VideoStreaming.cc \
     src/VideoStreaming/VideoSurface.cc \
 
-contains (DEFINES, DISABLE_VIDEOSTREAMING) {
+contains (CONFIG, DISABLE_VIDEOSTREAMING) {
     message("Skipping support for video streaming (manual override from command line)")
-    DEFINES -= DISABLE_VIDEOSTREAMING
 # Otherwise the user can still disable this feature in the user_config.pri file.
 } else:exists(user_config.pri):infile(user_config.pri, DEFINES, DISABLE_VIDEOSTREAMING) {
     message("Skipping support for video streaming (manual override from user_config.pri)")

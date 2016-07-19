@@ -32,10 +32,7 @@ Map {
     id: _map
 
     property string mapName:            'defaultMap'
-    property string mapType:            QGroundControl.flightMapSettings.mapTypeForMapName(mapName)
-//  property alias  mapWidgets:         controlWidgets
-    property bool   isSatelliteMap:     mapType == "Satellite Map" || mapType == "Hybrid Map"
-    property bool   showScale:          false
+    property bool   isSatelliteMap:     activeMapType.name.indexOf("Satellite") > -1 || activeMapType.name.indexOf("Hybrid") > -1
 
     readonly property real  maxZoomLevel: 20
     property variant        scaleLengths: [5, 10, 25, 50, 100, 150, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000]
@@ -93,8 +90,6 @@ Map {
 
     ExclusiveGroup { id: mapTypeGroup }
 
-    Component.onCompleted: onMapTypeChanged
-
     property bool _initialMapPositionSet: false
 
     Connections {
@@ -107,15 +102,21 @@ Map {
         }
     }
 
-    onMapTypeChanged: {
-        QGroundControl.flightMapSettings.setMapTypeForMapName(mapName, mapType)
-        var fullMapName = QGroundControl.flightMapSettings.mapProvider + " " + mapType
+    function updateActiveMapType() {
+        var fullMapName = QGroundControl.flightMapSettings.mapProvider + " " + QGroundControl.flightMapSettings.mapType
         for (var i = 0; i < _map.supportedMapTypes.length; i++) {
             if (fullMapName === _map.supportedMapTypes[i].name) {
                 _map.activeMapType = _map.supportedMapTypes[i]
                 return
             }
         }
+    }
+
+    Component.onCompleted: updateActiveMapType()
+
+    Connections {
+        target:             QGroundControl.flightMapSettings
+        onMapTypeChanged:   updateActiveMapType()
     }
 
     MapQuickItem {
@@ -128,179 +129,151 @@ Map {
         }
     }
 
-    onWidthChanged: {
-        if(_map.showScale)
-            scaleTimer.restart()
+    //---- Polygon drawing code
+
+    //
+    // Usage:
+    //
+    // Connections {
+    //     target: map.polygonDraw
+    //
+    //    onPolygonStarted: {
+    //      // Polygon creation has started
+    //    }
+    //
+    //    onPolygonFinished: {
+    //      // Polygon capture complete, coordinates signal variable contains the polygon points
+    //    }
+    // }
+    //
+    // map.polygonDraqw.startPolgyon() - begin capturing a new polygon
+    // map.polygonDraqw.endPolygon() - end capture (right-click will also end capture)
+
+    // Not sure why this is needed, but trying to reference polygonDrawer directly from other code doesn't work
+    property alias polygonDraw: polygonDrawer
+
+    QGCLabel {
+        id:                     polygonHelp
+        anchors.topMargin:      parent.height - ScreenTools.availableHeight
+        anchors.top:            parent.top
+        anchors.left:           parent.left
+        anchors.right:          parent.right
+        horizontalAlignment:    Text.AlignHCenter
+        text:                   qsTr("Click to add point %1").arg(ScreenTools.isMobile || !polygonDrawer.polygonReady ? "" : qsTr("- Right Click to end polygon"))
+        visible:                polygonDrawer.drawingPolygon
     }
 
-    onHeightChanged: {
-        if(_map.showScale)
-            scaleTimer.restart()
-    }
+    MouseArea {
+        id:                 polygonDrawer
+        anchors.fill:       parent
+        acceptedButtons:    Qt.LeftButton | Qt.RightButton
+        visible:            drawingPolygon
+        z:                  1000 // Hack to fix MouseArea layering for now
 
-    onZoomLevelChanged:{
-        if(_map.showScale)
-            scaleTimer.restart()
-    }
+        property alias  drawingPolygon: polygonDrawer.hoverEnabled
+        property bool   polygonReady:   polygonDrawerPolygon.path.length > 3 ///< true: enough points have been captured to create a closed polygon
 
-    Timer {
-        id:         scaleTimer
-        interval:   100
-        running:    false
-        repeat:     false
-        onTriggered: {
-            _map.calculateScale()
+        /// New polygon capture has started
+        signal polygonStarted
+
+        /// Polygon capture is complete
+        ///     @param coordinates Map coordinates for the polygon points
+        signal polygonFinished(var coordinates)
+
+        /// Begin capturing a new polygon
+        ///     polygonStarted will be signalled
+        function startPolygon() {
+            polygonDrawer.drawingPolygon = true
+            polygonDrawer._clearPolygon()
+            polygonDrawer.polygonStarted()
         }
-    }
-    /*
-        Scale
-    */
-    Item {
-        id:                         scale
-        visible:                    _map.showScale && scaleText.text !== "0 m"
-        z:                          _map.z + 20
-        width:                      scaleImageLeft.width + scaleImage.width + scaleImageRight.width
-        anchors {
-            bottom:                 parent.bottom
-            bottomMargin:           ScreenTools.defaultFontPixelHeight * (0.66)
-            right:                  parent.right
-            rightMargin:            ScreenTools.defaultFontPixelHeight * (0.33)
-        }
-        Image {
-            id:                     scaleImageLeft
-            source:                 isSatelliteMap ? "/qmlimages/scale_end.png" : "/qmlimages/scale_endLight.png"
-            anchors.bottom:         parent.bottom
-            anchors.left:           parent.left
-        }
-        Image {
-            id:                     scaleImage
-            source:                 isSatelliteMap ? "/qmlimages/scale.png" : "/qmlimages/scaleLight.png"
-            anchors.bottom:         parent.bottom
-            anchors.left:           scaleImageLeft.right
-        }
-        Image {
-            id:                     scaleImageRight
-            source:                 isSatelliteMap ? "/qmlimages/scale_end.png" : "/qmlimages/scale_endLight.png"
-            anchors.bottom:         parent.bottom
-            anchors.left:           scaleImage.right
-        }
-        QGCLabel {
-            id: scaleText
-            color:                  isSatelliteMap ? "white" : "black"
-            font.family:            ScreenTools.demiboldFontFamily
-            horizontalAlignment:    Text.AlignHCenter
-            anchors.bottom:         parent.bottom
-            anchors.right:          parent.right
-            anchors.bottomMargin:   ScreenTools.defaultFontPixelHeight * (0.83)
-            text: "0 m"
-        }
-        Component.onCompleted: {
-            if(_map.showScale)
-                _map.calculateScale();
-        }
-    }
 
-    /*********************************************
-    /// Map control widgets
-    Column {
-        id:                 controlWidgets
-        anchors.margins:    ScreenTools.defaultFontPixelWidth
-        anchors.right:      parent.right
-        anchors.bottom:     parent.bottom
-        spacing:            ScreenTools.defaultFontPixelWidth / 2
-        z:                  1000    // Must be on top for clicking
-        // Pinch zoom doesn't seem to be working, so zoom buttons in mobile on for now
-        //visible:            !ScreenTools.isMobile
-
-        Row {
-            layoutDirection:    Qt.RightToLeft
-            spacing:            ScreenTools.defaultFontPixelWidth / 2
-
-            readonly property real _zoomIncrement: 1.0
-            property real _buttonWidth: ScreenTools.defaultFontPixelWidth * 5
-
-            NumberAnimation {
-                id: animateZoom
-
-                property real startZoom
-                property real endZoom
-
-                target:     _map
-                properties: "zoomLevel"
-                from:       startZoom
-                to:         endZoom
-                duration:   500
-
-                easing {
-                    type: Easing.OutExpo
-                }
+        /// Finish capturing the polygon
+        ///     polygonFinished will be signalled
+        /// @return true: polygon completed, false: not enough points to complete polygon
+        function finishPolygon() {
+            if (!polygonDrawer.polygonReady) {
+                return false
             }
 
+            var polygonPath = polygonDrawerPolygon.path
+            polygonPath.pop() // get rid of drag coordinate
+            polygonDrawer._clearPolygon()
+            polygonDrawer.drawingPolygon = false
+            polygonDrawer.polygonFinished(polygonPath)
+            return true
+        }
 
-            QGCButton {
-                width:  parent._buttonWidth
-                z:      QGroundControl.zOrderWidgets
-                //iconSource: "/qmlimages/ZoomPlus.svg"
-                text:   "+"
+        function _clearPolygon() {
+            // Simpler methods to clear the path simply don't work due to bugs. This craziness does.
+            var bogusCoord = _map.toCoordinate(Qt.point(height/2, width/2))
+            polygonDrawerPolygon.path = [ bogusCoord, bogusCoord ]
+            polygonDrawerNextPoint.path = [ bogusCoord, bogusCoord ]
+            polygonDrawerPolygon.path = [ ]
+            polygonDrawerNextPoint.path = [ ]
+        }
 
-                onClicked: {
-                    var endZoomLevel = _map.zoomLevel + parent._zoomIncrement
-                    if (endZoomLevel > _map.maximumZoomLevel) {
-                        endZoomLevel = _map.maximumZoomLevel
+        onClicked: {
+            if (mouse.button == Qt.LeftButton) {
+                if (polygonDrawerPolygon.path.length > 2) {
+                    // Make sure the new line doesn't intersect the existing polygon
+                    var lastSegment = polygonDrawerPolygon.path.length - 2
+                    var newLineA = _map.fromCoordinate(polygonDrawerPolygon.path[lastSegment], false /* clipToViewPort */)
+                    var newLineB = _map.fromCoordinate(polygonDrawerPolygon.path[lastSegment+1], false /* clipToViewPort */)
+                    for (var i=0; i<lastSegment; i++) {
+                        var oldLineA = _map.fromCoordinate(polygonDrawerPolygon.path[i], false /* clipToViewPort */)
+                        var oldLineB = _map.fromCoordinate(polygonDrawerPolygon.path[i+1], false /* clipToViewPort */)
+                        if (QGroundControl.linesIntersect(newLineA, newLineB, oldLineA, oldLineB)) {
+                            return;
+                        }
                     }
-                    animateZoom.startZoom = _map.zoomLevel
-                    animateZoom.endZoom = endZoomLevel
-                    animateZoom.start()
                 }
-            }
 
-            QGCButton {
-                width:  parent._buttonWidth
-                z:      QGroundControl.zOrderWidgets
-                //iconSource: "/qmlimages/ZoomMinus.svg"
-                text:   "-"
-
-                onClicked: {
-                    var endZoomLevel = _map.zoomLevel - parent._zoomIncrement
-                    if (endZoomLevel < _map.minimumZoomLevel) {
-                        endZoomLevel = _map.minimumZoomLevel
-                    }
-                    animateZoom.startZoom = _map.zoomLevel
-                    animateZoom.endZoom = endZoomLevel
-                    animateZoom.start()
+                var clickCoordinate = _map.toCoordinate(Qt.point(mouse.x, mouse.y))
+                var polygonPath = polygonDrawerPolygon.path
+                if (polygonPath.length == 0) {
+                    // Add first coordinate
+                    polygonPath.push(clickCoordinate)
+                } else {
+                    // Update finalized coordinate
+                    polygonPath[polygonDrawerPolygon.path.length - 1] = clickCoordinate
                 }
+                // Add next drag coordinate
+                polygonPath.push(clickCoordinate)
+                polygonDrawerPolygon.path = polygonPath
+            } else if (polygonDrawer.polygonReady) {
+                finishPolygon()
             }
-        } // Row - +/- buttons
-    } // Column - Map control widgets
-*********************************************/
-
-/*
- The slider and scale display are commented out for now to try to save real estate - DonLakeFlyer
- Not sure if I'll bring them back or not. Need room for waypoint list at bottom
-
-    QGCSlider {
-        id: zoomSlider;
-        minimum: map.minimumZoomLevel;
-        maximum: map.maximumZoomLevel;
-        opacity: 1
-        visible: parent.visible
-        z: 1000
-        anchors {
-            bottom: parent.bottom;
-            bottomMargin:   ScreenTools.defaultFontPixelHeight * (1.25)
-            rightMargin:    ScreenTools.defaultFontPixelHeight * (1.66)
-            leftMargin:     ScreenTools.defaultFontPixelHeight * (1.66)
-            left: parent.left
         }
-        width: parent.width - anchors.rightMargin - anchors.leftMargin
-        value: map.zoomLevel
-        Binding {
-            target: zoomSlider; property: "value"; value: map.zoomLevel
-        }
-        onValueChanged: {
-            map.zoomLevel = value
+
+        onPositionChanged: {
+            if (polygonDrawerPolygon.path.length) {
+                var dragCoordinate = _map.toCoordinate(Qt.point(mouse.x, mouse.y))
+
+                // Update drag line
+                polygonDrawerNextPoint.path = [ polygonDrawerPolygon.path[polygonDrawerPolygon.path.length - 2], dragCoordinate ]
+
+                // Update drag coordinate
+                var polygonPath = polygonDrawerPolygon.path
+                polygonPath[polygonDrawerPolygon.path.length - 1] = dragCoordinate
+                polygonDrawerPolygon.path = polygonPath
+            }
         }
     }
-*/
 
+    MapPolygon {
+        id:         polygonDrawerPolygon
+        color:      "blue"
+        opacity:    0.5
+        visible:    polygonDrawer.drawingPolygon
+    }
+
+    MapPolyline {
+        id:         polygonDrawerNextPoint
+        line.color: "green"
+        line.width: 5
+        visible:    polygonDrawer.drawingPolygon
+    }
+
+    //---- End Polygon Drawing code
 } // Map

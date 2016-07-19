@@ -10,7 +10,7 @@
 
 #include "GPSProvider.h"
 
-#define TIMEOUT_5HZ 500
+#define GPS_RECEIVE_TIMEOUT 1200
 
 #include <QDebug>
 
@@ -18,9 +18,25 @@
 #include "Drivers/src/gps_helper.h"
 #include "definitions.h"
 
+//#define SIMULATE_RTCM_OUTPUT //if defined, generate simulated RTCM messages
+                               //additionally make sure to call connectGPS(""), eg. from QGCToolbox.cc
+
 
 void GPSProvider::run()
 {
+#ifdef SIMULATE_RTCM_OUTPUT
+        const int fakeMsgLengths[3] = { 30, 170, 240 };
+        uint8_t* fakeData = new uint8_t[fakeMsgLengths[2]];
+        while (!_requestStop) {
+            for (int i = 0; i < 3; ++i) {
+                gotRTCMData((uint8_t*) fakeData, fakeMsgLengths[i]);
+                msleep(4);
+            }
+            msleep(100);
+        }
+        delete[] fakeData;
+#endif /* SIMULATE_RTCM_OUTPUT */
+
     if (_serial) delete _serial;
 
     _serial = new QSerialPort();
@@ -57,7 +73,7 @@ void GPSProvider::run()
             int numTries = 0;
 
             while (!_requestStop && numTries < 3) {
-                int helperRet = gpsHelper->receive(TIMEOUT_5HZ);
+                int helperRet = gpsHelper->receive(GPS_RECEIVE_TIMEOUT);
 
                 if (helperRet > 0) {
                     numTries = 0;
@@ -125,10 +141,11 @@ int GPSProvider::callback(GPSCallbackType type, void *data1, int data2)
 {
     switch (type) {
         case GPSCallbackType::readDeviceData: {
-            int timeout = *((int *) data1);
-            if (!_serial->waitForReadyRead(timeout))
-                return 0; //timeout
-            msleep(10); //give some more time to buffer data
+            if (_serial->bytesAvailable() == 0) {
+                int timeout = *((int *) data1);
+                if (!_serial->waitForReadyRead(timeout))
+                    return 0; //timeout
+            }
             return (int)_serial->read((char*) data1, data2);
         }
         case GPSCallbackType::writeDeviceData:

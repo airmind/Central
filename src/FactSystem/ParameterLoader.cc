@@ -44,9 +44,13 @@ ParameterLoader::ParameterLoader(Vehicle* vehicle)
     , _initialLoadComplete(false)
     , _waitingForDefaultComponent(false)
     , _saveRequired(false)
-    , _defaultComponentId(FactSystem::defaultComponentId)
+    , _defaultComponentId(MAV_COMP_ID_ALL)
     , _parameterSetMajorVersion(-1)
     , _parameterMetaData(NULL)
+    , _prevWaitingReadParamIndexCount(0)
+    , _prevWaitingReadParamNameCount(0)
+    , _prevWaitingWriteParamNameCount(0)
+    , _initialRequestRetryCount(0)
     , _totalParamCount(0)
 {
     Q_ASSERT(_vehicle);
@@ -89,14 +93,26 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
 
     _initialRequestTimeoutTimer.stop();
 
-    qCDebug(ParameterLoaderLog) << "_parameterUpdate (usaId:" << uasId <<
-                                    "componentId:" << componentId <<
-                                    "name:" << parameterName <<
-                                    "count:" << parameterCount <<
-                                    "index:" << parameterId <<
-                                    "mavType:" << mavType <<
-                                    "value:" << value <<
-                                    ")";
+    if (_initialLoadComplete) {
+        qCDebug(ParameterLoaderLog) << "_parameterUpdate (id:" << uasId <<
+                                        "componentId:" << componentId <<
+                                        "name:" << parameterName <<
+                                        "count:" << parameterCount <<
+                                        "index:" << parameterId <<
+                                        "mavType:" << mavType <<
+                                        "value:" << value <<
+                                        ")";
+    } else {
+        // This is too noisy during initial load
+        qCDebug(ParameterLoaderVerboseLog) << "_parameterUpdate (id:" << uasId <<
+                                       "componentId:" << componentId <<
+                                       "name:" << parameterName <<
+                                       "count:" << parameterCount <<
+                                       "index:" << parameterId <<
+                                       "mavType:" << mavType <<
+                                       "value:" << value <<
+                                       ")";
+    }
 
 #if 0
     // Handy for testing retry logic
@@ -114,7 +130,7 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
     }
 #endif
 
-    if (parameterName == "_HASH_CHECK") {
+    if (_vehicle->px4Firmware() && parameterName == "_HASH_CHECK") {
         /* we received a cache hash, potentially load from cache */
         _tryCacheHashLoad(uasId, componentId, value);
         return;
@@ -200,20 +216,25 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
         qCDebug(ParameterLoaderLog) << "waitingWriteParamNameCount:" << waitingWriteParamNameCount;
     }
 
-    int waitingParamCount = waitingReadParamIndexCount + waitingReadParamNameCount + waitingWriteParamNameCount;
-    if (waitingParamCount) {
-        qCDebug(ParameterLoaderLog) << "waitingParamCount:" << waitingParamCount;
-    } else if (_defaultComponentId != FactSystem::defaultComponentId) {
+    int readWaitingParamCount = waitingReadParamIndexCount + waitingReadParamNameCount;
+    int totalWaitingParamCount = readWaitingParamCount + waitingWriteParamNameCount;
+    if (totalWaitingParamCount) {
+        qCDebug(ParameterLoaderLog) << "totalWaitingParamCount:" << totalWaitingParamCount;
+    } else if (_defaultComponentId != MAV_COMP_ID_ALL) {
         // No more parameters to wait for, stop the timeout. Be careful to not stop timer if we don't have the default
         // component yet.
         _waitingParamTimeoutTimer.stop();
     }
 
-    // Update progress bar
-    if (waitingParamCount == 0) {
-        emit parameterListProgress(0);
+    // Update progress bar for waiting reads
+    if (readWaitingParamCount == 0) {
+        // We are no longer waiting for any reads to complete
+        if (_prevWaitingReadParamIndexCount + _prevWaitingReadParamNameCount != 0) {
+            // Set progress to 0 if not already there
+            emit parameterListProgress(0);
+        }
     } else {
-        emit parameterListProgress((float)(_totalParamCount - waitingParamCount) / (float)_totalParamCount);
+        emit parameterListProgress((float)(_totalParamCount - readWaitingParamCount) / (float)_totalParamCount);
     }
 
     // Get parameter set version
@@ -285,11 +306,24 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
         _setupGroupMap();
     }
 
-    if (waitingParamCount == 0) {
-        // Now that we know vehicle is up to date persist
+    if (_prevWaitingWriteParamNameCount != 0 &&  waitingWriteParamNameCount == 0) {
+        // If all the writes just finished the vehicle is up to date, so persist.
         _saveToEEPROM();
-        _writeLocalParamCache(uasId, componentId);
     }
+
+    // Update param cache. The param cache is only used on PX4 Firmware since ArduPilot and Solo have volatile params
+    // which invalidate the cache. The Solo also streams param updates in flight for things like gimbal values
+    // which in turn causes a perf problem with all the param cache updates.
+    if (_vehicle->px4Firmware()) {
+        if (_prevWaitingReadParamIndexCount + _prevWaitingReadParamNameCount != 0 && readWaitingParamCount == 0) {
+            // All reads just finished, update the cache
+            _writeLocalParamCache(uasId, componentId);
+        }
+    }
+
+    _prevWaitingReadParamIndexCount = waitingReadParamIndexCount;
+    _prevWaitingReadParamNameCount = waitingReadParamNameCount;
+    _prevWaitingWriteParamNameCount = waitingWriteParamNameCount;
 
     // Don't fail initial load complete if default component isn't found yet. That will be handled in wait timeout check.
     _checkInitialLoadComplete(false /* failIfNoDefaultComponent */);
@@ -358,12 +392,11 @@ void ParameterLoader::refreshAllParameters(uint8_t componentID)
 
 void ParameterLoader::_determineDefaultComponentId(void)
 {
-    if (_defaultComponentId == FactSystem::defaultComponentId) {
+    if (_defaultComponentId == MAV_COMP_ID_ALL) {
         // We don't have a default component id yet. That means the plugin can't provide
         // the param to trigger off of. Instead we use the most prominent component id in
         // the set of parameters. Better than nothing!
 
-        _defaultComponentId = -1;
         int largestCompParamCount = 0;
         foreach(int componentId, _mapParameterName2Variant.keys()) {
             int compParamCount = _mapParameterName2Variant[componentId].count();
@@ -373,7 +406,7 @@ void ParameterLoader::_determineDefaultComponentId(void)
             }
         }
 
-        if (_defaultComponentId == -1) {
+        if (_defaultComponentId == MAV_COMP_ID_ALL) {
             qWarning() << "All parameters missing, unable to determine default componet id";
         }
     }
@@ -491,7 +524,7 @@ void ParameterLoader::_waitingParamTimeout(void)
     foreach(int componentId, _waitingReadParamIndexMap.keys()) {
         foreach(int paramIndex, _waitingReadParamIndexMap[componentId].keys()) {
             _waitingReadParamIndexMap[componentId][paramIndex]++;   // Bump retry count
-            if (_waitingReadParamIndexMap[componentId][paramIndex] > _maxInitialLoadRetry) {
+            if (_waitingReadParamIndexMap[componentId][paramIndex] > _maxInitialLoadRetrySingleParam) {
                 // Give up on this index
                 _failedReadParamIndexMap[componentId] << paramIndex;
                 qCDebug(ParameterLoaderLog) << "Giving up on (componentId:" << componentId << "paramIndex:" << paramIndex << "retryCount:" << _waitingReadParamIndexMap[componentId][paramIndex] << ")";
@@ -509,7 +542,7 @@ void ParameterLoader::_waitingParamTimeout(void)
         }
     }
 
-    if (!paramsRequested && _defaultComponentId == FactSystem::defaultComponentId && !_waitingForDefaultComponent) {
+    if (!paramsRequested && _defaultComponentId == MAV_COMP_ID_ALL && !_waitingForDefaultComponent) {
         // Initial load is complete but we still don't have default component params. Wait one more cycle to see if the
         // default component finally shows up.
         _waitingParamTimeoutTimer.start();
@@ -883,7 +916,7 @@ void ParameterLoader::_restartWaitingParamTimer(void)
 
 void ParameterLoader::_addMetaDataToDefaultComponent(void)
 {
-     if (_defaultComponentId == FactSystem::defaultComponentId) {
+     if (_defaultComponentId == MAV_COMP_ID_ALL) {
          // We don't know what the default component is so we can't support meta data
          return;
      }
@@ -929,7 +962,7 @@ void ParameterLoader::_checkInitialLoadComplete(bool failIfNoDefaultComponent)
         }
     }
 
-    if (!failIfNoDefaultComponent && _defaultComponentId == FactSystem::defaultComponentId) {
+    if (!failIfNoDefaultComponent && _defaultComponentId == MAV_COMP_ID_ALL) {
         // We are still waiting for default component to show up
         return;
     }
@@ -955,8 +988,10 @@ void ParameterLoader::_checkInitialLoadComplete(bool failIfNoDefaultComponent)
                               "This will cause QGroundControl to be unable to display its full user interface. "
                               "If you are using modified firmware, you may need to resolve any vehicle startup errors to resolve the issue. "
                               "If you are using standard firmware, you may need to upgrade to a newer version to resolve the issue.");
-        qCWarning(ParameterLoaderLog) << "The following parameter indices could not be loaded after the maximum number of retries: " << indexList;
-        emit parametersReady(true);
+        if (!qgcApp()->runningUnitTests()) {
+            qCWarning(ParameterLoaderLog) << "The following parameter indices could not be loaded after the maximum number of retries: " << indexList;
+        }
+        emit parametersReady(true /* missingParameters */);
         return;
     }
 
@@ -966,22 +1001,29 @@ void ParameterLoader::_checkInitialLoadComplete(bool failIfNoDefaultComponent)
                               "This will cause QGroundControl to be unable to display its full user interface. "
                               "If you are using modified firmware, you may need to resolve any vehicle startup errors to resolve the issue. "
                               "If you are using standard firmware, you may need to upgrade to a newer version to resolve the issue.");
-        qCWarning(ParameterLoaderLog) << "Default component was never found, param:" << _defaultComponentIdParam;
-        emit parametersReady(true);
+        if (!qgcApp()->runningUnitTests()) {
+            qCWarning(ParameterLoaderLog) << "Default component was never found, param:" << _defaultComponentIdParam;
+        }
+        emit parametersReady(true /* missingParameters */);
         return;
     }
 
     // No failures, signal good load
     _parametersReady = true;
     _determineDefaultComponentId();
-    emit parametersReady(false);
+    emit parametersReady(false /* no missingParameters */);
 }
 
 void ParameterLoader::_initialRequestTimeout(void)
 {
-    qgcApp()->showMessage("Vehicle did not respond to request for parameters, retrying");
-    refreshAllParameters();
-    _initialRequestTimeoutTimer.start();
+    if (!_vehicle->genericFirmware()) {
+        // Generic vehicles (like BeBop) may not have any parameters, so don't annoy the user
+        qgcApp()->showMessage("Vehicle did not respond to request for parameters, retrying");
+    }
+    if (++_initialRequestRetryCount <= _maxInitialRequestListRetry) {
+        refreshAllParameters();
+        _initialRequestTimeoutTimer.start();
+    }
 }
 
 QString ParameterLoader::parameterMetaDataFile(MAV_AUTOPILOT firmwareType, int wantedMajorVersion, int& majorVersion, int& minorVersion)
@@ -1154,7 +1196,7 @@ QString ParameterLoader::_remapParamNameToVersion(const QString& paramName)
 
     const FirmwarePlugin::remapParamNameMinorVersionRemapMap_t& remapMinorVersion = majorVersionRemap[majorVersion];
 
-    // We must map from the highest known minor version to one above the vehicle's minor version
+    // We must map backwards from the highest known minor version to one above the vehicle's minor version
 
     for (int currentMinorVersion=_vehicle->firmwarePlugin()->remapParamNameHigestMinorVersionNumber(majorVersion); currentMinorVersion>minorVersion; currentMinorVersion--) {
         if (remapMinorVersion.contains(currentMinorVersion)) {

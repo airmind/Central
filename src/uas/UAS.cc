@@ -39,7 +39,6 @@
 #ifndef __ios__
 #include "SerialLink.h"
 #endif
-#include <Eigen/Geometry>
 #include "FirmwarePluginManager.h"
 #include "QGCLoggingCategory.h"
 #include "Vehicle.h"
@@ -589,13 +588,6 @@ void UAS::receiveMessage(mavlink_message_t message)
             setSatelliteCount(pos.satellites_visible);
         }
             break;
-        case MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN:
-        {
-            mavlink_gps_global_origin_t pos;
-            mavlink_msg_gps_global_origin_decode(&message, &pos);
-            emit homePositionChanged(uasId, pos.latitude / 10000000.0, pos.longitude / 10000000.0, pos.altitude / 1000.0);
-        }
-            break;
 
         case MAVLINK_MSG_ID_PARAM_VALUE:
         {
@@ -774,33 +766,36 @@ void UAS::startCalibration(UASInterface::StartCalibrationType calType)
     int escCal = 0;
 
     switch (calType) {
-        case StartCalibrationGyro:
-            gyroCal = 1;
-            break;
-        case StartCalibrationMag:
-            magCal = 1;
-            break;
-        case StartCalibrationAirspeed:
-            airspeedCal = 1;
-            break;
-        case StartCalibrationRadio:
-            radioCal = 1;
-            break;
-        case StartCalibrationCopyTrims:
-            radioCal = 2;
-            break;
-        case StartCalibrationAccel:
-            accelCal = 1;
-            break;
-        case StartCalibrationLevel:
-            accelCal = 2;
-            break;
-        case StartCalibrationEsc:
-            escCal = 1;
-            break;
-        case StartCalibrationUavcanEsc:
-            escCal = 2;
-            break;
+    case StartCalibrationGyro:
+        gyroCal = 1;
+        break;
+    case StartCalibrationMag:
+        magCal = 1;
+        break;
+    case StartCalibrationAirspeed:
+        airspeedCal = 1;
+        break;
+    case StartCalibrationRadio:
+        radioCal = 1;
+        break;
+    case StartCalibrationCopyTrims:
+        radioCal = 2;
+        break;
+    case StartCalibrationAccel:
+        accelCal = 1;
+        break;
+    case StartCalibrationLevel:
+        accelCal = 2;
+        break;
+    case StartCalibrationEsc:
+        escCal = 1;
+        break;
+    case StartCalibrationUavcanEsc:
+        escCal = 2;
+        break;
+    case StartCalibrationCompassMot:
+        airspeedCal = 1; // ArduPilot, bit of a hack
+        break;
     }
 
     mavlink_message_t msg;
@@ -816,7 +811,7 @@ void UAS::startCalibration(UASInterface::StartCalibrationType calType)
                                   0,                                // ground pressure
                                   radioCal,                         // radio cal
                                   accelCal,                         // accel cal
-                                  airspeedCal,                      // airspeed cal
+                                  airspeedCal,                      // PX4: airspeed cal, ArduPilot: compass mot
                                   escCal);                          // esc cal
     _vehicle->sendMessageOnPriorityLink(msg);
 }
@@ -1151,7 +1146,7 @@ void UAS::requestImage()
     {
         mavlink_message_t msg;
         mavlink_msg_data_transmission_handshake_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg, MAVLINK_DATA_STREAM_IMG_JPEG, 0, 0, 0, 0, 0, 50);
-        _vehicle->sendMessage(msg);
+        _vehicle->sendMessageOnPriorityLink(msg);
     }
 }
 
@@ -1250,7 +1245,7 @@ void UAS::executeCommand(MAV_CMD command, int confirmation, float param1, float 
     cmd.target_system = uasId;
     cmd.target_component = component;
     mavlink_msg_command_long_encode(mavlink->getSystemId(), mavlink->getComponentId(), &msg, &cmd);
-    _vehicle->sendMessage(msg);
+    _vehicle->sendMessageOnPriorityLink(msg);
 }
 
 /**
@@ -1433,7 +1428,7 @@ void UAS::setExternalControlSetpoint(float roll, float pitch, float yaw, float t
             mavlink_msg_manual_control_pack(mavlink->getSystemId(), mavlink->getComponentId(), &message, this->uasId, newPitchCommand, newRollCommand, newThrustCommand, newYawCommand, buttons);
         }
 
-        _vehicle->sendMessage(message);
+        _vehicle->sendMessageOnPriorityLink(message);
         // Emit an update in control values to other UI elements, like the HSI display
         emit attitudeThrustSetPointChanged(this, roll, pitch, yaw, thrust, QGC::groundTimeMilliseconds());
     }
@@ -1460,15 +1455,15 @@ void UAS::setManual6DOFControlCommands(double x, double y, double z, double roll
         quint8 mask = (1 << 0) | (1 << 1) | (1 << 2); // ignore rates
         mask |= (1 << 6); // ignore throttle
         mavlink_msg_set_attitude_target_pack(mavlink->getSystemId(), mavlink->getComponentId(),
-                                             &message, QGC::groundTimeMilliseconds(), this->uasId, 0,
+                                             &message, QGC::groundTimeMilliseconds(), this->uasId, _vehicle->defaultComponentId(),
                                              mask, q, 0, 0, 0, 0);
-        _vehicle->sendMessage(message);
+        _vehicle->sendMessageOnPriorityLink(message);
         quint16 position_mask = (1 << 3) | (1 << 4) | (1 << 5) |
             (1 << 6) | (1 << 7) | (1 << 8);
         mavlink_msg_set_position_target_local_ned_pack(mavlink->getSystemId(), mavlink->getComponentId(),
-                                                       &message, QGC::groundTimeMilliseconds(), this->uasId, 0,
+                                                       &message, QGC::groundTimeMilliseconds(), this->uasId, _vehicle->defaultComponentId(),
                                                        MAV_FRAME_LOCAL_NED, position_mask, x, y, z, 0, 0, 0, 0, 0, 0, yaw, yawrate);
-        _vehicle->sendMessage(message);
+        _vehicle->sendMessageOnPriorityLink(message);
         qDebug() << __FILE__ << __LINE__ << ": SENT 6DOF CONTROL MESSAGES: x" << x << " y: " << y << " z: " << z << " roll: " << roll << " pitch: " << pitch << " yaw: " << yaw;
 
         //emit attitudeThrustSetPointChanged(this, roll, pitch, yaw, thrust, QGC::groundTimeMilliseconds());
@@ -1491,8 +1486,8 @@ void UAS::pairRX(int rxType, int rxSubType)
 
     mavlink_message_t msg;
 
-    mavlink_msg_command_long_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg, uasId, MAV_COMP_ID_ALL, MAV_CMD_START_RX_PAIR, 0, rxType, rxSubType, 0, 0, 0, 0, 0);
-    _vehicle->sendMessage(msg);
+    mavlink_msg_command_long_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg, uasId, _vehicle->defaultComponentId(), MAV_CMD_START_RX_PAIR, 0, rxType, rxSubType, 0, 0, 0, 0, 0);
+    _vehicle->sendMessageOnPriorityLink(msg);
 }
 
 /**
@@ -1715,7 +1710,7 @@ void UAS::sendHilState(quint64 time_us, float roll, float pitch, float yaw, floa
         mavlink_msg_hil_state_quaternion_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg,
                                    time_us, q, rollspeed, pitchspeed, yawspeed,
                                    lat*1e7f, lon*1e7f, alt*1000, vx*100, vy*100, vz*100, ind_airspeed*100, true_airspeed*100, xacc*1000/9.81, yacc*1000/9.81, zacc*1000/9.81);
-        _vehicle->sendMessage(msg);
+        _vehicle->sendMessageOnPriorityLink(msg);
     }
     else
     {
@@ -1793,7 +1788,7 @@ void UAS::sendHilSensors(quint64 time_us, float xacc, float yacc, float zacc, fl
                                    time_us, xacc_corrupt, yacc_corrupt, zacc_corrupt, rollspeed_corrupt, pitchspeed_corrupt,
                                     yawspeed_corrupt, xmag_corrupt, ymag_corrupt, zmag_corrupt, abs_pressure_corrupt,
                                     diff_pressure_corrupt, pressure_alt_corrupt, temperature_corrupt, fields_changed);
-        _vehicle->sendMessage(msg);
+        _vehicle->sendMessageOnPriorityLink(msg);
         lastSendTimeSensors = QGC::groundTimeMilliseconds();
     }
     else
@@ -1830,7 +1825,7 @@ void UAS::sendHilOpticalFlow(quint64 time_us, qint16 flow_x, qint16 flow_y, floa
         mavlink_msg_hil_optical_flow_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg,
                                    time_us, 0, 0 /* hack */, flow_x, flow_y, 0.0f /* hack */, 0.0f /* hack */, 0.0f /* hack */, 0 /* hack */, quality, ground_distance);
 
-        _vehicle->sendMessage(msg);
+        _vehicle->sendMessageOnPriorityLink(msg);
         lastSendTimeOpticalFlow = QGC::groundTimeMilliseconds();
 #endif
     }
@@ -1868,7 +1863,7 @@ void UAS::sendHilGps(quint64 time_us, double lat, double lon, double alt, int fi
         mavlink_msg_hil_gps_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg,
                                    time_us, fix_type, lat*1e7, lon*1e7, alt*1e3, eph*1e2, epv*1e2, vel*1e2, vn*1e2, ve*1e2, vd*1e2, course*1e2, satellites);
         lastSendTimeGPS = QGC::groundTimeMilliseconds();
-        _vehicle->sendMessage(msg);
+        _vehicle->sendMessageOnPriorityLink(msg);
     }
     else
     {
@@ -1941,7 +1936,7 @@ void UAS::sendMapRCToParam(QString param_id, float scale, float value0, quint8 p
                                   mavlink->getComponentId(),
                                   &message,
                                   this->uasId,
-                                  0,
+                                  _vehicle->defaultComponentId(),
                                   param_id_cstr,
                                   -1,
                                   param_rc_channel_index,
@@ -1949,7 +1944,7 @@ void UAS::sendMapRCToParam(QString param_id, float scale, float value0, quint8 p
                                   scale,
                                   valueMin,
                                   valueMax);
-    _vehicle->sendMessage(message);
+    _vehicle->sendMessageOnPriorityLink(message);
     //qDebug() << "Mavlink message sent";
 }
 
@@ -1967,7 +1962,7 @@ void UAS::unsetRCToParameterMap()
                                       mavlink->getComponentId(),
                                       &message,
                                       this->uasId,
-                                      0,
+                                      _vehicle->defaultComponentId(),
                                       param_id_cstr,
                                       -2,
                                       i,
@@ -1975,7 +1970,7 @@ void UAS::unsetRCToParameterMap()
                                       0.0f,
                                       0.0f,
                                       0.0f);
-        _vehicle->sendMessage(message);
+        _vehicle->sendMessageOnPriorityLink(message);
     }
 }
 

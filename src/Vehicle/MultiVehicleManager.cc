@@ -97,21 +97,24 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
         _app->showMessage(QString("Warning: A vehicle is using the same system id as QGroundControl: %1").arg(vehicleId));
     }
 
-    QSettings settings;
-    bool mavlinkVersionCheck = settings.value("VERSION_CHECK_ENABLED", true).toBool();
-    if (mavlinkVersionCheck && vehicleMavlinkVersion != MAVLINK_VERSION) {
-        _ignoreVehicleIds += vehicleId;
-        _app->showMessage(QString("The MAVLink protocol version on vehicle #%1 and QGroundControl differ! "
-                                  "It is unsafe to use different MAVLink versions. "
-                                  "QGroundControl therefore refuses to connect to vehicle #%1, which sends MAVLink version %2 (QGroundControl uses version %3).").arg(vehicleId).arg(vehicleMavlinkVersion).arg(MAVLINK_VERSION));
-        return;
-    }
+//    QSettings settings;
+//    bool mavlinkVersionCheck = settings.value("VERSION_CHECK_ENABLED", true).toBool();
+//    if (mavlinkVersionCheck && vehicleMavlinkVersion != MAVLINK_VERSION) {
+//        _ignoreVehicleIds += vehicleId;
+//        _app->showMessage(QString("The MAVLink protocol version on vehicle #%1 and QGroundControl differ! "
+//                                  "It is unsafe to use different MAVLink versions. "
+//                                  "QGroundControl therefore refuses to connect to vehicle #%1, which sends MAVLink version %2 (QGroundControl uses version %3).").arg(vehicleId).arg(vehicleMavlinkVersion).arg(MAVLINK_VERSION));
+//        return;
+//    }
 
     Vehicle* vehicle = new Vehicle(link, vehicleId, (MAV_AUTOPILOT)vehicleFirmwareType, (MAV_TYPE)vehicleType, _firmwarePluginManager, _autopilotPluginManager, _joystickManager);
     connect(vehicle, &Vehicle::allLinksInactive, this, &MultiVehicleManager::_deleteVehiclePhase1);
     connect(vehicle->autopilotPlugin(), &AutoPilotPlugin::parametersReadyChanged, this, &MultiVehicleManager::_autopilotParametersReadyChanged);
 
     _vehicles.append(vehicle);
+
+    // Send QGC heartbeat ASAP, this allows PX4 to start accepting commands
+    _sendGCSHeartbeat();
 
     emit vehicleAdded(vehicle);
 
@@ -414,12 +417,12 @@ void MultiVehicleManager::_sendGCSHeartbeat(void)
         mavlink_msg_heartbeat_pack(_mavlinkProtocol->getSystemId(),
                                    _mavlinkProtocol->getComponentId(),
                                    &message,
-                                   MAV_TYPE_GCS,                // MAV_TYPE
+                                   MAV_TYPE_GCS,            // MAV_TYPE
                                    MAV_AUTOPILOT_INVALID,   // MAV_AUTOPILOT
                                    MAV_MODE_MANUAL_ARMED,   // MAV_MODE
                                    0,                       // custom mode
                                    MAV_STATE_ACTIVE);       // MAV_STATE
-        vehicle->sendMessage(message);
+        vehicle->sendMessageOnPriorityLink(message);
     }
 }
 

@@ -63,7 +63,8 @@ QGCView {
         }
 
         onChannelCountChanged:              updateChannelCount()
-        onFunctionMappingChangedAPMReboot:    showMessage(qsTr("Reboot required"), qsTr("Your stick mappings have changed, you must reboot the vehicle for correct operation."), StandardButton.Ok)
+        onFunctionMappingChangedAPMReboot:  showMessage(qsTr("Reboot required"), qsTr("Your stick mappings have changed, you must reboot the vehicle for correct operation."), StandardButton.Ok)
+        onThrottleReversedCalFailure:       showMessage(qsTr("Throttle channel reversed"), qsTr("Calibration failed. The throttle channel on your transmitter is reversed. You must correct this on your transmitter in order to complete calibration."), StandardButton.Ok)
     }
 
     onCompleted: {
@@ -176,6 +177,10 @@ QGCView {
                 readonly property int   __rcValueMaxJitter: 2
                 property color          __barColor:         qgcPal.windowShade
 
+                readonly property int _pwmMin:      800
+                readonly property int _pwmMax:      2200
+                readonly property int _pwmRange:    _pwmMax - _pwmMin
+
                 // Bar
                 Rectangle {
                     id:                     bar
@@ -198,10 +203,10 @@ QGCView {
                     anchors.verticalCenter: parent.verticalCenter
                     width:                  parent.height * 0.75
                     height:                 width
-                    x:                      ((Math.abs((rcValue - 1000) - (reversed ? 1000 : 0)) / 1000) * parent.width) - (width / 2)
                     radius:                 width / 2
                     color:                  qgcPal.text
                     visible:                mapped
+                    x:                      (((reversed ? _pwmMax - rcValue : rcValue - _pwmMin) / _pwmRange) * parent.width) - (width / 2)
                 }
 
                 QGCLabel {
@@ -433,20 +438,11 @@ QGCView {
 
                 QGCLabel { text: qsTr("Additional Radio setup:") }
 
-                Row {
-                    spacing: 10
+                QGCButton {
+                    id:         bindButton
+                    text:       qsTr("Spektrum Bind")
 
-                    QGCLabel {
-                        anchors.baseline:   bindButton.baseline
-                        text:               qsTr("Place Spektrum satellite receiver in bind mode:")
-                    }
-
-                    QGCButton {
-                        id:         bindButton
-                        text:       qsTr("Spektrum Bind")
-
-                        onClicked: showDialog(spektrumBindDialogComponent, dialogTitle, qgcView.showDialogDefaultWidth, StandardButton.Ok | StandardButton.Cancel)
-                    }
+                    onClicked: showDialog(spektrumBindDialogComponent, dialogTitle, qgcView.showDialogDefaultWidth, StandardButton.Ok | StandardButton.Cancel)
                 }
 
                 QGCButton {
@@ -488,12 +484,14 @@ QGCView {
                 id:             rightColumn
                 anchors.top:    parent.top
                 anchors.right:  parent.right
-                width:          defaultTextWidth * 35
-                spacing:        10
+                width:          Math.min(defaultTextWidth * 35, qgcView.width * 0.4)
+                spacing:        ScreenTools.defaultFontPixelHeight / 2
 
                 Row {
-                    spacing: 10
+                    spacing: ScreenTools.defaultFontPixelWidth
+
                     ExclusiveGroup { id: modeGroup }
+
                     QGCRadioButton {
                         exclusiveGroup: modeGroup
                         text:           qsTr("Mode 1")
@@ -513,14 +511,13 @@ QGCView {
 
                 Image {
                     width:      parent.width
-                    height:     defaultTextHeight * 15
                     fillMode:   Image.PreserveAspectFit
                     smooth:     true
                     source:     controller.imageHelp
                 }
 
                 RCChannelMonitor {
-                    width:      parent.width
+                    width: parent.width
                 }
             } // Column - Right Column
         } // QGCFlickable

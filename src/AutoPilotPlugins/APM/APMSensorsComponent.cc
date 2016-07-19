@@ -62,6 +62,12 @@ QStringList APMSensorsComponent::setupCompleteChangedTriggerList(void) const
     // Accelerometer triggers
     triggers << "INS_ACCOFFS_X" << "INS_ACCOFFS_Y" << "INS_ACCOFFS_Z";
 
+    if (_autopilot->parameterExists(FactSystem::defaultComponentId, QStringLiteral("INS_USE"))) {
+        triggers << QStringLiteral("INS_USE") << QStringLiteral("INS_USE2") << QStringLiteral("INS_USE3");
+        triggers << QStringLiteral("INS_ACC2OFFS_X") << QStringLiteral("INS_ACC2OFFS_Y") << QStringLiteral("INS_ACC2OFFS_Z");
+        triggers << QStringLiteral("INS_ACC3OFFS_X") << QStringLiteral("INS_ACC3OFFS_Y") << QStringLiteral("INS_ACC3OFFS_Z");
+    }
+
     return triggers;
 }
 
@@ -117,13 +123,36 @@ bool APMSensorsComponent::compassSetupNeeded(void) const
 
 bool APMSensorsComponent::accelSetupNeeded(void) const
 {
-    QStringList offsets;
+    QStringList         rgUse;
+    QStringList         rgOffsets;
+    QList<QStringList>  rgAccels;
 
-    offsets << QStringLiteral("INS_ACCOFFS_X") << QStringLiteral("INS_ACCOFFS_Y") << QStringLiteral("INS_ACCOFFS_Z");
+    // We always at a minimum test the first accel
+    rgOffsets << QStringLiteral("INS_ACCOFFS_X") << QStringLiteral("INS_ACCOFFS_Y") << QStringLiteral("INS_ACCOFFS_Z");
+    rgAccels << rgOffsets;
+    rgOffsets.clear();
 
-    foreach(const QString& offset, offsets) {
-        if (_autopilot->getParameterFact(FactSystem::defaultComponentId, offset)->rawValue().toFloat() == 0.0f) {
-            return true;
+    // This parameter is not available in all firmware version. Specifically missing from older Solo firmware.
+    if (_autopilot->parameterExists(FactSystem::defaultComponentId, QStringLiteral("INS_USE"))) {
+        rgUse << QStringLiteral("INS_USE") << QStringLiteral("INS_USE2") << QStringLiteral("INS_USE3");
+
+        // We have usage information for the remaining accels, so we can test them sa well
+        rgOffsets << QStringLiteral("INS_ACC2OFFS_X") << QStringLiteral("INS_ACC2OFFS_Y") << QStringLiteral("INS_ACC2OFFS_Z");
+        rgAccels << rgOffsets;
+        rgOffsets.clear();
+
+        rgOffsets << QStringLiteral("INS_ACC3OFFS_X") << QStringLiteral("INS_ACC3OFFS_Y") << QStringLiteral("INS_ACC3OFFS_Z");
+        rgAccels << rgOffsets;
+        rgOffsets.clear();
+    }
+
+    for (int i=0; i<rgAccels.count(); i++) {
+        if (rgUse.count() == 0 || _autopilot->getParameterFact(FactSystem::defaultComponentId, rgUse[i])->rawValue().toInt() != 0) {
+            for (int j=0; j<rgAccels[0].count(); j++) {
+                if (_autopilot->getParameterFact(FactSystem::defaultComponentId, rgAccels[i][j])->rawValue().toFloat() == 0.0f) {
+                    return true;
+                }
+            }
         }
     }
 

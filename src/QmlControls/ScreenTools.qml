@@ -63,7 +63,6 @@ Item {
         smallFontPointSize      = defaultFontPointSize  * _screenTools.smallFontPointRatio
         mediumFontPointSize     = defaultFontPointSize  * _screenTools.mediumFontPointRatio
         largeFontPointSize      = defaultFontPointSize  * _screenTools.largeFontPointRatio
-        console.log("setBasePointSize", defaultFontPixelWidth)
     }
 
     Text {
@@ -83,15 +82,21 @@ Item {
             if(baseSize < 6 || baseSize > 48) {
                 //-- Init base size base on the platform
                 if(ScreenToolsController.isMobile) {
-                    // Small Devices
-                    if((Screen.width / Screen.pixelDensity) < 120)
+                    //-- Check iOS really tiny screens (iPhone 4s/5/5s)
+                    if(ScreenToolsController.isiOS) {
+                        if(ScreenToolsController.isiOS && Screen.width < 570) {
+                            // For iPhone 4s size we don't fit with additional tweaks to fit screen,
+                            // we will just drop point size to make things fit. Correct size not yet determined.
+                            baseSize = 12;  // This will be lowered in a future pull
+                        } else {
+                            baseSize = 12;
+                        }
+                    } else if((Screen.width / Screen.pixelDensity) < 120) {
                         baseSize = 11;
-                    // iOS
-                    else if(ScreenToolsController.isiOS)
-                        baseSize = 13;
-                    // Android
-                    else
+                    // Other Android
+                    } else {
                         baseSize = 14;
+                    }
                 } else {
                     //-- Mac OS
                     if(ScreenToolsController.isMacOS)

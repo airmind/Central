@@ -9,13 +9,15 @@ import QGroundControl.Palette       1.0
 Rectangle {
     id:     _root
     width:  label.contentWidth + (_diameter * 2.5) + (_border * 4)
+    height: label.height * 2.5
     radius: height /2
     color:  qgcPal.window
 
     signal accept   ///< Action confirmed
     signal reject   ///< Action rejected
 
-    property string confirmText ///< Text for slider
+    property string confirmText                         ///< Text for slider
+    property alias  fontPointSize: label.font.pointSize ///< Point size for text
 
     property real _border: 4
     property real _diameter: height - (_border * 2)
@@ -23,10 +25,10 @@ Rectangle {
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
 
     QGCLabel {
-        id: label
+        id:                         label
         anchors.horizontalCenter:   parent.horizontalCenter
         anchors.verticalCenter:     parent.verticalCenter
-        text:   qsTr("Slide to %1").arg(confirmText)
+        text:                       qsTr("Slide to %1").arg(confirmText)
     }
 
     Rectangle {
@@ -47,6 +49,8 @@ Rectangle {
             fillMode:               Image.PreserveAspectFit
             smooth:                 false
             mipmap:                 false
+
+
             color:                  qgcPal.text
             cache:                  false
             source:                 "/res/ArrowRight.svg"
