@@ -8,8 +8,10 @@
 
 #import <UIKit/UIKit.h>
 
-@interface tagNodesViewController : UIViewController {
+@interface tagNodesViewController : UIViewController <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate>{
     IBOutlet UITableView* tagnodeslist;
+    IBOutlet UIImageView* tagImage;
+    IBOutlet UIButton* wifiButton;
 }
 
 -(IBAction)onWifiButtonTapped:(id)sender;
