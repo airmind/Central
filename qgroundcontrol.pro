@@ -366,6 +366,7 @@ iOSBuild {
         mindskin/MindSkinRootView.h \
         mindskin/ios/MindSkinRootView_impl_objc.h \
         mindskin/ios/tagNodesViewController.h \
+        mindskin/ios/mindskinMessageViewController.h \
 
 
     SOURCES += \
@@ -377,6 +378,7 @@ iOSBuild {
         mindskin/ios/MindStickButtonViewController.mm \
         mindskin/ios/MindSkinRootView_impl_objc.mm \
         mindskin/ios/tagNodesViewController.m \
+        mindskin/ios/mindskinMessageViewController.m \
 
 
     DebugBuild {

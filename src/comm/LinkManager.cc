@@ -942,6 +942,9 @@ QStringList LinkManager::linkTypeStrings(void) const
 #ifndef __ios__
         list += "Serial";
 #endif
+#ifdef __mindskin__
+        list += "Bluetooth Low Energy";  ///< Bluetooth Serial Link
+#endif
         list += "UDP";
         list += "TCP";
 #ifdef QGC_ENABLE_BLUETOOTH

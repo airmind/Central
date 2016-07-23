@@ -9,6 +9,7 @@
 #ifndef qgroundcontrol_MindSkinRootView_h
 #define qgroundcontrol_MindSkinRootView_h
 
+#include <QString>
 
 class MindSkinRootView_wrapper;
 
@@ -36,6 +37,8 @@ public:
     static MindSkinRootView* sharedInstance();
     void launchMindskinUI();
     void shutdown();
+    
+    void showMessage(QString& msg);
     
 };
 

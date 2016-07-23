@@ -434,15 +434,15 @@ bool QGCApplication::_initForNormalAppBoot(void)
     _qmlAppEngine->addImportPath("qrc:/qml");
     _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
     _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
-    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
-    //_qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
+    //_qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
+    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
 
 #ifdef __ios__
     //launch mindskin;
     
-    MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
+    //MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
     
-    skinroot -> launchMindskinUI();
+    //skinroot -> launchMindskinUI();
     
     /*
     self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
@@ -470,6 +470,8 @@ bool QGCApplication::_initForNormalAppBoot(void)
     
 #endif
 #ifdef __android__
+    
+    
 #endif
 #else
     _qmlAppEngine = new QQmlApplicationEngine(this);
@@ -489,7 +491,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
 #endif //__mobile__
 
     // Load known link configurations
-    //toolbox()->linkManager()->loadLinkConfigurationList();
+    toolbox()->linkManager()->loadLinkConfigurationList();
 /*
 <<<<<<< HEAD
     
@@ -734,6 +736,8 @@ QObject* QGCApplication::_rootQmlObject(void)
 
 void QGCApplication::showMessage(const QString& message)
 {
+    
+#ifndef __mindskin__
     // Special case hack for ArduPilot prearm messages. These show up in the center of the map, so no need for popup.
     if (message.contains("PreArm:")) {
         return;
@@ -754,6 +758,19 @@ void QGCApplication::showMessage(const QString& message)
     } else {
         qWarning() << "Internal error";
     }
+    
+#else 
+    
+#ifdef __ios__
+    //use ios notification;
+    MindSkinRootView::sharedInstance()->showMessage(message);
+#endif //__ios__
+    
+#ifdef __android__
+    
+#endif //__android__
+    
+#endif //__mindskin
 }
 
 void QGCApplication::showFlyView(void)

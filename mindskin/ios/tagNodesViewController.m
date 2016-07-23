@@ -136,7 +136,7 @@
 -(void)configureCell:(UITableViewCell*)cell atIndexPath:indexPath {
     int idx = [indexPath indexAtPosition:1];
     
-    int cellwidth = bindtable.frame.size.width;
+    /*int cellwidth = bindtable.frame.size.width;
     
     if (idx==0) {
         if (companyname==nil) {
@@ -299,7 +299,7 @@
         }
         [cell.contentView addSubview:submit];
         
-    }
+    }*/
     
 }
 

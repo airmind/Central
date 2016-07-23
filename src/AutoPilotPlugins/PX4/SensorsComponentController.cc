@@ -219,9 +219,17 @@ void SensorsComponentController::_handleUASTextMessage(int uasId, int compId, in
     Q_UNUSED(compId);
     Q_UNUSED(severity);
     
+    QString msg = "Entering sensor calibration ... MindPX";
+    _appendStatusLog(msg);
+    qDebug() << msg;
+
     UASInterface* uas = _autopilot->vehicle()->uas();
     Q_ASSERT(uas);
     if (uasId != uas->getUASID()) {
+        QString msg = "Not a valid uas id ... MindPX";
+        _appendStatusLog(msg);
+        qDebug() << msg;
+
         return;
     }
     

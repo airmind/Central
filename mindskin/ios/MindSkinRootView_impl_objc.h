@@ -21,6 +21,8 @@
 -(void)presentMindSkinRootUI;
 -(void)shutdown;
 
+-(void)showMessage:(NSString*)msg;
+
 -(UIResponder*)getUIViewRootController;
 
 @end

@@ -12,7 +12,9 @@
 
 #include "MindSkinRootView.h"
 #include "MindSkinRootView_impl_objc.h"
+#include "qt2ioshelper.h"
 
+#import "mindskinMessageViewController.h"
 
 /// ///////////////////////////////////////////////
 ///     @brief MindSkinRootView_wrapper
@@ -30,6 +32,9 @@ public:
     
     void presentMindSkinRootUI();
     
+    void showMessage(QString& msg);
+
+    
 };
 
 MindSkinRootView_wrapper::MindSkinRootView_wrapper () {
@@ -45,6 +50,9 @@ void MindSkinRootView_wrapper::presentMindSkinRootUI() {
 }
 
 
+void MindSkinRootView_wrapper::showMessage(QString& msg) {
+    [skinroot_objc showMessage:(qt2ioshelper::QString2NSString(&msg))];
+}
 
 
 
@@ -76,6 +84,9 @@ void MindSkinRootView::shutdown(){
     
 }
 
+void MindSkinRootView::showMessage(QString& msg) {
+    skinroot_wrapper->showMessage(msg);
+}
 
 
 
@@ -139,6 +150,11 @@ void MindSkinRootView::shutdown(){
     
     return responder;
 
+}
+
+
+-(void)showMessage:(NSString*)msg {
+    
 }
 
 
