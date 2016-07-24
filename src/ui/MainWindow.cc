@@ -210,6 +210,7 @@ MainWindow::MainWindow()
     connect(this, &MainWindow::x11EventOccured, mouse, &Mouse6dofInput::handleX11Event);
 #endif //QGC_MOUSE_ENABLED_LINUX
 
+/*
 <<<<<<< HEAD
     // These also cause the screen to redraw so we need to update any OpenGL canvases in QML controls
 #ifndef __ios__
@@ -234,6 +235,9 @@ MainWindow::MainWindow()
 
 =======
 >>>>>>> upstream/master
+ 
+ */
+    
     // Set low power mode
     enableLowPowerMode(_lowPowerMode);
     emit initStatusChanged(tr("Restoring last view state"), Qt::AlignLeft | Qt::AlignBottom, QColor(62, 93, 141));
@@ -563,6 +567,7 @@ void MainWindow::saveLastUsedConnection(const QString connection)
     settings.setValue(key, connection);
 }
 
+/*
 <<<<<<< HEAD
 /// @brief Restore (and connects) the last used connection (if any)
 void MainWindow::restoreLastUsedConnection()
@@ -595,6 +600,8 @@ void MainWindow::_linkStateChange(BTSerialLink*)
 
 =======
 >>>>>>> upstream/master
+ */
+
 #ifdef QGC_MOUSE_ENABLED_LINUX
 bool MainWindow::x11Event(XEvent *event)
 {

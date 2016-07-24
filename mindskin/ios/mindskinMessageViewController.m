@@ -8,6 +8,7 @@
 
 #import "mindskinMessageViewController.h"
 #import "MindSkinRootView_impl_objc.h"
+#import <CoreText/CoreText.h>
 
 @interface mindskinMessageViewController ()
 
@@ -37,24 +38,24 @@
 }
 
 - (void)loadView {
-    //override view with UIVisualEffectView;
-    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
-    UIVisualEffectView* blurView = [[UIVisualEffectView alloc]initWithEffect:blurEffect];
-    blurView.alpha = 1;
-    blurView.frame = self.view.frame;
-
-    self.view = blurView;
     
     //add text view;
+    CGRect msgrect = CGRectMake(self.view.frame.origin.x+10, self.view.frame.origin.y+10,
+                                self.view.frame.size.width-20, self.view.frame.size.height-20);
+
     if (messageview == nil) {
-        CGRect msgrect = CGRectMake(self.view.frame.origin.x+10, self.view.frame.origin.y+10,
-                                    self.view.frame.size.width-20, self.view.frame.size.height-20);
         
         messageview = [[UITextView alloc] initWithFrame:msgrect];
         
+        [self.view addSubview:messageview];
         
     }
-    [self.view addSubview:messageview];
+    else {
+        //adjust view height to fit text message into.
+        messageview.frame = msgrect;
+        
+    }
+    
     
     
 }
@@ -85,6 +86,9 @@
     @synchronized(self) {
         //mulitple access;
         if (!ispresented) {
+            
+            UIView* parentview = [[MindSkinRootView_impl_objc sharedInstance] view];
+            
             //calc message text to determine view size;
             NSString* str = messageview.text;
             if (str==nil) {
@@ -92,12 +96,57 @@
             }
             str = [str stringByAppendingString:msg];
 
-            messageview.text = str;
+            //messageview.text = str;
             
             
             //present view first;
             ispresented = YES;
-            [[MindSkinRootView_impl_objc sharedInstance].view addSubView:self.view];
+            
+            //calc correct message view size;
+                int textviewwidth = self.view.frame.size.width - 40;
+                
+                
+                
+                UIFont *font = [UIFont fontWithName:@"HelveticaNeue" size:11.0];
+                UIColor *color = [UIColor blackColor];
+                
+                NSDictionary *attributesDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                                      font, NSFontAttributeName,
+                                                      color, NSForegroundColorAttributeName,
+                                                      nil];
+                
+                
+                NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:str attributes:attributesDictionary];
+                messageview.attributedText = attributedString; //this is the key!
+
+                 
+                CGSize constraint = CGSizeMake(textviewwidth, CGFLOAT_MAX);
+                
+                //calced view rect for message.
+                CGRect msgrect = [attributedString boundingRectWithSize:constraint options:(NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading) context:nil];
+                
+                
+                //messageview = [[UITextView alloc] initWithFrame:msgrect];
+                CGRect viewframe = CGRectMake(parentview.frame.origin.x, parentview.frame.origin.y,
+                                              parentview.frame.size.width, msgrect.size.height + 40);
+                
+                
+                //create and add view;
+            //override view with UIVisualEffectView;
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+            UIVisualEffectView* blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+            blurView.alpha = 1;
+            blurView.frame = self.view.frame;
+            
+            self.view = blurView;
+
+            self.view.frame = viewframe;
+                
+            
+            
+            [parentview addSubView:self.view];
+            
+            //animate view in;
             
         }
         else {
@@ -148,12 +197,41 @@
 
 }
 
+                 
+                 
 -(void)showHistoryMessages:(int)max {
     
 }
 
 -(void)dismissMessageView{
     
+}
+
+                 
+                 
+- (CGSize)frameSizeForAttributedString:(NSAttributedString *)attributedString
+{
+                    CTTypesetterRef typesetter = CTTypesetterCreateWithAttributedString((CFAttributedStringRef)attributedString);
+                    CGFloat width = YOUR_FIXED_WIDTH;
+                    
+                    CFIndex offset = 0, length;
+                    CGFloat y = 0;
+                    do {
+                        length = CTTypesetterSuggestLineBreak(typesetter, offset, width);
+                        CTLineRef line = CTTypesetterCreateLine(typesetter, CFRangeMake(offset, length));
+                        
+                        CGFloat ascent, descent, leading;
+                        CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
+                        
+                        CFRelease(line);
+                        
+                        offset += length;
+                        y += ascent + descent + leading;
+                    } while (offset < [attributedString length]);
+                    
+                    CFRelease(typesetter);
+                    
+                    return CGSizeMake(width, ceil(y));
 }
 
 

@@ -15,6 +15,8 @@
     UIPanGestureRecognizer* pangesture;
     BOOL ispresented;
     
+    NSString* history;
+    
     NSTimer* t1;
 }
 
