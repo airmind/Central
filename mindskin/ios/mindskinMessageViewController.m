@@ -186,7 +186,6 @@
                 str = [str stringByAppendingString:arraylen];
                 
                 
-                
             }
             self.textView.text = str;
             [self.textView scrollRangeToVisible:NSMakeRange([str length], 0)];
