@@ -166,6 +166,7 @@ protected:
     QTimer windowNameUpdateTimer;
 
 private slots:
+/*
 <<<<<<< HEAD
     void _linkStateChange(LinkInterface*);
 #ifdef __ios__
@@ -174,6 +175,7 @@ private slots:
 #endif
 =======
 >>>>>>> upstream/master
+ */
     void _closeWindow(void) { close(); }
     void _vehicleAdded(Vehicle* vehicle);
 
