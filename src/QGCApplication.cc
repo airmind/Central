@@ -434,15 +434,15 @@ bool QGCApplication::_initForNormalAppBoot(void)
     _qmlAppEngine->addImportPath("qrc:/qml");
     _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
     _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
-    //_qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
-    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
+    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
+    //_qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
 
 #ifdef __ios__
     //launch mindskin;
     
-    //MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
+    MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
     
-    //skinroot -> launchMindskinUI();
+    skinroot -> launchMindskinUI();
     
     /*
     self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];

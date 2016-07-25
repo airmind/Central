@@ -38,7 +38,7 @@ public:
     void launchMindskinUI();
     void shutdown();
     
-    void showMessage(QString& msg);
+    void showMessage(const QString& msg);
     
 };
 

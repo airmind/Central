@@ -11,13 +11,24 @@
 @interface mindskinMessageViewController : UIViewController <UIGestureRecognizerDelegate> {
     UITextView* messageview;
     UITapGestureRecognizer* tapgesture;
-    UISwipeGestureRecognizer* swipegesture;
+    UISwipeGestureRecognizer* swipeupgesture;
+    UISwipeGestureRecognizer* swipedowngesture;
+
     UIPanGestureRecognizer* pangesture;
     BOOL ispresented;
     
     NSString* history;
     
     NSTimer* t1;
+    
+    UIFont *msgfont;
+    UIColor *msgcolor;
+    
+    dispatch_queue_t messageview_q;
+    dispatch_semaphore_t messageSemaphore;
+
+    
+    
 }
 
 +(mindskinMessageViewController*) sharedInstance;

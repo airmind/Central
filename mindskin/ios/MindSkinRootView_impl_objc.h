@@ -14,6 +14,8 @@
 
 @interface MindSkinRootView_impl_objc : NSObject{
     BOOL presented;
+    
+    UIViewController* skinrootcontroller;
 
 };
 
@@ -24,6 +26,8 @@
 -(void)showMessage:(NSString*)msg;
 
 -(UIResponder*)getUIViewRootController;
+
+-(UIView*)view;
 
 @end
 

@@ -32,7 +32,7 @@ public:
     
     void presentMindSkinRootUI();
     
-    void showMessage(QString& msg);
+    void showMessage(const QString& msg);
 
     
 };
@@ -50,7 +50,7 @@ void MindSkinRootView_wrapper::presentMindSkinRootUI() {
 }
 
 
-void MindSkinRootView_wrapper::showMessage(QString& msg) {
+void MindSkinRootView_wrapper::showMessage(const QString& msg) {
     [skinroot_objc showMessage:(qt2ioshelper::QString2NSString(&msg))];
 }
 
@@ -84,7 +84,7 @@ void MindSkinRootView::shutdown(){
     
 }
 
-void MindSkinRootView::showMessage(QString& msg) {
+void MindSkinRootView::showMessage(const QString& msg) {
     skinroot_wrapper->showMessage(msg);
 }
 
@@ -113,11 +113,16 @@ void MindSkinRootView::showMessage(QString& msg) {
     
 }
 
+-(UIView*)view {
+    return skinrootcontroller.view;
+}
+
 -(void)presentMindSkinRootUI {
     UIViewController* rootcontroller = (UIViewController*)[self getUIViewRootController];
     
     //present Mindskin UI entry;
     UIViewController* tagnodesctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
+    skinrootcontroller = tagnodesctlr;
     //[tagnodesctlr.view setFrame:CGRectMake(00, 60, 200, 200)];
     //[rootcontroller.view setFrame:CGRectMake(00, 60, 200, 200)];
     //[rootcontroller.view addSubview:tagnodesctlr.view];
