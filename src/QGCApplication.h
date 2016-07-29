@@ -160,6 +160,15 @@ public:
     /// @brief Intialize the application for normal application boot. Or in other words we are not going to run
     ///         unit tests. Although public should only be called by main.
     bool _initForUnitTests(void);
+    
+    
+#ifdef __mindskin__
+    /*
+     call back after mindskin UI root loaded;
+     */
+
+    void _initSetting(void);
+#endif
 
     void _showSetupFirmware(void);
     void _showSetupParameters(void);

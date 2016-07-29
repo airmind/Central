@@ -492,50 +492,64 @@ bool QGCApplication::_initForNormalAppBoot(void)
 
     // Load known link configurations
     toolbox()->linkManager()->loadLinkConfigurationList();
-/*
-<<<<<<< HEAD
     
-    // Show user an upgrade message if the settings version has been bumped up
-    bool settingsUpgraded = false;
-    if (settings.contains(_settingsVersionKey)) {
-        if (settings.value(_settingsVersionKey).toInt() != QGC_SETTINGS_VERSION) {
-            settingsUpgraded = true;
-        }
-    } else if (settings.allKeys().count()) {
-        // Settings version key is missing and there are settings. This is an upgrade scenario.
-        settingsUpgraded = true;
-    } else {
-        settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
-    }
-
-    if (settingsUpgraded) {
-=======*/
+    
+#ifndef __mindskin__ //get into event-loop asap to show messages in mindskin UI;
     
     if (_settingsUpgraded) {
-//>>>>>>> master
         settings.clear();
         settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
-#ifndef __mindskin__
 
         showMessage("The format for QGroundControl saved settings has been modified. "
                     "Your saved settings have been reset to defaults.");
-#endif
 
     }
 
     if (getQGCMapEngine()->wasCacheReset()) {
-#ifndef __mindskin__
 
         showMessage("The Offline Map Cache database has been upgraded. "
                     "Your old map cache sets have been reset.");
-#endif
-
     }
 
     settings.sync();
+#endif
     
     return true;
 }
+
+
+#ifdef __mindskin__
+/*
+ call back after mindskin UI root loaded;
+ */
+void QGCApplication::_initSetting(void){
+    QSettings settings;
+    
+    showMessage("1 The format for QGroundControl saved settings has been modified. ");
+    showMessage("2 The format for QGroundControl saved settings has been modified. ");
+
+    if (_settingsUpgraded) {
+        settings.clear();
+        settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
+        
+        showMessage("The format for QGroundControl saved settings has been modified. "
+                    "Your saved settings have been reset to defaults.");
+        
+    }
+    
+    if (getQGCMapEngine()->wasCacheReset()) {
+        
+        showMessage("The Offline Map Cache database has been upgraded. "
+                    "Your old map cache sets have been reset.");
+    }
+    
+    settings.sync();
+    
+    qDebug() << "Call ended";
+
+}
+#endif
+
 
 bool QGCApplication::_initForUnitTests(void)
 {

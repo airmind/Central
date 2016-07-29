@@ -13,6 +13,7 @@
 #include "MindSkinRootView.h"
 #include "MindSkinRootView_impl_objc.h"
 #include "qt2ioshelper.h"
+#include "QGCApplication.h"
 
 #import "mindskinMessageViewController.h"
 
@@ -123,11 +124,10 @@ void MindSkinRootView::showMessage(const QString& msg) {
     //present Mindskin UI entry;
     UIViewController* tagnodesctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
     skinrootcontroller = tagnodesctlr;
-    //[tagnodesctlr.view setFrame:CGRectMake(00, 60, 200, 200)];
-    //[rootcontroller.view setFrame:CGRectMake(00, 60, 200, 200)];
-    //[rootcontroller.view addSubview:tagnodesctlr.view];
 
-    [rootcontroller presentViewController:tagnodesctlr animated:YES completion:nil];
+    [rootcontroller presentViewController:tagnodesctlr animated:YES completion:^{
+        qgcApp()->_initSetting();
+    }];
     
 }
 
@@ -159,7 +159,7 @@ void MindSkinRootView::showMessage(const QString& msg) {
 
 
 -(void)showMessage:(NSString*)msg {
-    
+    [[mindskinMessageViewController sharedInstance] showMessage:msg];
 }
 
 
