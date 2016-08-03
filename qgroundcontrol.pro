@@ -34,19 +34,36 @@ exists(user_config.pri):infile(user_config.pri, CONFIG) {
     message($$sprintf("Using user-supplied additional config: '%1' specified in user_config.pri", $$fromfile(user_config.pri, CONFIG)))
 }
 
-# mind skin
+# Airmind - mind skin
 contains (DEFINES, __mindskin__) {
     message ("Use mind skin")
 
     DebugBuild {
         DEFINES += _BLE_DEBUG_
     }
+
+#exclusive macro
+    DEFINES -= __remotehead__
 }
 
-# Airmind BLE
+# Airmind - BLE
 contains (DEFINES, __mindble__) {
     message ("Enable BLE")
 }
+
+# Airmind - Remote Head
+contains (DEFINES, __remotehead__) {
+    message ("Use remote head")
+
+    DebugBuild {
+    DEFINES += _REMOTEHEAD_DEBUG_
+    }
+
+#exclusive macro
+    DEFINES -= __mindskin__
+
+}
+
 
 # Bluetooth
 contains (DEFINES, QGC_DISABLE_BLUETOOTH) {
