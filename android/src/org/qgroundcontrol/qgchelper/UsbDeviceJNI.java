@@ -41,6 +41,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.*;
+import android.os.Handler;
+import android.os.Message;
 import android.widget.Toast;
 import android.util.Log;
 import android.os.PowerManager;
@@ -680,5 +682,23 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     {
         return m_openedDevices.get(idA);
     }
-}
 
+    public static final int MSG_TYPE_TOAST = 1;
+    private static Handler m_handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch(msg.what) {
+                case MSG_TYPE_TOAST:
+                    Toast toast = Toast.makeText(m_instance, (String)msg.obj, Toast.LENGTH_SHORT);
+                    toast.show();
+                    break;
+            }
+        }
+    };
+
+    //Android implementation for Qt to showMessage()
+    public static void showMessage(String msg) {
+        Log.e(UsbDeviceJNI.class.getName(),"to show message for " + msg);
+        m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST,msg));
+    }
+}

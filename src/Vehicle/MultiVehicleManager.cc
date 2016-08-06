@@ -69,10 +69,10 @@ void MultiVehicleManager::setToolbox(QGCToolbox *toolbox)
 #ifndef __mindskin__
     connect(_mavlinkProtocol, &MAVLinkProtocol::vehicleHeartbeatInfo, this, &MultiVehicleManager::_vehicleHeartbeatInfo);
 #else 
-    
+    #ifdef __ios__
     connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(LinkInterface*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
     connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(BTSerialLink*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
-
+    #endif
     
 #endif
     
@@ -134,7 +134,7 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
 }
 
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 
 void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
 {

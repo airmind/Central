@@ -37,7 +37,7 @@
 #include "MultiVehicleManager.h"
 
 
-#ifdef _BLE_DEBUG_
+#if defined(_BLE_DEBUG_) && defined(__ios__)
 #include "BLEDebugTextView.h"
 #endif
 
@@ -183,7 +183,7 @@ void MAVLinkProtocol::resetMetadataForLink(const LinkInterface *link)
 }
 
 //<<<<<<< HEAD
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 
 void MAVLinkProtocol::resetMetadataForLink(const BTSerialLink *link) {
     
@@ -769,7 +769,7 @@ void MAVLinkProtocol::_sendMessage(mavlink_message_t message)
         _sendMessage(link, message);
     }
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 
     for (int i=0; i<_linkMgr->getBTSeriallinks()->count(); i++) {
         
@@ -830,7 +830,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
 //<<<<<<< HEAD
 
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 /**
  * @param link the link to send the message over
  * @param message message to send

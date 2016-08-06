@@ -115,7 +115,9 @@ public:
 
     QGeoCoordinate lastKnownHomePosition(void) { return _lastKnownHomePosition; }
     void setLastKnownHomePosition(QGeoCoordinate& lastKnownHomePosition);
-
+    #if defined(__mindskin__) && defined(__android__)
+    void cleanJavaException(void);
+    #endif
 public slots:
     /// You can connect to this slot to show an information message box from a different thread.
     void informationMessageBoxOnMainThread(const QString& title, const QString& msg);
@@ -162,13 +164,13 @@ public:
     bool _initForUnitTests(void);
     
     
-#ifdef __mindskin__
+//#ifdef __mindskin__
     /*
      call back after mindskin UI root loaded;
      */
 
     void _initSetting(void);
-#endif
+//#endif
 
     void _showSetupFirmware(void);
     void _showSetupParameters(void);
