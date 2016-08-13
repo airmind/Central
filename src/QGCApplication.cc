@@ -447,9 +447,9 @@ bool QGCApplication::_initForNormalAppBoot(void)
 #ifdef __ios__
     //launch mindskin;
     
-    //MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
+    MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
     
-    //skinroot -> launchMindskinUI();
+    skinroot -> launchMindskinUI();
     
     /*
     self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
