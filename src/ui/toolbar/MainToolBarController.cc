@@ -25,7 +25,7 @@
 #include "MultiVehicleManager.h"
 #include "UAS.h"
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 #include "BTSerialLink.h"
 #include "BLEDebugTextView.h"
 
@@ -51,6 +51,7 @@ MainToolBarController::MainToolBarController(QObject* parent)
     connect(qgcApp()->toolbox()->mavlinkProtocol(),     &MAVLinkProtocol::radioStatusChanged, this, &MainToolBarController::_telemetryChanged);
 
 #else
+#ifdef __ios__
     //has to use static cast for overloaded signals. Qt is terrible ...
     /*connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkConnected));
     
@@ -68,7 +69,7 @@ MainToolBarController::MainToolBarController(QObject* parent)
     
     connect(qgcApp()->toolbox()->mavlinkProtocol(),     static_cast<void (MAVLinkProtocol::*)(BTSerialLink*,unsigned, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned)>(&MAVLinkProtocol::radioStatusChanged), this, static_cast<void (MainToolBarController::*)(BTSerialLink*, unsigned, unsigned, int, int, unsigned, unsigned, unsigned)>(&MainToolBarController::_telemetryChanged));
     
-
+#endif
 #endif
     
     // RSSI (didn't like standard connection)
@@ -80,7 +81,7 @@ MainToolBarController::MainToolBarController(QObject* parent)
 //>>>>>>> upstream/master
     connect(qgcApp()->toolbox()->multiVehicleManager(), &MultiVehicleManager::activeVehicleChanged, this, &MainToolBarController::_activeVehicleChanged);
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     popoverpresented=false;
 #endif
     
@@ -156,7 +157,7 @@ void MainToolBarController::onConnect(QString conf)
 }
 */
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 void MainToolBarController::onConnectTapped(QString conf)
 {
 }

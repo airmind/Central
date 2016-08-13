@@ -35,11 +35,11 @@
 //<<<<<<< HEAD
 //<<<<<<< account //switch 7
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 #include "BTSerialLink.h"
 #endif
 
-#ifdef _BLE_DEBUG_
+#if defined(_BLE_DEBUG_) && defined(__mindskin__) && defined(__ios__)
 #include "BLEDebugTextView.h"
 #endif
 
@@ -144,7 +144,7 @@ public:
     const QList<SerialLink*> getSerialLinks();
 #endif
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     //BTSerialLink* getlink();
     //const QList<BTSerialLink*> getBTSerialLinks();
     QmlObjectListModel* getBTSeriallinks               (void) { return &_blelinks; }
@@ -181,7 +181,7 @@ public:
     
 #endif
 
-#ifdef _BLE_DEBUG_
+#if defined(_BLE_DEBUG_) && defined(__ios__)
     BLEDebugTextView* openDebugView();
 #endif
     
@@ -233,7 +233,7 @@ public:
     void _addLink(LinkInterface* link);
 
 //<<<<<<< HEAD
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void _deleteLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
 #endif
@@ -274,7 +274,7 @@ signals:
 //<<<<<<< HEAD
     void linkConfigurationChanged();
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void newLink(BTSerialLink* link);
     void linkDeleted(BTSerialLink* link);
     void linkConnected(BTSerialLink* link);
@@ -313,8 +313,7 @@ private slots:
     void _activeLinkCheck(void);
 #endif
 
-#ifdef __mindskin__
-    
+#if defined(__mindskin__) && defined(__ios__)
     void _bleLinkConnected(void);
     void _bleLinkDisconnected(void);
 #endif
@@ -331,7 +330,7 @@ private:
 #endif
 //<<<<<<< HEAD
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     BLEHelper* blehelper = NULL;
 #endif
     
@@ -350,7 +349,7 @@ private:
 //<<<<<<< HEAD
 //#endif
 
-#ifdef _BLE_DEBUG_
+#if defined(_BLE_DEBUG_) && defined(__ios__)
     BLEDebugTextView* bledebugview=NULL;
 #endif
 

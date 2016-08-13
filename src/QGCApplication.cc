@@ -29,7 +29,7 @@
 #include <QBluetoothLocalDevice>
 #endif
 
-#ifdef __mindskin__
+#if defined (__mindskin__) && defined(__ios__)
 #include "MindSkinRootView.h"
 #endif
 
@@ -121,6 +121,13 @@
 #endif
 
 #include "QGCMapEngine.h"
+
+#if defined(__mindskin__) && defined(__android__)
+#include <android/log.h>
+#include <QtAndroidExtras/QtAndroidExtras>
+#include <QtAndroidExtras/QAndroidJniObject>
+static const char TAG[] {"QGCApplication"};
+#endif
 
 QGCApplication* QGCApplication::_app = NULL;
 
@@ -435,14 +442,14 @@ bool QGCApplication::_initForNormalAppBoot(void)
     _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
     _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
     _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
-    //_qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
+//    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
 
 #ifdef __ios__
     //launch mindskin;
     
-    MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
+    //MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
     
-    skinroot -> launchMindskinUI();
+    //skinroot -> launchMindskinUI();
     
     /*
     self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
@@ -468,19 +475,19 @@ bool QGCApplication::_initForNormalAppBoot(void)
     [window makeKeyAndVisible];
 */
     
-#endif
+#endif //__ios__
 #ifdef __android__
-    
-    
-#endif
-#else
+    qDebug()<<"Test from migu";
+    showMessage("Test from migu");
+#endif //__android__
+#else //__mindskin__
     _qmlAppEngine = new QQmlApplicationEngine(this);
     _qmlAppEngine->addImportPath("qrc:/qml");
     _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
     _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
     _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
-#endif //__mindskin__
-#else
+#endif
+#else //__mobile__
     // Start the user interface
     MainWindow* mainWindow = MainWindow::_create();
     Q_CHECK_PTR(mainWindow);
@@ -488,7 +495,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
     // Now that main window is up check for lost log files
     connect(this, &QGCApplication::checkForLostLogFiles, toolbox()->mavlinkProtocol(), &MAVLinkProtocol::checkForLostLogFiles);
     emit checkForLostLogFiles();
-#endif //__mobile__
+#endif
 
     // Load known link configurations
     toolbox()->linkManager()->loadLinkConfigurationList();
@@ -747,6 +754,16 @@ QObject* QGCApplication::_rootQmlObject(void)
 #endif
 }
 
+#if defined(__mindskin__) && defined(__android__)
+void QGCApplication::cleanJavaException(void)
+{
+    QAndroidJniEnvironment env;
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+#endif
 
 void QGCApplication::showMessage(const QString& message)
 {
@@ -781,11 +798,17 @@ void QGCApplication::showMessage(const QString& message)
 #endif //__ios__
     
 #ifdef __android__
-    
+    qDebug() << "android showMessage()";
+    QAndroidJniObject jnameL = QAndroidJniObject::fromString(message);
+    cleanJavaException();
+    __android_log_print(ANDROID_LOG_INFO, TAG, "To showMessage() for %s", message.toLatin1().data());
+    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/UsbDeviceJNI", "showMessage", "(Ljava/lang/String;)V", jnameL.object<jstring>());
+    cleanJavaException();
 #endif //__android__
     
 #endif //__mindskin
 }
+
 
 void QGCApplication::showFlyView(void)
 {

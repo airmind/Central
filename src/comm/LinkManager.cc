@@ -91,7 +91,7 @@ LinkManager::LinkManager(QGCApplication* app)
 
 LinkManager::~LinkManager()
 {
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     delete blehelper;
 #endif
 
@@ -110,7 +110,7 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 
 }
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 //for BT LE;
 bool LinkManager::discoverBTLinks(void* delegate) {
     if (blehelper == NULL) {
@@ -329,7 +329,7 @@ void LinkManager::_addLink(LinkInterface* link)
     
 }
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 /*
 
 bool LinkManager::containsLink(BTSerialLink* link) {
@@ -447,7 +447,7 @@ void LinkManager::_bleLinkDisconnected(void) {
 
 #endif
 
-#ifdef _BLE_DEBUG_
+#if defined(_BLE_DEBUG_) && defined(__ios__)
 BLEDebugTextView* LinkManager::openDebugView(){
     if (bledebugview==NULL) {
         

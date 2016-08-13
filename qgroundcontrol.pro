@@ -34,37 +34,6 @@ exists(user_config.pri):infile(user_config.pri, CONFIG) {
     message($$sprintf("Using user-supplied additional config: '%1' specified in user_config.pri", $$fromfile(user_config.pri, CONFIG)))
 }
 
-# Airmind - mind skin
-contains (DEFINES, __mindskin__) {
-    message ("Use mind skin")
-
-    DebugBuild {
-        DEFINES += _BLE_DEBUG_
-    }
-
-#exclusive macro
-    DEFINES -= __remotehead__
-}
-
-# Airmind - BLE
-contains (DEFINES, __mindble__) {
-    message ("Enable BLE")
-}
-
-# Airmind - Remote Head
-contains (DEFINES, __remotehead__) {
-    message ("Use remote head")
-
-    DebugBuild {
-    DEFINES += _REMOTEHEAD_DEBUG_
-    }
-
-#exclusive macro
-    DEFINES -= __mindskin__
-
-}
-
-
 # Bluetooth
 contains (DEFINES, QGC_DISABLE_BLUETOOTH) {
     message("Skipping support for Bluetooth (manual override from command line)")
@@ -144,11 +113,6 @@ equals(QT_MAJOR_VERSION, 5) | greaterThan(QT_MINOR_VERSION, 5) {
 iOSBuild {
     BUNDLE.files        = $$files($$PWD/ios/AppIcon*.png) $$PWD/ios/QGCLaunchScreen.xib
 
-contains (DEFINES, __mindskin__) {
-    BUNDLE.files       += $$PWD/mindskin/ios/TagNodesViewController.xib
-    LIBS               += -framework CoreBluetooth
-
-}
     QMAKE_BUNDLE_DATA  += BUNDLE
 
     LIBS               += -framework AVFoundation
@@ -368,53 +332,6 @@ WindowsBuild {
 contains(DEFINES, QGC_ENABLE_BLUETOOTH) {
     HEADERS += \
     src/comm/BluetoothLink.h \
-}
-
-contains(DEFINES, __mindskin__) {
-iOSBuild {
-    HEADERS += \
-        BLE/ios/BTSerialLink_objc.h \
-        BLE/ios/BTSerialLink.h \
-        mindskin/ios/qt2ioshelper.h \
-        mindskin/ios/ConnectPopover.h \
-        mindskin/ios/ConnectPopoverViewController.h \
-        mindskin/ios/MindStickButton.h \
-        mindskin/ios/MindStickButtonViewController.h \
-        mindskin/MindSkinRootView.h \
-        mindskin/ios/MindSkinRootView_impl_objc.h \
-        mindskin/ios/tagNodesViewController.h \
-        mindskin/ios/mindskinMessageViewController.h \
-
-
-    SOURCES += \
-        mindskin/ios/MindStickButton.cpp \
-
-    OBJECTIVE_SOURCES += \
-        BLE/ios/BTSerialLink.mm \
-        mindskin/ios/ConnectPopoverViewController.mm \
-        mindskin/ios/MindStickButtonViewController.mm \
-        mindskin/ios/MindSkinRootView_impl_objc.mm \
-        mindskin/ios/tagNodesViewController.m \
-        mindskin/ios/mindskinMessageViewController.m \
-
-
-    DebugBuild {
-        HEADERS += \
-            mindskin/ios/BLEDebugTextView.h \
-            mindskin/ios/BLEDebugTextViewController.h \
-
-        OBJECTIVE_SOURCES += \
-            mindskin/ios/BLEDebugTextViewController.mm \
-
-    }
-
-
-}
-
-AndroidBuild {
-
-}
-
 }
 
 !iOSBuild {
@@ -911,6 +828,10 @@ AndroidBuild {
         android/gradlew.bat
 }
 
+
+#-------------------------------------------------------------------------------------
+# Customerized Config
+include (QGCCustomerized.pri)
 #-------------------------------------------------------------------------------------
 #
 # Post link configuration

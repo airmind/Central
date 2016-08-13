@@ -24,11 +24,11 @@
 
 //#define __mindskin__ 1 //for the moment; //move to "custom compiler flags" - "other C flags"
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 #include "BTSerialLink.h"
 #endif
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
 #include "ConnectPopover.h"
 #include "MindStickButton.h"
 #endif
@@ -61,7 +61,7 @@ public:
 =======
 >>>>>>> upstream/master
     */
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     Q_INVOKABLE void    onConnectTapped(QString conf);
     Q_INVOKABLE void    onConnectTappedDismiss(QString conf);
     
@@ -107,7 +107,7 @@ private slots:
     void _linkConnected                 (LinkInterface* link);
     void _linkDisconnected              (LinkInterface* link);
     */
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void _linkConnected                 (BTSerialLink* link);
     void _linkDisconnected              (BTSerialLink* link);
 
@@ -121,7 +121,7 @@ private slots:
     void _setProgressBarValue           (float value);
     void _telemetryChanged              (LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise);
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void _telemetryChanged              (BTSerialLink* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise);
 
 #endif
@@ -144,7 +144,7 @@ private:
     QStringList     _toolbarMessageQueue;
     QMutex          _toolbarMessageQueueMutex;
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     ConnectPopover* popover;
     MindStickButton* mindstickButton;
     bool popoverpresented;

@@ -130,7 +130,7 @@ public:
      */
     virtual void resetMetadataForLink(const LinkInterface *link);
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void resetMetadataForLink(const BTSerialLink *link);
     
     void linkConnected(BTSerialLink* link);
@@ -147,7 +147,7 @@ public slots:
     /** @brief Receive bytes from a communication interface */
     void receiveBytes(LinkInterface* link, QByteArray b);
     
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void receiveBytes(BTSerialLink* link, QByteArray b);
 #endif
     
@@ -241,7 +241,7 @@ signals:
     /// Heartbeat received on link
     void vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     
@@ -286,7 +286,7 @@ signals:
      */
     void radioStatusChanged(LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi,
     unsigned txbuf, unsigned noise, unsigned remnoise);
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     void radioStatusChanged(BTSerialLink* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
                             unsigned txbuf, unsigned noise, unsigned remnoise);
     
@@ -313,7 +313,7 @@ private:
 
 //>>>>>>> upstream/master
 
-#ifdef __mindskin__
+#if defined(__mindskin__) && defined(__ios__)
     /** @brief Send MAVLink message */
     void _sendMessage(BTSerialLink* link, mavlink_message_t message);
     /** @brief Send MAVLink message with correct system / component ID */
