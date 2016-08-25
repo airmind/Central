@@ -122,12 +122,25 @@ void MindSkinRootView::showMessage(const QString& msg) {
     UIViewController* rootcontroller = (UIViewController*)[self getUIViewRootController];
     
     //present Mindskin UI entry;
+    
+#ifdef __dronetag__
     UIViewController* tagnodesctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
     skinrootcontroller = tagnodesctlr;
 
     [rootcontroller presentViewController:tagnodesctlr animated:YES completion:^{
         qgcApp()->_initSetting();
     }];
+#else
+    //todo: try to get a link to see if its racer or mindpx
+    //launch racer by default;
+    
+    UIViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"RacerMainMenuViewController" bundle:nil];
+    skinrootcontroller = racermainctlr;
+    
+    [rootcontroller presentViewController:racermainctlr animated:YES completion:^{
+        qgcApp()->_initSetting();
+    }];
+#endif
     
 }
 
