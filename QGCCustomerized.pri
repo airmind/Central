@@ -77,8 +77,6 @@ __mindskin__ {
 
     }
 
-
-
     AndroidBuild {
         message("Adding mindskin Java Classes")
         ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
@@ -96,9 +94,11 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/BluetoothLeService.java \
             $$PWD/android/src/org/airmind/ble/SampleGattAttributes.java \
             $$PWD/android/src/org/airmind/ble/BLECommNative.java \
+            $$PWD/android/src/org/airmind/ble/BLEComm.java \
             $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
 
     }
-
-
 }
+
+DISTFILES += \
+    $$PWD/android/src/org/airmind/ble/BLEComm
