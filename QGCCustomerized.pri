@@ -91,12 +91,12 @@ __mindskin__ {
             $$PWD/android/res/menu/main.xml \
             $$PWD/android/res/values/color.xml \
             $$PWD/android/res/values/string.xml \
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/DeviceControlActivity.java \
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/DeviceScanActivity.java \
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/BluetoothLeService.java \
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/SampleGattAttributes.java \
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommNative.java \
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommInterface.java \
+            $$PWD/android/src/org/airmind/ble/DeviceControlActivity.java \
+            $$PWD/android/src/org/airmind/ble/DeviceScanActivity.java \
+            $$PWD/android/src/org/airmind/ble/BluetoothLeService.java \
+            $$PWD/android/src/org/airmind/ble/SampleGattAttributes.java \
+            $$PWD/android/src/org/airmind/ble/BLECommNative.java \
+            $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
 
     }
 

@@ -1,3 +1,5 @@
+package org.airmind.ble;
+
 /*
  * Copyright (C) 2013 The Android Open Source Project
  *
@@ -14,7 +16,6 @@
  * limitations under the License.
  */
 
-package org.qgroundcontrol.qgchelper;
 
 import java.util.HashMap;
 

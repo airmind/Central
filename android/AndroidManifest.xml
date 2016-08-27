@@ -101,9 +101,8 @@
                 android:value="false" />
             <!-- Background running -->
         </activity>
-        <!--<activity android:name="org.qgroundcontrol.qgchelper.DeviceScanActivity"/>-->
         <activity
-            android:name="org.qgroundcontrol.qgchelper.DeviceScanActivity"
+            android:name="org.airmind.ble.DeviceScanActivity"
             android:label="QGroundControl"
             android:screenOrientation="sensorLandscape">
             <intent-filter>
@@ -111,11 +110,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.qgroundcontrol.qgchelper.DeviceControlActivity"
+            android:name="org.airmind.ble.DeviceControlActivity"
             android:screenOrientation="sensorLandscape" />
 
         <service
-            android:name="org.qgroundcontrol.qgchelper.BluetoothLeService"
+            android:name="org.airmind.ble.BluetoothLeService"
             android:enabled="true" />
     </application>
     <uses-sdk

@@ -1,5 +1,4 @@
-package org.qgroundcontrol.qgchelper;
-
+package org.airmind.ble;
 /**
  * Created by caprin on 16-8-16.
  */

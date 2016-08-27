@@ -61,7 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import org.airmind.ble.DeviceScanActivity;
 //-- Text To Speech
 
 public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListener {

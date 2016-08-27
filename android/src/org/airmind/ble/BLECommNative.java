@@ -1,4 +1,4 @@
-package org.qgroundcontrol.qgchelper;
+package org.airmind.ble;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
