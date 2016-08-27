@@ -29,67 +29,75 @@ package org.qgroundcontrol.qgchelper;
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.io.IOException;
-
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.hardware.usb.*;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.widget.Toast;
-import android.util.Log;
 import android.os.PowerManager;
-//-- Text To Speech
-import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
-import com.hoho.android.usbserial.driver.*;
+import com.hoho.android.usbserial.driver.CdcAcmSerialDriver;
+import com.hoho.android.usbserial.driver.Cp2102SerialDriver;
+import com.hoho.android.usbserial.driver.FtdiSerialDriver;
+import com.hoho.android.usbserial.driver.ProlificSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialProber;
+
+import org.mavlink.qgroundcontrol.R;
 import org.qtproject.qt5.android.bindings.QtActivity;
-import org.qtproject.qt5.android.bindings.QtApplication;
 
-public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListener
-{
-    public  static int BAD_PORT = 0;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.airmind.ble.DeviceScanActivity;
+//-- Text To Speech
+
+public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListener {
+    public static int BAD_PORT = 0;
     private static UsbDeviceJNI m_instance;
     private static UsbManager m_manager;    //  ANDROID USB HOST CLASS
     private static List<UsbSerialDriver> m_devices; //  LIST OF CURRENT DEVICES
     private static HashMap<Integer, UsbSerialDriver> m_openedDevices;   //  LIST OF OPENED DEVICES
-    private static HashMap<Integer, UsbIoManager> m_ioManager;	//  THREADS FOR LISTENING FOR INCOMING DATA
+    private static HashMap<Integer, UsbIoManager> m_ioManager;    //  THREADS FOR LISTENING FOR INCOMING DATA
     private static HashMap<Integer, Integer> m_userData;    //  CORRESPONDING USER DATA FOR OPENED DEVICES.  USED IN DISCONNECT CALLBACK
     //  USED TO DETECT WHEN A DEVICE HAS BEEN UNPLUGGED
     private BroadcastReceiver m_UsbReceiver = null;
     private final static ExecutorService m_Executor = Executors.newSingleThreadExecutor();
     private static final String TAG = "QGC_UsbDeviceJNI";
-    private static TextToSpeech  m_tts;
+    private static TextToSpeech m_tts;
     private static PowerManager.WakeLock m_wl;
 
     private final static UsbIoManager.Listener m_Listener =
-            new UsbIoManager.Listener()
-            {
+            new UsbIoManager.Listener() {
                 @Override
-                public void onRunError(Exception eA, int userDataA)
-                {
+                public void onRunError(Exception eA, int userDataA) {
                     Log.e(TAG, "onRunError Exception");
                     nativeDeviceException(userDataA, eA.getMessage());
                 }
 
                 @Override
-                public void onNewData(final byte[] dataA, int userDataA)
-                {
+                public void onNewData(final byte[] dataA, int userDataA) {
                     nativeDeviceNewData(userDataA, dataA);
                 }
             };
 
     //  NATIVE C++ FUNCTION THAT WILL BE CALLED IF THE DEVICE IS UNPLUGGED
     private static native void nativeDeviceHasDisconnected(int userDataA);
+
     private static native void nativeDeviceException(int userDataA, String messageA);
+
     private static native void nativeDeviceNewData(int userDataA, byte[] dataA);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,8 +105,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Constructor.  Only used once to create the initial instance for the static functions.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public UsbDeviceJNI()
-    {
+    public UsbDeviceJNI() {
         m_instance = this;
         m_openedDevices = new HashMap<Integer, UsbSerialDriver>();
         m_userData = new HashMap<Integer, Integer>();
@@ -116,8 +123,17 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        m_tts = new TextToSpeech(this,this);
-        PowerManager pm = (PowerManager)m_instance.getSystemService(Context.POWER_SERVICE);
+        setContentView(R.layout.main_activity);
+        final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
+        Button scanDevice = (Button) findViewById(R.id.ble_scan);
+        scanDevice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                m_instance.startActivity(intent);
+            }
+        });
+        m_tts = new TextToSpeech(this, this);
+        PowerManager pm = (PowerManager) m_instance.getSystemService(Context.POWER_SERVICE);
         m_wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "QGroundControl");
     }
 
@@ -130,15 +146,13 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     public void onInit(int status) {
     }
 
-    public static void say(String msg)
-    {
+    public static void say(String msg) {
         Log.i(TAG, "Say: " + msg);
         m_tts.speak(msg, TextToSpeech.QUEUE_FLUSH, null);
     }
 
-    public static void keepScreenOn()
-    {
-        if(m_wl != null) {
+    public static void keepScreenOn() {
+        if (m_wl != null) {
             m_wl.acquire();
             Log.i(TAG, "SCREEN_BRIGHT_WAKE_LOCK acquired.");
         } else {
@@ -146,9 +160,8 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
         }
     }
 
-    public static void restoreScreenOn()
-    {
-        if(m_wl != null) {
+    public static void restoreScreenOn() {
+        if (m_wl != null) {
             m_wl.release();
             Log.i(TAG, "SCREEN_BRIGHT_WAKE_LOCK released.");
         }
@@ -160,13 +173,12 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  device_filter.xml
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    private static boolean getCurrentDevices()
-    {
+    private static boolean getCurrentDevices() {
         if (m_instance == null)
             return false;
 
         if (m_manager == null)
-            m_manager = (UsbManager)m_instance.getSystemService(Context.USB_SERVICE);
+            m_manager = (UsbManager) m_instance.getSystemService(Context.USB_SERVICE);
 
         if (m_devices != null)
             m_devices.clear();
@@ -184,24 +196,20 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  DeviceName:Company:ProductId:VendorId
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static String[] availableDevicesInfo()
-    {
+    public static String[] availableDevicesInfo() {
         //  GET THE LIST OF CURRENT DEVICES
-        if (!getCurrentDevices())
-        {
+        if (!getCurrentDevices()) {
             Log.e(TAG, "UsbDeviceJNI instance not present");
             return null;
         }
 
         //  MAKE SURE WE HAVE ENTRIES
-        if (m_devices.size() <= 0)
-        {
+        if (m_devices.size() <= 0) {
             //Log.e(TAG, "No USB devices found");
             return null;
         }
 
-        if (m_openedDevices == null)
-        {
+        if (m_openedDevices == null) {
             Log.e(TAG, "m_openedDevices is null");
             return null;
         }
@@ -210,17 +218,14 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
         int iL;
 
         //  CHECK FOR ALREADY OPENED DEVICES AND DON"T INCLUDE THEM IN THE COUNT
-        for (iL=0; iL<m_devices.size(); iL++)
-        {
-            if (m_openedDevices.get(m_devices.get(iL).getDevice().getDeviceId()) != null)
-            {
+        for (iL = 0; iL < m_devices.size(); iL++) {
+            if (m_openedDevices.get(m_devices.get(iL).getDevice().getDeviceId()) != null) {
                 countL++;
                 break;
             }
         }
 
-        if (m_devices.size() - countL <= 0)
-        {
+        if (m_devices.size() - countL <= 0) {
             //Log.e(TAG, "No open USB devices found");
             return null;
         }
@@ -231,11 +236,9 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
 
         //  GET THE DATA ON THE INDIVIDUAL DEVICES SKIPPING THE ONES THAT ARE ALREADY OPEN
         countL = 0;
-        for (iL=0; iL<m_devices.size(); iL++)
-        {
+        for (iL = 0; iL < m_devices.size(); iL++) {
             driverL = m_devices.get(iL);
-            if (m_openedDevices.get(driverL.getDevice().getDeviceId()) == null)
-            {
+            if (m_openedDevices.get(driverL.getDevice().getDeviceId()) == null) {
                 UsbDevice deviceL = driverL.getDevice();
                 tempL = deviceL.getDeviceName() + ":";
 
@@ -262,7 +265,6 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     }
 
 
-
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //
     //  Open a device based on the name.
@@ -275,8 +277,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //              calls like close(), read(), and write().
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////
-    public static int open(String nameA, int userDataA)
-    {
+    public static int open(String nameA, int userDataA) {
         int idL = BAD_PORT;
 
         Log.i(TAG, "Getting device list");
@@ -284,51 +285,38 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
             return BAD_PORT;
 
         //  CHECK THAT PORT IS NOT ALREADY OPENED
-        if (m_openedDevices != null)
-        {
-            for (UsbSerialDriver driverL: m_openedDevices.values())
-            {
-                if (nameA.equals(driverL.getDevice().getDeviceName()))
-                {
+        if (m_openedDevices != null) {
+            for (UsbSerialDriver driverL : m_openedDevices.values()) {
+                if (nameA.equals(driverL.getDevice().getDeviceName())) {
                     Log.e(TAG, "Device already opened");
                     return BAD_PORT;
                 }
             }
-        }
-        else
+        } else
             return BAD_PORT;
 
         if (m_devices == null)
             return BAD_PORT;
 
         //  OPEN THE DEVICE
-        try
-        {
-            for (int iL=0; iL<m_devices.size(); iL++)
-            {
+        try {
+            for (int iL = 0; iL < m_devices.size(); iL++) {
                 Log.i(TAG, "Checking device " + m_devices.get(iL).getDevice().getDeviceName() + " id: " + m_devices.get(iL).getDevice().getDeviceId());
-                if (nameA.equals(m_devices.get(iL).getDevice().getDeviceName()))
-                {
+                if (nameA.equals(m_devices.get(iL).getDevice().getDeviceName())) {
                     idL = m_devices.get(iL).getDevice().getDeviceId();
                     m_openedDevices.put(idL, m_devices.get(iL));
                     m_userData.put(idL, userDataA);
 
-                    if (m_instance.m_UsbReceiver == null)
-                    {
+                    if (m_instance.m_UsbReceiver == null) {
                         Log.i(TAG, "Creating new broadcast receiver");
-                        m_instance.m_UsbReceiver= new BroadcastReceiver()
-                        {
-                            public void onReceive(Context contextA, Intent intentA)
-                            {
+                        m_instance.m_UsbReceiver = new BroadcastReceiver() {
+                            public void onReceive(Context contextA, Intent intentA) {
                                 String actionL = intentA.getAction();
 
-                                if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(actionL))
-                                {
-                                    UsbDevice deviceL = (UsbDevice)intentA.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                                    if (deviceL != null)
-                                    {
-                                        if (m_userData.containsKey(deviceL.getDeviceId()))
-                                        {
+                                if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(actionL)) {
+                                    UsbDevice deviceL = (UsbDevice) intentA.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                                    if (deviceL != null) {
+                                        if (m_userData.containsKey(deviceL.getDeviceId())) {
                                             nativeDeviceHasDisconnected(m_userData.get(deviceL.getDeviceId()));
                                         }
                                     }
@@ -355,15 +343,12 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
             }
 
             return BAD_PORT;
-        }
-        catch(IOException exA)
-        {
-            if (idL != BAD_PORT)
-            {
+        } catch (IOException exA) {
+            if (idL != BAD_PORT) {
                 m_openedDevices.remove(idL);
                 m_userData.remove(idL);
 
-                if(m_ioManager.get(idL) != null)
+                if (m_ioManager.get(idL) != null)
                     m_ioManager.get(idL).stop();
 
                 m_ioManager.remove(idL);
@@ -373,8 +358,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
         }
     }
 
-    public static void startIoManager(int idA)
-    {
+    public static void startIoManager(int idA) {
         if (m_ioManager.get(idA) != null)
             return;
 
@@ -388,9 +372,8 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
         m_Executor.submit(managerL);
     }
 
-    public static void stopIoManager(int idA)
-    {
-        if(m_ioManager.get(idA) == null)
+    public static void stopIoManager(int idA) {
+        if (m_ioManager.get(idA) == null)
             return;
 
         m_ioManager.get(idA).stop();
@@ -410,24 +393,19 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  T/F Success/Failure
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static boolean setParameters(int idA, int baudRateA, int dataBitsA, int stopBitsA, int parityA)
-    {
+    public static boolean setParameters(int idA, int baudRateA, int dataBitsA, int stopBitsA, int parityA) {
         UsbSerialDriver driverL = m_openedDevices.get(idA);
 
         if (driverL == null)
             return false;
 
-        try
-        {
+        try {
             driverL.setParameters(baudRateA, dataBitsA, stopBitsA, parityA);
             return true;
-        }
-        catch(IOException eA)
-        {
+        } catch (IOException eA) {
             return false;
         }
     }
-
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -439,28 +417,23 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  T/F Success/Failure
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static boolean close(int idA)
-    {
+    public static boolean close(int idA) {
         UsbSerialDriver driverL = m_openedDevices.get(idA);
 
         if (driverL == null)
             return false;
 
-        try
-        {
+        try {
             stopIoManager(idA);
             m_userData.remove(idA);
             m_openedDevices.remove(idA);
             driverL.close();
 
             return true;
-        }
-        catch(IOException eA)
-        {
+        } catch (IOException eA) {
             return false;
         }
     }
-
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -474,19 +447,15 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  number of bytes written
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static int write(int idA, byte[] sourceA, int timeoutMSecA)
-    {
+    public static int write(int idA, byte[] sourceA, int timeoutMSecA) {
         UsbSerialDriver driverL = m_openedDevices.get(idA);
 
         if (driverL == null)
             return 0;
 
-        try
-        {
+        try {
             return driverL.write(sourceA, timeoutMSecA);
-        }
-        catch(IOException eA)
-        {
+        } catch (IOException eA) {
             return 0;
         }
         /*
@@ -503,7 +472,6 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     }
 
 
-
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     //
     //  Determine if a device name if valid.  Note, it does not look for devices that are already open
@@ -513,20 +481,17 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns: T/F
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static boolean isDeviceNameValid(String nameA)
-    {
+    public static boolean isDeviceNameValid(String nameA) {
         if (m_devices.size() <= 0)
             return false;
 
-        for (int iL=0; iL<m_devices.size(); iL++)
-        {
+        for (int iL = 0; iL < m_devices.size(); iL++) {
             if (m_devices.get(iL).getDevice().getDeviceName() == nameA)
                 return true;
         }
 
         return false;
     }
-
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -538,20 +503,17 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  T/F
     //
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static boolean isDeviceNameOpen(String nameA)
-    {
+    public static boolean isDeviceNameOpen(String nameA) {
         if (m_openedDevices == null)
             return false;
 
-        for (UsbSerialDriver driverL: m_openedDevices.values())
-        {
+        for (UsbSerialDriver driverL : m_openedDevices.values()) {
             if (nameA.equals(driverL.getDevice().getDeviceName()))
                 return true;
         }
 
         return false;
     }
-
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -564,10 +526,8 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  T/F Success/Failure
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static boolean setDataTerminalReady(int idA, boolean onA)
-    {
-        try
-        {
+    public static boolean setDataTerminalReady(int idA, boolean onA) {
+        try {
             UsbSerialDriver driverL = m_openedDevices.get(idA);
 
             if (driverL == null)
@@ -575,13 +535,10 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
 
             driverL.setDTR(onA);
             return true;
-        }
-        catch(IOException eA)
-        {
+        } catch (IOException eA) {
             return false;
         }
     }
-
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -594,10 +551,8 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  T/F Success/Failure
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
-    public static boolean setRequestToSend(int idA, boolean onA)
-    {
-        try
-        {
+    public static boolean setRequestToSend(int idA, boolean onA) {
+        try {
             UsbSerialDriver driverL = m_openedDevices.get(idA);
 
             if (driverL == null)
@@ -605,13 +560,10 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
 
             driverL.setRTS(onA);
             return true;
-        }
-        catch(IOException eA)
-        {
+        } catch (IOException eA) {
             return false;
         }
     }
-
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -625,23 +577,18 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  T/F Success/Failure
     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    public static boolean purgeBuffers(int idA, boolean inputA, boolean outputA)
-    {
-        try
-        {
+    public static boolean purgeBuffers(int idA, boolean inputA, boolean outputA) {
+        try {
             UsbSerialDriver driverL = m_openedDevices.get(idA);
 
             if (driverL == null)
                 return false;
 
             return driverL.purgeHwBuffers(inputA, outputA);
-        }
-        catch(IOException eA)
-        {
+        } catch (IOException eA) {
             return false;
         }
     }
-
 
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -653,8 +600,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  device handle
     //
     ///////////////////////////////////////////////////////////////////////////////////////////
-    public static int getDeviceHandle(int idA)
-    {
+    public static int getDeviceHandle(int idA) {
         UsbSerialDriver driverL = m_openedDevices.get(idA);
 
         if (driverL == null)
@@ -668,7 +614,6 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     }
 
 
-
     //////////////////////////////////////////////////////////////////////////////////////////////
     //
     //  Get the open usb serial driver for the given id
@@ -678,8 +623,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Returns:  usb device driver
     //
     /////////////////////////////////////////////////////////////////////////////////////////////
-    public static UsbSerialDriver getUsbSerialDriver(int idA)
-    {
+    public static UsbSerialDriver getUsbSerialDriver(int idA) {
         return m_openedDevices.get(idA);
     }
 
@@ -687,9 +631,9 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     private static Handler m_handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            switch(msg.what) {
+            switch (msg.what) {
                 case MSG_TYPE_TOAST:
-                    Toast toast = Toast.makeText(m_instance, (String)msg.obj, Toast.LENGTH_SHORT);
+                    Toast toast = Toast.makeText(m_instance, (String) msg.obj, Toast.LENGTH_SHORT);
                     toast.show();
                     break;
             }
@@ -698,7 +642,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
 
     //Android implementation for Qt to showMessage()
     public static void showMessage(String msg) {
-        Log.e(UsbDeviceJNI.class.getName(),"to show message for " + msg);
-        m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST,msg));
+        Log.e(UsbDeviceJNI.class.getName(), "to show message for " + msg);
+        m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST, msg));
     }
 }
