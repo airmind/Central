@@ -14,6 +14,9 @@
             <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <subviews>
+                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bJV-Ig-2OF">
+                    <rect key="frame" x="0.0" y="0.0" width="606" height="600"/>
+                </imageView>
                 <visualEffectView opaque="NO" contentMode="scaleToFill" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="plf-xH-rAP">
                     <rect key="frame" x="8" y="157" width="187" height="393"/>
                     <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" ambiguous="YES" id="fQk-IU-B8E">
@@ -30,12 +33,16 @@
                                 <rect key="frame" x="24" y="120" width="138" height="174"/>
                             </imageView>
                         </subviews>
+                        <gestureRecognizers/>
                         <constraints>
                             <constraint firstAttribute="centerY" secondItem="zAq-1J-JPI" secondAttribute="centerY" id="4Nj-x6-GFw"/>
                             <constraint firstAttribute="centerX" secondItem="zAq-1J-JPI" secondAttribute="centerX" id="7yt-CX-Jie"/>
                             <constraint firstItem="cgW-jj-FWf" firstAttribute="leading" secondItem="fQk-IU-B8E" secondAttribute="leading" constant="15" id="FGf-Vq-Xba"/>
                             <constraint firstItem="cgW-jj-FWf" firstAttribute="top" secondItem="fQk-IU-B8E" secondAttribute="top" constant="30" id="rf9-jM-Kf3"/>
                         </constraints>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="Ihd-U1-Uot" appends="YES" id="UcK-lD-Pfv"/>
+                        </connections>
                     </view>
                     <blurEffect style="light"/>
                 </visualEffectView>
@@ -55,12 +62,16 @@
                                 <rect key="frame" x="29" y="119" width="138" height="174"/>
                             </imageView>
                         </subviews>
+                        <gestureRecognizers/>
                         <constraints>
                             <constraint firstAttribute="centerY" secondItem="848-EC-1O9" secondAttribute="centerY" id="0ji-XZ-etd"/>
                             <constraint firstItem="3ie-IC-K4Y" firstAttribute="leading" secondItem="IfD-YY-F0U" secondAttribute="leading" constant="15" id="6Zj-9t-2xm"/>
                             <constraint firstItem="3ie-IC-K4Y" firstAttribute="top" secondItem="IfD-YY-F0U" secondAttribute="top" constant="30" id="eBO-tP-bmc"/>
                             <constraint firstAttribute="centerX" secondItem="848-EC-1O9" secondAttribute="centerX" id="szO-o8-Bbb"/>
                         </constraints>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="8G0-DF-CqO" appends="YES" id="edK-Ez-S9K"/>
+                        </connections>
                     </view>
                     <blurEffect style="light"/>
                 </visualEffectView>
@@ -80,6 +91,7 @@
                                 <rect key="frame" x="23" y="119" width="138" height="174"/>
                             </imageView>
                         </subviews>
+                        <gestureRecognizers/>
                         <constraints>
                             <constraint firstItem="t83-w4-Cxf" firstAttribute="top" relation="greaterThanOrEqual" secondItem="xrh-qz-yET" secondAttribute="top" constant="41" id="8ad-wP-TEe"/>
                             <constraint firstAttribute="centerY" secondItem="2Wd-jn-5ly" secondAttribute="centerY" id="A2h-Yc-A2o"/>
@@ -98,6 +110,9 @@
                                 <exclude reference="QZI-12-SzU"/>
                             </mask>
                         </variation>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="R6u-Ml-2me" appends="YES" id="kQK-OB-c2B"/>
+                        </connections>
                     </view>
                     <vibrancyEffect>
                         <blurEffect style="light"/>
@@ -108,19 +123,27 @@
                     <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="eJz-Hh-f5u">
                         <rect key="frame" x="0.0" y="0.0" width="184" height="393"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <gestureRecognizers/>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="xhU-0e-jqp" appends="YES" id="ZGo-BM-wfC"/>
+                        </connections>
                     </view>
+                    <gestureRecognizers/>
                     <vibrancyEffect>
                         <blurEffect style="light"/>
                     </vibrancyEffect>
                 </visualEffectView>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zzz-GW-NDD">
-                    <rect key="frame" x="323" y="41" width="46" height="30"/>
+                    <rect key="frame" x="323" y="50" width="46" height="30"/>
                     <state key="normal" title="Button">
                         <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                     </state>
+                    <connections>
+                        <action selector="linkstatusPressed:" destination="-1" eventType="touchUpInside" id="1qn-dA-mUl"/>
+                    </connections>
                 </button>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QYi-7a-eYF">
-                    <rect key="frame" x="419" y="41" width="46" height="30"/>
+                    <rect key="frame" x="419" y="50" width="46" height="30"/>
                     <state key="normal" title="Button">
                         <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                     </state>
@@ -132,7 +155,7 @@
                     <nil key="highlightedColor"/>
                 </label>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ssl-X1-97p">
-                    <rect key="frame" x="522" y="41" width="46" height="30"/>
+                    <rect key="frame" x="522" y="50" width="46" height="30"/>
                     <state key="normal" title="Button">
                         <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                     </state>
@@ -145,7 +168,7 @@
                 <constraint firstItem="5Xd-U0-ObQ" firstAttribute="leading" secondItem="1Sc-4t-6B4" secondAttribute="trailing" constant="8" id="4dF-DP-44t"/>
                 <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="plf-xH-rAP" secondAttribute="bottom" constant="50" id="4sh-XM-XBN"/>
                 <constraint firstItem="1Sc-4t-6B4" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="157" id="8I5-nn-OGl"/>
-                <constraint firstItem="Ssl-X1-97p" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="41" id="9Jv-bJ-GlX"/>
+                <constraint firstItem="Ssl-X1-97p" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="50" id="9Jv-bJ-GlX"/>
                 <constraint firstAttribute="bottom" secondItem="5Xd-U0-ObQ" secondAttribute="bottom" constant="50" id="AIc-xB-1FX"/>
                 <constraint firstItem="1Sc-4t-6B4" firstAttribute="height" secondItem="J2B-OI-kJE" secondAttribute="height" id="Bgc-gc-mBU"/>
                 <constraint firstItem="1Sc-4t-6B4" firstAttribute="width" secondItem="J2B-OI-kJE" secondAttribute="width" id="D11-OK-uDe"/>
@@ -160,17 +183,17 @@
                 <constraint firstItem="QYi-7a-eYF" firstAttribute="leading" secondItem="zzz-GW-NDD" secondAttribute="trailing" constant="50" id="aWR-eI-yH2"/>
                 <constraint firstItem="Ssl-X1-97p" firstAttribute="leading" secondItem="QYi-7a-eYF" secondAttribute="trailing" constant="57" id="agw-2i-Or9"/>
                 <constraint firstItem="1Sc-4t-6B4" firstAttribute="height" secondItem="5Xd-U0-ObQ" secondAttribute="height" id="cOb-bg-lbt"/>
-                <constraint firstItem="zzz-GW-NDD" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="41" id="cpv-PC-peY"/>
+                <constraint firstItem="zzz-GW-NDD" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="50" id="cpv-PC-peY"/>
                 <constraint firstItem="J2B-OI-kJE" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="157" id="egd-55-XDd"/>
                 <constraint firstAttribute="bottom" secondItem="1Sc-4t-6B4" secondAttribute="bottom" constant="50" id="oiv-mK-HGQ"/>
                 <constraint firstItem="1Sc-4t-6B4" firstAttribute="top" secondItem="5Xd-U0-ObQ" secondAttribute="top" id="q3Q-BI-BuA"/>
                 <constraint firstItem="plf-xH-rAP" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="i5M-Pr-FkT" secondAttribute="leading" constant="8" id="sqB-3i-R7f"/>
-                <constraint firstItem="QYi-7a-eYF" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="41" id="wLf-Kr-xSX"/>
+                <constraint firstItem="QYi-7a-eYF" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="50" id="wLf-Kr-xSX"/>
                 <constraint firstItem="J2B-OI-kJE" firstAttribute="leading" secondItem="5Xd-U0-ObQ" secondAttribute="trailing" constant="8" id="wNo-J9-VbC"/>
                 <constraint firstAttribute="trailing" secondItem="Ssl-X1-97p" secondAttribute="trailing" constant="32" id="wl5-La-LXg"/>
                 <constraint firstItem="5Xd-U0-ObQ" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="157" id="x3h-8y-FSD"/>
                 <constraint firstItem="1Sc-4t-6B4" firstAttribute="top" secondItem="J2B-OI-kJE" secondAttribute="top" id="x8c-EO-UEd"/>
-                <constraint firstItem="Haq-Ve-9Ne" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="25" id="zmA-O4-oEV"/>
+                <constraint firstItem="Haq-Ve-9Ne" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" constant="45" id="zmA-O4-oEV"/>
             </constraints>
             <connections>
                 <outlet property="dronestatus" destination="zzz-GW-NDD" id="bun-tp-NNE"/>
@@ -184,5 +207,29 @@
             </connections>
             <point key="canvasLocation" x="401" y="393"/>
         </view>
+        <tapGestureRecognizer id="Ihd-U1-Uot">
+            <connections>
+                <action selector="FlightTapped:" destination="-1" id="mvI-sJ-kgb"/>
+                <outlet property="delegate" destination="-1" id="eAN-HK-ok6"/>
+            </connections>
+        </tapGestureRecognizer>
+        <tapGestureRecognizer id="8G0-DF-CqO">
+            <connections>
+                <action selector="PowerTapped:" destination="-1" id="bQa-0I-pSZ"/>
+                <outlet property="delegate" destination="-1" id="Qc6-e7-s17"/>
+            </connections>
+        </tapGestureRecognizer>
+        <tapGestureRecognizer id="R6u-Ml-2me">
+            <connections>
+                <action selector="RadioTapped:" destination="-1" id="KRi-BN-Wur"/>
+                <outlet property="delegate" destination="-1" id="v8F-Wx-Glt"/>
+            </connections>
+        </tapGestureRecognizer>
+        <tapGestureRecognizer id="xhU-0e-jqp">
+            <connections>
+                <action selector="ExpertTapped:" destination="-1" id="iQr-78-WTn"/>
+                <outlet property="delegate" destination="-1" id="EQp-Zh-aeN"/>
+            </connections>
+        </tapGestureRecognizer>
     </objects>
 </document>
