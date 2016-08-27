@@ -3,7 +3,7 @@ package org.airmind.ble;
 *
 * Called from Qt-C++
 */
-public class BLECommon {
+public class BLEComm {
     /**
     * called when app starts up and auto-connect BLE device/service/characteristic which has ever been connnected before
     */
