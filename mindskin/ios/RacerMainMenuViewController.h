@@ -8,6 +8,38 @@
 
 #import <UIKit/UIKit.h>
 
-@interface RacerMainMenuViewController : UIViewController
+@interface MenuController : NSObject {
+    NSString* controllername;
+    int controllerid;
+    
+    NSArray* commandbuffer;
+    
+}
+
+-(NSString*)menuControlCommmandReceived:(NSString*)cmd;
+-(void)clearBuffer;
+
+@end
+
+
+@interface RacerMainMenuViewController : UIViewController {
+#ifdef __remotehead__
+    
+    MenuController* mctlr;
+#endif
+    
+    NSArray* menuitems;
+    
+    //gestures;
+    
+    
+    
+}
+
+-(IBAction)FlightTapped:(id)sender;
+-(IBAction)PowerTapped:(id)sender;
+-(IBAction)RadioTapped:(id)sender;
+-(IBAction)ExpertTapped:(id)sender;
+-(IBAction)linkstatusPressed:(id)sender;
 
 @end

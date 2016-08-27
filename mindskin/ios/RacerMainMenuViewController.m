@@ -39,4 +39,28 @@
 }
 */
 
+/***
+ Menu actions;
+ ***/
+
+-(IBAction)FlightTapped:(id)sender {
+    
+}
+
+-(IBAction)PowerTapped:(id)sender {
+    
+}
+
+-(IBAction)RadioTapped:(id)sender {
+    
+}
+
+-(IBAction)ExpertTapped:(id)sender {
+    
+}
+
+-(IBAction)linkstatusPressed:(id)sender {
+    
+}
+
 @end
