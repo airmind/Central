@@ -89,15 +89,31 @@ __mindskin__ {
     }
 
     AndroidBuild {
+        message("Adding mindskin Java Classes")
         HEADERS += \
-            BLE/android/BTSerialLink_java.h \
-            BLE/BTSerialLink.h \
+#            BLE/android/BTSerialLink_java.h \
+#            BLE/BTSerialLink.h \
 
         SOURCES += \
-            BLE/android/BTSerialLink.cc \
-            BLE/android/BTSerialLink.java \
+#            BLE/android/BTSerialLink.cc \
+#            BLE/android/BTSerialLink.java \
 
-
-
+        ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+        OTHER_FILES += \
+            $$PWD/android/res/layout/actionbar_indeterminate_progress.xml \
+            $$PWD/android/res/layout/gatt_services_characteristics.xml \
+            $$PWD/android/res/layout/listitem_device.xml \
+            $$PWD/android/res/layout/main_activity.xml \
+            $$PWD/android/res/menu/gatt_services.xml \
+            $$PWD/android/res/menu/main.xml \
+            $$PWD/android/res/values/color.xml \
+            $$PWD/android/res/values/string.xml \
+            $$PWD/android/src/org/airmind/ble/DeviceControlActivity.java \
+            $$PWD/android/src/org/airmind/ble/DeviceScanActivity.java \
+            $$PWD/android/src/org/airmind/ble/BluetoothLeService.java \
+            $$PWD/android/src/org/airmind/ble/SampleGattAttributes.java \
+            $$PWD/android/src/org/airmind/ble/BLECommNative.java \
+            $$PWD/android/src/org/airmind/ble/BLEComm.java \
+            $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
     }
 }
