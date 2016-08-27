@@ -25,6 +25,7 @@
 #import "ConnectPopoverViewController.h"
 #include "QGCApplication.h"
 
+
 static NSString * const kServiceUUID = @"FC00"; //mindstick
 static NSString * const kCharacteristicUUID = @"FC20";
 static NSString * const kCharacteristicInputstickUUID = @"FC21";  //inputstick
