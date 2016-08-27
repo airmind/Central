@@ -63,7 +63,7 @@
         <file alias="LandModeCopter.svg">src/AutoPilotPlugins/PX4/Images/LandModeCopter.svg</file>
         <file alias="LowBattery.svg">src/AutoPilotPlugins/PX4/Images/LowBattery.svg</file>
         <file alias="LowBatteryLight.svg">src/AutoPilotPlugins/PX4/Images/LowBatteryLight.svg</file>
-        <file alias="MotorComponentIcon.png">src/AutoPilotPlugins/Common/MotorComponentIcon.png</file>
+        <file alias="MotorComponentIcon.svg">src/AutoPilotPlugins/Common/Images/MotorComponentIcon.svg</file>
         <file alias="PowerComponentBattery_01cell.svg">src/AutoPilotPlugins/PX4/Images/PowerComponentBattery_01cell.svg</file>
         <file alias="PowerComponentBattery_02cell.svg">src/AutoPilotPlugins/PX4/Images/PowerComponentBattery_02cell.svg</file>
         <file alias="PowerComponentBattery_03cell.svg">src/AutoPilotPlugins/PX4/Images/PowerComponentBattery_03cell.svg</file>
@@ -151,6 +151,9 @@
         <file alias="CogWheel.svg">src/MissionManager/CogWheel.svg</file>
         <file alias="StationMode.svg">src/AutoPilotPlugins/Common/Images/StationMode.svg</file>
         <file alias="APMode.svg">src/AutoPilotPlugins/Common/Images/APMode.svg</file>
+        <file alias="ArrowDirection.svg">src/AutoPilotPlugins/Common/Images/ArrowDirection.svg</file>
+        <file alias="ArrowCW.svg">src/AutoPilotPlugins/Common/Images/ArrowCW.svg</file>
+        <file alias="ArrowCCW.svg">src/AutoPilotPlugins/Common/Images/ArrowCCW.svg</file>
     </qresource>
     <qresource prefix="/res">
         <file alias="AntennaRC">resources/Antenna_RC.svg</file>

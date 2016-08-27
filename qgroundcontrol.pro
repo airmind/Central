@@ -180,6 +180,11 @@ RESOURCES += \
     qgroundcontrol.qrc \
     qgcresources.qrc
 
+DebugBuild {
+    # Unit Test resources
+    RESOURCES += UnitTest.qrc
+}
+
 DEPENDPATH += \
     . \
     plugins
@@ -240,10 +245,8 @@ FORMS += \
     src/ui/QGCTabbedInfoView.ui \
     src/ui/QGCUASFileView.ui \
     src/ui/QGCUASFileViewMulti.ui \
-    src/ui/SettingsDialog.ui \
     src/ui/uas/UASQuickView.ui \
     src/ui/uas/UASQuickViewItemSelect.ui \
-    src/ui/UASInfo.ui \
 }
 
 HEADERS += \
@@ -270,13 +273,15 @@ HEADERS += \
     src/JsonHelper.h \
     src/LogCompressor.h \
     src/MG.h \
+    src/MissionManager/ComplexMissionItem.h \
     src/MissionManager/MissionCommandList.h \
-    src/MissionManager/MissionCommands.h \
+    src/MissionManager/MissionCommandTree.h \
+    src/MissionManager/MissionCommandUIInfo.h \
     src/MissionManager/MissionController.h \
     src/MissionManager/MissionItem.h \
     src/MissionManager/MissionManager.h \
-    src/MissionManager/ComplexMissionItem.h \
     src/MissionManager/SimpleMissionItem.h \
+    src/MissionManager/SurveyMissionItem.h \
     src/MissionManager/VisualMissionItem.h \
     src/QGC.h \
     src/QGCApplication.h \
@@ -365,7 +370,6 @@ HEADERS += \
     src/ui/MultiVehicleDockWidget.h \
     src/ui/QGCMAVLinkLogPlayer.h \
     src/ui/QGCMapRCToParamDialog.h \
-    src/ui/SettingsDialog.h \
     src/ui/uas/UASMessageView.h \
     src/ui/uas/QGCUnconnectedInfoWidget.h \
     src/ui/QGCDataPlot2D.h \
@@ -377,7 +381,6 @@ HEADERS += \
     src/ui/QGCTabbedInfoView.h \
     src/ui/QGCUASFileView.h \
     src/ui/QGCUASFileViewMulti.h \
-    src/ui/uas/UASInfoWidget.h \
     src/ui/uas/UASQuickView.h \
     src/ui/uas/UASQuickViewGaugeItem.h \
     src/ui/uas/UASQuickViewItem.h \
@@ -416,6 +419,7 @@ SOURCES += \
     src/comm/LinkConfiguration.cc \
     src/comm/LinkManager.cc \
     src/comm/MAVLinkProtocol.cc \
+    src/comm/QGCMAVLink.cc \
     src/comm/TCPLink.cc \
     src/comm/UDPLink.cc \
     src/FlightDisplay/FlightDisplayViewController.cc \
@@ -430,13 +434,15 @@ SOURCES += \
     src/FollowMe/FollowMe.cc \
     src/LogCompressor.cc \
     src/main.cc \
+    src/MissionManager/ComplexMissionItem.cc \
     src/MissionManager/MissionCommandList.cc \
-    src/MissionManager/MissionCommands.cc \
+    src/MissionManager/MissionCommandTree.cc \
+    src/MissionManager/MissionCommandUIInfo.cc \
     src/MissionManager/MissionController.cc \
     src/MissionManager/MissionItem.cc \
     src/MissionManager/MissionManager.cc \
-    src/MissionManager/ComplexMissionItem.cc \
     src/MissionManager/SimpleMissionItem.cc \
+    src/MissionManager/SurveyMissionItem.cc \
     src/MissionManager/VisualMissionItem.cc \
     src/QGC.cc \
     src/QGCApplication.cc \
@@ -492,7 +498,6 @@ SOURCES += \
     src/ui/uas/UASMessageView.cc \
     src/uas/FileManager.cc \
     src/ui/uas/QGCUnconnectedInfoWidget.cc \
-    src/ui/SettingsDialog.cc \
     src/ui/MAVLinkDecoder.cc \
     src/ui/MAVLinkSettingsWidget.cc \
     src/ui/QGCMapRCToParamDialog.cpp \
@@ -522,7 +527,6 @@ SOURCES += \
     src/ui/QGCTabbedInfoView.cpp \
     src/ui/QGCUASFileView.cc \
     src/ui/QGCUASFileViewMulti.cc \
-    src/ui/uas/UASInfoWidget.cc \
     src/ui/uas/UASQuickView.cc \
     src/ui/uas/UASQuickViewGaugeItem.cc \
     src/ui/uas/UASQuickViewItem.cc \
@@ -559,6 +563,7 @@ HEADERS += \
     src/FactSystem/FactSystemTestGeneric.h \
     src/FactSystem/FactSystemTestPX4.h \
     src/MissionManager/ComplexMissionItemTest.h \
+    src/MissionManager/MissionCommandTreeTest.h \
     src/MissionManager/MissionControllerTest.h \
     src/MissionManager/MissionControllerManagerTest.h \
     src/MissionManager/MissionItemTest.h \
@@ -585,6 +590,7 @@ SOURCES += \
     src/FactSystem/FactSystemTestGeneric.cc \
     src/FactSystem/FactSystemTestPX4.cc \
     src/MissionManager/ComplexMissionItemTest.cc \
+    src/MissionManager/MissionCommandTreeTest.cc \
     src/MissionManager/MissionControllerTest.cc \
     src/MissionManager/MissionControllerManagerTest.cc \
     src/MissionManager/MissionItemTest.cc \
@@ -667,6 +673,7 @@ HEADERS+= \
     src/FirmwarePlugin/APM/ArduCopterFirmwarePlugin.h \
     src/FirmwarePlugin/APM/ArduPlaneFirmwarePlugin.h \
     src/FirmwarePlugin/APM/ArduRoverFirmwarePlugin.h \
+    src/FirmwarePlugin/APM/ArduSubFirmwarePlugin.h \
     src/FirmwarePlugin/PX4/px4_custom_mode.h \
     src/FirmwarePlugin/PX4/PX4FirmwarePlugin.h \
     src/FirmwarePlugin/PX4/PX4ParameterMetaData.h \
@@ -725,6 +732,7 @@ SOURCES += \
     src/FirmwarePlugin/APM/ArduCopterFirmwarePlugin.cc \
     src/FirmwarePlugin/APM/ArduPlaneFirmwarePlugin.cc \
     src/FirmwarePlugin/APM/ArduRoverFirmwarePlugin.cc \
+    src/FirmwarePlugin/APM/ArduSubFirmwarePlugin.cc \
     src/FirmwarePlugin/FirmwarePlugin.cc \
     src/FirmwarePlugin/FirmwarePluginManager.cc \
     src/FirmwarePlugin/PX4/PX4FirmwarePlugin.cc \
