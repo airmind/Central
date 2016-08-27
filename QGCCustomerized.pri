@@ -100,5 +100,4 @@ __mindskin__ {
     }
 }
 
-DISTFILES += \
-    $$PWD/android/src/org/airmind/ble/BLEComm
+DISTFILES +=
