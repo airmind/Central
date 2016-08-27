@@ -77,7 +77,26 @@ __mindskin__ {
 
     }
 
+
+
     AndroidBuild {
+        message("Adding mindskin Java Classes")
+        ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+        OTHER_FILES += \
+            $$PWD/android/res/layout/actionbar_indeterminate_progress.xml \
+            $$PWD/android/res/layout/gatt_services_characteristics.xml \
+            $$PWD/android/res/layout/listitem_device.xml \
+            $$PWD/android/res/layout/main_activity.xml \
+            $$PWD/android/res/menu/gatt_services.xml \
+            $$PWD/android/res/menu/main.xml \
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/DeviceControlActivity.java \
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/DeviceScanActivity.java
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/BluetoothLeService.java
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/SampleGattAttributes.java
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommNative.java
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommInterface.java
 
     }
+
+
 }
