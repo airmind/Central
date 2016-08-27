@@ -23,6 +23,8 @@
 #include "QGCImageProvider.h"
 #include "GAudioOutput.h"
 #include "FollowMe.h"
+#include "MissionCommandTree.h"
+#include "QGroundControlQmlGlobal.h"
 
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
 
@@ -253,13 +255,13 @@ Vehicle::Vehicle(LinkInterface*             link,
 }
 
 // Disconnected Vehicle
-Vehicle::Vehicle(QObject* parent)
+Vehicle::Vehicle(MAV_AUTOPILOT firmwareType, MAV_TYPE vehicleType, QObject* parent)
     : FactGroup(_vehicleUIUpdateRateMSecs, ":/json/Vehicle/VehicleFact.json", parent)
     , _id(0)
     , _active(false)
-    , _disconnectedVehicle(false)
-    , _firmwareType(MAV_AUTOPILOT_PX4)
-    , _vehicleType(MAV_TYPE_QUADROTOR)
+    , _disconnectedVehicle(true)
+    , _firmwareType(firmwareType)
+    , _vehicleType(vehicleType)
     , _firmwarePlugin(NULL)
     , _autopilotPlugin(NULL)
     , _joystickMode(JoystickModeRC)
@@ -320,6 +322,11 @@ Vehicle::Vehicle(QObject* parent)
     , _windFactGroup(this)
     , _vibrationFactGroup(this)
 {
+    // This is a hack for disconnected vehicle used while unit testing
+    if (qgcApp()->toolbox() && qgcApp()->toolbox()->firmwarePluginManager()) {
+        _firmwarePlugin = qgcApp()->toolbox()->firmwarePluginManager()->firmwarePluginForAutopilot(_firmwareType, _vehicleType);
+    }
+
     // Build FactGroup object model
 
     _addFact(&_rollFact,                _rollFactName);
@@ -787,13 +794,7 @@ void Vehicle::_handleCommandAck(mavlink_message_t& message)
         return;
     }
 
-    QString commandName;
-    MavCmdInfo* cmdInfo = qgcApp()->toolbox()->missionCommands()->getMavCmdInfo((MAV_CMD)ack.command, this);
-    if (cmdInfo) {
-        commandName = cmdInfo->friendlyName();
-    } else {
-        commandName = tr("cmdid %1").arg(ack.command);
-    }
+    QString commandName = qgcApp()->toolbox()->missionCommandTree()->friendlyName((MAV_CMD)ack.command);
 
     switch (ack.result) {
     case MAV_RESULT_TEMPORARILY_REJECTED:
@@ -884,7 +885,7 @@ void Vehicle::_handleSysStatus(mavlink_message_t& message)
     }
     _batteryFactGroup.percentRemaining()->setRawValue(sysStatus.battery_remaining);
 
-    if (sysStatus.battery_remaining > 0 && sysStatus.battery_remaining < _batteryFactGroup.percentRemainingAnnounce()->rawValue().toInt()) {
+    if (sysStatus.battery_remaining > 0 && sysStatus.battery_remaining < QGroundControlQmlGlobal::batteryPercentRemainingAnnounce()->rawValue().toInt()) {
         if (!_lowBatteryAnnounceTimer.isValid() || _lowBatteryAnnounceTimer.elapsed() > _lowBatteryAnnounceRepeatMSecs) {
             _lowBatteryAnnounceTimer.restart();
             _say(QString("%1 low battery: %2 percent remaining").arg(_vehicleIdSpeech()).arg(sysStatus.battery_remaining));
@@ -1479,7 +1480,12 @@ void Vehicle::_saveSettings(void)
     settings.beginGroup(QString(_settingsGroup).arg(_id));
 
     settings.setValue(_joystickModeSettingsKey, _joystickMode);
-    settings.setValue(_joystickEnabledSettingsKey, _joystickEnabled);
+
+    // The joystick enabled setting should only be changed if a joystick is present
+    // since the checkbox can only be clicked if one is present
+    if (qgcApp()->toolbox()->joystickManager()->joysticks().count()) {
+        settings.setValue(_joystickEnabledSettingsKey, _joystickEnabled);
+    }
 }
 
 int Vehicle::joystickMode(void)
@@ -1583,7 +1589,7 @@ void Vehicle::setArmed(bool armed)
 
 bool Vehicle::flightModeSetAvailable(void)
 {
-    return _firmwarePlugin->isCapable(FirmwarePlugin::SetFlightModeCapability);
+    return _firmwarePlugin->isCapable(this, FirmwarePlugin::SetFlightModeCapability);
 }
 
 QStringList Vehicle::flightModes(void)
@@ -1826,27 +1832,22 @@ void Vehicle::_say(const QString& text)
 
 bool Vehicle::fixedWing(void) const
 {
-    return vehicleType() == MAV_TYPE_FIXED_WING;
+    return QGCMAVLink::isFixedWing(vehicleType());
 }
 
 bool Vehicle::rover(void) const
 {
-    return vehicleType() == MAV_TYPE_GROUND_ROVER;
+    return QGCMAVLink::isRover(vehicleType());
+}
+
+bool Vehicle::sub(void) const
+{
+    return QGCMAVLink::isSub(vehicleType());
 }
 
 bool Vehicle::multiRotor(void) const
 {
-    switch (vehicleType()) {
-    case MAV_TYPE_QUADROTOR:
-    case MAV_TYPE_COAXIAL:
-    case MAV_TYPE_HELICOPTER:
-    case MAV_TYPE_HEXAROTOR:
-    case MAV_TYPE_OCTOROTOR:
-    case MAV_TYPE_TRICOPTER:
-        return true;
-    default:
-        return false;
-    }
+    return QGCMAVLink::isMultiRotor(vehicleType());
 }
 
 bool Vehicle::vtol(void) const
@@ -1863,6 +1864,26 @@ bool Vehicle::vtol(void) const
     default:
         return false;
     }
+}
+
+bool Vehicle::supportsManualControl(void) const
+{
+    return _firmwarePlugin->supportsManualControl();
+}
+
+bool Vehicle::supportsThrottleModeCenterZero(void) const
+{
+    return _firmwarePlugin->supportsThrottleModeCenterZero();
+}
+
+bool Vehicle::supportsRadio(void) const
+{
+    return _firmwarePlugin->supportsRadio();
+}
+
+bool Vehicle::supportsJSButton(void) const
+{
+    return _firmwarePlugin->supportsJSButton();
 }
 
 void Vehicle::_setCoordinateValid(bool coordinateValid)
@@ -1943,12 +1964,17 @@ void Vehicle::setFlying(bool flying)
 
 bool Vehicle::guidedModeSupported(void) const
 {
-    return _firmwarePlugin->isCapable(FirmwarePlugin::GuidedModeCapability);
+    return _firmwarePlugin->isCapable(this, FirmwarePlugin::GuidedModeCapability);
 }
 
 bool Vehicle::pauseVehicleSupported(void) const
 {
-    return _firmwarePlugin->isCapable(FirmwarePlugin::PauseVehicleCapability);
+    return _firmwarePlugin->isCapable(this, FirmwarePlugin::PauseVehicleCapability);
+}
+
+bool Vehicle::orbitModeSupported() const
+{
+    return _firmwarePlugin->isCapable(this, FirmwarePlugin::OrbitModeCapability);
 }
 
 void Vehicle::guidedModeRTL(void)
@@ -1995,6 +2021,15 @@ void Vehicle::guidedModeChangeAltitude(double altitudeRel)
         return;
     }
     _firmwarePlugin->guidedModeChangeAltitude(this, altitudeRel);
+}
+
+void Vehicle::guidedModeOrbit(const QGeoCoordinate& centerCoord, double radius, double velocity, double altitude)
+{
+    if (!orbitModeSupported()) {
+        qgcApp()->showMessage(QStringLiteral("Orbit mode not supported by Vehicle."));
+        return;
+    }
+    _firmwarePlugin->guidedModeOrbit(this, centerCoord, radius, velocity, altitude);
 }
 
 void Vehicle::pauseVehicle(void)
@@ -2129,10 +2164,13 @@ void Vehicle::setSoloFirmware(bool soloFirmware)
     }
 }
 
+#if 0
+    // Temporarily removed, waiting for new command implementation
 void Vehicle::motorTest(int motor, int percent, int timeoutSecs)
 {
     doCommandLong(defaultComponentId(), MAV_CMD_DO_MOTOR_TEST, motor, MOTOR_TEST_THROTTLE_PERCENT, percent, timeoutSecs);
 }
+#endif
 
 const char* VehicleGPSFactGroup::_hdopFactName =                "hdop";
 const char* VehicleGPSFactGroup::_vdopFactName =                "vdop";
@@ -2214,14 +2252,12 @@ void VehicleGPSFactGroup::_setSatLoc(UASInterface*, int fix)
 
 const char* VehicleBatteryFactGroup::_voltageFactName =                     "voltage";
 const char* VehicleBatteryFactGroup::_percentRemainingFactName =            "percentRemaining";
-const char* VehicleBatteryFactGroup::_percentRemainingAnnounceFactName =    "percentRemainingAnnounce";
 const char* VehicleBatteryFactGroup::_mahConsumedFactName =                 "mahConsumed";
 const char* VehicleBatteryFactGroup::_currentFactName =                     "current";
 const char* VehicleBatteryFactGroup::_temperatureFactName =                 "temperature";
 const char* VehicleBatteryFactGroup::_cellCountFactName =                   "cellCount";
 
 const char* VehicleBatteryFactGroup::_settingsGroup =                       "Vehicle.battery";
-const int   VehicleBatteryFactGroup::_percentRemainingAnnounceDefault =     30;
 
 const double VehicleBatteryFactGroup::_voltageUnavailable =           -1.0;
 const int    VehicleBatteryFactGroup::_percentRemainingUnavailable =  -1;
@@ -2229,8 +2265,6 @@ const int    VehicleBatteryFactGroup::_mahConsumedUnavailable =       -1;
 const int    VehicleBatteryFactGroup::_currentUnavailable =           -1;
 const double VehicleBatteryFactGroup::_temperatureUnavailable =       -1.0;
 const int    VehicleBatteryFactGroup::_cellCountUnavailable =         -1.0;
-
-SettingsFact* VehicleBatteryFactGroup::_percentRemainingAnnounceFact = NULL;
 
 VehicleBatteryFactGroup::VehicleBatteryFactGroup(QObject* parent)
     : FactGroup(1000, ":/json/Vehicle/BatteryFact.json", parent)
@@ -2244,7 +2278,6 @@ VehicleBatteryFactGroup::VehicleBatteryFactGroup(QObject* parent)
 {
     _addFact(&_voltageFact,                 _voltageFactName);
     _addFact(&_percentRemainingFact,        _percentRemainingFactName);
-    _addFact(percentRemainingAnnounce(),    _percentRemainingAnnounceFactName);
     _addFact(&_mahConsumedFact,             _mahConsumedFactName);
     _addFact(&_currentFact,                 _currentFactName);
     _addFact(&_temperatureFact,             _temperatureFactName);
@@ -2262,14 +2295,6 @@ VehicleBatteryFactGroup::VehicleBatteryFactGroup(QObject* parent)
 void VehicleBatteryFactGroup::setVehicle(Vehicle* vehicle)
 {
     _vehicle = vehicle;
-}
-
-Fact* VehicleBatteryFactGroup::percentRemainingAnnounce(void)
-{
-    if (!_percentRemainingAnnounceFact) {
-        _percentRemainingAnnounceFact = new SettingsFact(_settingsGroup, _percentRemainingAnnounceFactName, FactMetaData::valueTypeInt32, _percentRemainingAnnounceDefault);
-    }
-    return _percentRemainingAnnounceFact;
 }
 
 const char* VehicleWindFactGroup::_directionFactName =      "direction";

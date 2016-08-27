@@ -15,6 +15,7 @@
 #include "UAS.h"
 #include "QGCApplication.h"
 #include "QGCToolbox.h"
+#include "QGCMapEngine.h"
 #include "Vehicle.h"
 #include "MainWindow.h"
 
@@ -26,12 +27,11 @@
 
 #define kTimeOutMilliseconds 500
 #define kGUIRateMilliseconds 17
-#define kTableBins           128
+#define kTableBins           512
 #define kChunkSize           (kTableBins * MAVLINK_MSG_LOG_DATA_FIELD_DATA_LEN)
 
 QGC_LOGGING_CATEGORY(LogDownloadLog, "LogDownloadLog")
 
-static QLocale kLocale;
 //-----------------------------------------------------------------------------
 struct LogDownloadData {
     LogDownloadData(QGCLogEntry* entry);
@@ -42,6 +42,8 @@ struct LogDownloadData {
     uint          ID;
     QGCLogEntry*  entry;
     uint          written;
+    size_t        rate_bytes;
+    qreal         rate_avg;
     QElapsedTimer elapsed;
 
     void advanceChunk()
@@ -76,6 +78,8 @@ LogDownloadData::LogDownloadData(QGCLogEntry* entry_)
     : ID(entry_->id())
     , entry(entry_)
     , written(0)
+    , rate_bytes(0)
+    , rate_avg(0)
 {
 
 }
@@ -95,7 +99,7 @@ QGCLogEntry::QGCLogEntry(uint logId, const QDateTime& dateTime, uint logSize, bo
 QString
 QGCLogEntry::sizeStr() const
 {
-    return kLocale.toString(_logSize);
+    return QGCMapEngine::bigSizeToString(_logSize);
 }
 
 //----------------------------------------------------------------------------------------
@@ -234,8 +238,7 @@ void
 LogDownloadController::_receivedAllEntries()
 {
     _timer.stop();
-    _requestingLogEntries = false;
-    emit requestingListChanged();
+    _setListing(false);
 }
 
 //----------------------------------------------------------------------------------------
@@ -333,10 +336,18 @@ LogDownloadController::_logData(UASInterface* uas, uint32_t ofs, uint16_t id, ui
         //-- Write chunk to file
         if(_downloadData->file.write((const char*)data, count)) {
             _downloadData->written += count;
+            _downloadData->rate_bytes += count;
             if (_downloadData->elapsed.elapsed() >= kGUIRateMilliseconds) {
+                //-- Update download rate
+                qreal rrate = _downloadData->rate_bytes/(_downloadData->elapsed.elapsed()/1000.0);
+                _downloadData->rate_avg = _downloadData->rate_avg*0.95 + rrate*0.05;
+                _downloadData->rate_bytes = 0;
+
                 //-- Update status
-                QString comma_value = kLocale.toString(_downloadData->written);
-                _downloadData->entry->setStatus(comma_value);
+                const QString status = QString("%1 (%2/s)").arg(QGCMapEngine::bigSizeToString(_downloadData->written),
+                                                                QGCMapEngine::bigSizeToString(_downloadData->rate_avg));
+
+                _downloadData->entry->setStatus(status);
                 _downloadData->elapsed.start();
             }
             result = true;
@@ -354,6 +365,9 @@ LogDownloadController::_logData(UASInterface* uas, uint32_t ofs, uint16_t id, ui
                 _requestLogData(_downloadData->ID,
                                 _downloadData->current_chunk*kChunkSize,
                                 _downloadData->chunk_table.size()*MAVLINK_MSG_LOG_DATA_FIELD_DATA_LEN);
+            } else if (bin < _downloadData->chunk_table.size() - 1 && _downloadData->chunk_table.at(bin+1)) {
+                // Likely to be grabbing fragments and got to the end of a gap
+                _findMissingData();
             }
         } else {
             qWarning() << "Error while writing log file chunk";
@@ -458,7 +472,8 @@ void
 LogDownloadController::refresh(void)
 {
     _logEntriesModel.clear();
-    _requestLogList();
+    //-- Get first 50 entries
+    _requestLogList(0, 49);
 }
 
 //----------------------------------------------------------------------------------------
@@ -467,8 +482,7 @@ LogDownloadController::_requestLogList(uint32_t start, uint32_t end)
 {
     if(_vehicle && _uas) {
         qCDebug(LogDownloadLog) << "Request log entry list (" << start << "through" << end << ")";
-        _requestingLogEntries = true;
-        emit requestingListChanged();
+        _setListing(true);
         mavlink_message_t msg;
         mavlink_msg_log_request_list_pack(
             qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
@@ -479,8 +493,8 @@ LogDownloadController::_requestLogList(uint32_t start, uint32_t end)
             start,
             end);
         _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
-        //-- Wait 2 seconds before bitching about not getting anything
-        _timer.start(2000);
+        //-- Wait 5 seconds before bitching about not getting anything
+        _timer.start(5000);
     }
 }
 
@@ -608,6 +622,15 @@ LogDownloadController::_setDownloading(bool active)
     _downloadingLogs = active;
     _vehicle->setConnectionLostEnabled(!active);
     emit downloadingLogsChanged();
+}
+
+//----------------------------------------------------------------------------------------
+void
+LogDownloadController::_setListing(bool active)
+{
+    _requestingLogEntries = active;
+    _vehicle->setConnectionLostEnabled(!active);
+    emit requestingListChanged();
 }
 
 //----------------------------------------------------------------------------------------

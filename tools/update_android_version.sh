@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
-# this requires `master` in the git tree
-#  travis-ci branch builds are unable to set the version properly
+# this requires `origin/master` in the git tree
 
 MANIFEST_FILE=android/AndroidManifest.xml
 
-VERSIONCODE=`git rev-list master --first-parent --count`
+VERSIONCODE=`git rev-list origin/master --first-parent --count`
 VERSIONNAME=`git describe --always --tags | sed -e 's/^v//'`
+
+# increment the versionCode past master for tagged releases
+if [ "${TRAVIS_TAG}" ]; then
+	let VERSIONCODE=${VERSIONCODE}+1
+fi
 
 if [ -n "$VERSIONCODE" ]; then
 	sed -i -e "s/android:versionCode=\"[0-9][0-9]*\"/android:versionCode=\"$VERSIONCODE\"/" $MANIFEST_FILE

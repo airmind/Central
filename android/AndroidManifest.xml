@@ -1,22 +1,8 @@
 <?xml version="1.0"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.mavlink.qgroundcontrol"
-    android:installLocation="auto"
-    android:versionCode="2888"
-    android:versionName="2.9.7b-362-g303a70c">
+<manifest package="org.mavlink.qgroundcontrol" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="3.0.0" android:versionCode="2976" android:installLocation="auto">
+    <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="-- %%INSERT_APP_NAME%% --" android:icon="@drawable/icon">
+        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.qgroundcontrol.qgchelper.UsbDeviceJNI" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="sensorLandscape" android:launchMode="singleTask" android:keepScreenOn="true">
 
-    <application
-        android:name="org.qtproject.qt5.android.bindings.QtApplication"
-        android:hardwareAccelerated="true"
-        android:icon="@drawable/icon"
-        android:label="QGroundControl">
-        <activity
-            android:name="org.qgroundcontrol.qgchelper.UsbDeviceJNI"
-            android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation"
-            android:keepScreenOn="true"
-            android:label="QGroundControl"
-            android:launchMode="singleTask"
-            android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

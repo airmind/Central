@@ -15,9 +15,10 @@
 #include "FirmwarePlugin.h"
 #include "QGCApplication.h"
 #include "SimpleMissionItem.h"
-#include "ComplexMissionItem.h"
+#include "SurveyMissionItem.h"
 #include "JsonHelper.h"
 #include "ParameterLoader.h"
+#include "QGroundControlQmlGlobal.h"
 
 #ifndef __mobile__
 #include "QGCFileDialog.h"
@@ -44,6 +45,10 @@ MissionController::MissionController(QObject *parent)
     , _firstItemsFromVehicle(false)
     , _missionItemsRequested(false)
     , _queuedSend(false)
+    , _missionDistance(0.0)
+    , _missionMaxTelemetry(0.0)
+    , _cruiseDistance(0.0)
+    , _hoverDistance(0.0)
 {
 
 }
@@ -195,7 +200,7 @@ int MissionController::insertSimpleMissionItem(QGeoCoordinate coordinate, int i)
 int MissionController::insertComplexMissionItem(QGeoCoordinate coordinate, int i)
 {
     int sequenceNumber = _nextSequenceNumber();
-    ComplexMissionItem* newItem = new ComplexMissionItem(_activeVehicle, this);
+    SurveyMissionItem* newItem = new SurveyMissionItem(_activeVehicle, this);
     newItem->setSequenceNumber(sequenceNumber);
     newItem->setCoordinate(coordinate);
     _initVisualItem(newItem);
@@ -215,9 +220,7 @@ void MissionController::removeMissionItem(int index)
     _deinitVisualItem(item);
     if (!item->isSimpleItem()) {
         ComplexMissionItem* complexItem = qobject_cast<ComplexMissionItem*>(_complexItems->removeOne(item));
-        if (complexItem) {
-            complexItem->deleteLater();
-        } else {
+        if (!complexItem) {
             qWarning() << "Complex item missing";
         }
     }
@@ -294,7 +297,7 @@ bool MissionController::_loadJsonMissionFile(const QByteArray& bytes, QmlObjectL
             return false;
         }
 
-        ComplexMissionItem* item = new ComplexMissionItem(_activeVehicle, this);
+        SurveyMissionItem* item = new SurveyMissionItem(_activeVehicle, this);
         if (item->load(itemValue.toObject(), errorString)) {
             qCDebug(MissionControllerLog) << "Json load: complex item start:stop" << item->sequenceNumber() << item->lastSequenceNumber();
             complexItems->append(item);
@@ -316,7 +319,7 @@ bool MissionController::_loadJsonMissionFile(const QByteArray& bytes, QmlObjectL
 
         // If there is a complex item that should be next in sequence add it in
         if (nextComplexItemIndex < complexItems->count()) {
-            ComplexMissionItem* complexItem = qobject_cast<ComplexMissionItem*>(complexItems->get(nextComplexItemIndex));
+            SurveyMissionItem* complexItem = qobject_cast<SurveyMissionItem*>(complexItems->get(nextComplexItemIndex));
 
             if (complexItem->sequenceNumber() == nextSequenceNumber) {
                 qCDebug(MissionControllerLog) << "Json load: injecting complex item expectedSequence:actualSequence:" << nextSequenceNumber << complexItem->sequenceNumber();
@@ -602,6 +605,23 @@ void MissionController::_calcPrevWaypointValues(double homeAlt, VisualMissionIte
     }
 }
 
+void MissionController::_calcHomeDist(VisualMissionItem* currentItem, VisualMissionItem* homeItem, double* distance)
+{
+    QGeoCoordinate  currentCoord =  currentItem->coordinate();
+    QGeoCoordinate  homeCoord =     homeItem->exitCoordinate();
+    bool            distanceOk =    false;
+
+    distanceOk = true;
+
+    qCDebug(MissionControllerLog) << "distanceOk" << distanceOk;
+
+    if (distanceOk) {
+        *distance = homeCoord.distanceTo(currentCoord);
+    } else {
+        *distance = 0.0;
+    }
+}
+
 void MissionController::_recalcWaypointLines(void)
 {
     bool                firstCoordinateItem =   true;
@@ -692,7 +712,6 @@ void MissionController::_recalcAltitudeRangeBearing()
 
     bool                firstCoordinateItem =   true;
     VisualMissionItem*  lastCoordinateItem =    qobject_cast<VisualMissionItem*>(_visualItems->get(0));
-
     SimpleMissionItem*  homeItem = qobject_cast<SimpleMissionItem*>(lastCoordinateItem);
 
     if (!homeItem) {
@@ -717,19 +736,50 @@ void MissionController::_recalcAltitudeRangeBearing()
     const double homePositionAltitude = homeItem->coordinate().altitude();
     minAltSeen = maxAltSeen = homeItem->coordinate().altitude();
 
+    double missionDistance = 0.0;
+    double missionMaxTelemetry = 0.0;
+
+    bool vtolCalc = (QGroundControlQmlGlobal::offlineEditingVehicleType()->enumStringValue() == "VTOL" || (_activeVehicle && _activeVehicle->vtol())) ? true : false ;
+    double cruiseDistance = 0.0;
+    double hoverDistance = 0.0;
+    bool hoverDistanceCalc = false;
+    bool hoverTransition = false;
+    bool cruiseTransition = false;
+    bool hoverDistanceReset = false;
+
     bool linkBackToHome = false;
+
+
     for (int i=1; i<_visualItems->count(); i++) {
         VisualMissionItem* item = qobject_cast<VisualMissionItem*>(_visualItems->get(i));
-
         // Assume the worst
         item->setAzimuth(0.0);
         item->setDistance(0.0);
 
-        // If we still haven't found the first coordinate item and we hit a a takeoff command link back to home
+        // If we still haven't found the first coordinate item and we hit a takeoff command link back to home
         if (firstCoordinateItem &&
                 item->isSimpleItem() &&
                 qobject_cast<SimpleMissionItem*>(item)->command() == MavlinkQmlSingleton::MAV_CMD_NAV_TAKEOFF) {
             linkBackToHome = true;
+            hoverDistanceCalc = true;
+        }
+
+        if (item->isSimpleItem() && vtolCalc) {
+            SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(item);
+            if (simpleItem->command() == MavlinkQmlSingleton::MAV_CMD_DO_VTOL_TRANSITION){  //transition waypoint value
+                if (simpleItem->missionItem().param1() == 3){ //hover mode value
+                    hoverDistanceCalc = true;
+                    hoverTransition = true;
+                }
+                else if (simpleItem->missionItem().param1() == 4){
+                    hoverDistanceCalc = false;
+                    cruiseTransition = true;
+                }
+            }
+            if(!hoverTransition && cruiseTransition && !hoverDistanceReset && !linkBackToHome){
+                hoverDistance = missionDistance;
+                hoverDistanceReset = true;
+            }
         }
 
         if (item->specifiesCoordinate()) {
@@ -754,7 +804,7 @@ void MissionController::_recalcAltitudeRangeBearing()
             if (!item->isStandaloneCoordinate()) {
                 firstCoordinateItem = false;
                 if (lastCoordinateItem != homeItem || (showHomePosition && linkBackToHome)) {
-                    double azimuth, distance, altDifference;
+                    double azimuth, distance, altDifference, telemetryDistance;
 
                     // Subsequent coordinate items link to last coordinate item. If the last coordinate item
                     // is an invalid home position we skip the line
@@ -762,11 +812,53 @@ void MissionController::_recalcAltitudeRangeBearing()
                     item->setAltDifference(altDifference);
                     item->setAzimuth(azimuth);
                     item->setDistance(distance);
+
+                    missionDistance += distance;
+
+                    if (item->isSimpleItem()) {
+                        _calcHomeDist(item, homeItem, &telemetryDistance);
+
+                        if (vtolCalc) {
+                            SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(item);
+                            if (simpleItem->command() == MavlinkQmlSingleton::MAV_CMD_NAV_TAKEOFF || hoverDistanceCalc){
+                                hoverDistance += distance;
+                            }
+                            cruiseDistance = missionDistance - hoverDistance;
+                            if(simpleItem->command() == MavlinkQmlSingleton::MAV_CMD_NAV_LAND && !linkBackToHome && !cruiseTransition && !hoverTransition){
+                                hoverDistance = cruiseDistance;
+                                cruiseDistance = missionDistance - hoverDistance;
+                            }
+                        }
+                    } else {
+                        missionDistance += qobject_cast<ComplexMissionItem*>(item)->complexDistance();
+                        telemetryDistance = qobject_cast<ComplexMissionItem*>(item)->greatestDistanceTo(homeItem->exitCoordinate());
+
+                        if (vtolCalc){
+                            cruiseDistance += qobject_cast<ComplexMissionItem*>(item)->complexDistance(); //assume all survey missions undertaken in cruise
+                        }
+                    }
+
+                    if (telemetryDistance > missionMaxTelemetry) {
+                        missionMaxTelemetry = telemetryDistance;
+                    }
+                }
+                else if (lastCoordinateItem == homeItem && !item->isSimpleItem()){
+                    missionDistance += qobject_cast<ComplexMissionItem*>(item)->complexDistance();
+                    missionMaxTelemetry = qobject_cast<ComplexMissionItem*>(item)->greatestDistanceTo(homeItem->exitCoordinate());
+
+                    if (vtolCalc){
+                        cruiseDistance += qobject_cast<ComplexMissionItem*>(item)->complexDistance(); //assume all survey missions undertaken in cruise
+                    }
                 }
                 lastCoordinateItem = item;
             }
         }
     }
+
+    setMissionDistance(missionDistance);
+    setMissionMaxTelemetry(missionMaxTelemetry);
+    setCruiseDistance(cruiseDistance);
+    setHoverDistance(hoverDistance);
 
     // Walk the list again calculating altitude percentages
     double altRange = maxAltSeen - minAltSeen;
@@ -921,6 +1013,7 @@ void MissionController::_initVisualItem(VisualMissionItem* visualItem)
         // We need to track changes of lastSequenceNumber so we can recalc sequence numbers for subsequence items
         ComplexMissionItem* complexItem = qobject_cast<ComplexMissionItem*>(visualItem);
         connect(complexItem, &ComplexMissionItem::lastSequenceNumberChanged, this, &MissionController::_recalcSequence);
+        connect(complexItem, &ComplexMissionItem::complexDistanceChanged, this, &MissionController::_recalcAltitudeRangeBearing);
     }
 }
 
@@ -1017,6 +1110,38 @@ void MissionController::setAutoSync(bool autoSync)
 #endif
 }
 
+void MissionController::setMissionDistance(double missionDistance)
+{
+    if (!qFuzzyCompare(_missionDistance, missionDistance)) {
+        _missionDistance = missionDistance;
+        emit missionDistanceChanged(_missionDistance);
+    }
+}
+
+void MissionController::setMissionMaxTelemetry(double missionMaxTelemetry)
+{
+    if (!qFuzzyCompare(_missionMaxTelemetry, missionMaxTelemetry)) {
+        _missionMaxTelemetry = missionMaxTelemetry;
+        emit missionMaxTelemetryChanged(_missionMaxTelemetry);
+    }
+}
+
+void MissionController::setCruiseDistance(double cruiseDistance)
+{
+    if (!qFuzzyCompare(_cruiseDistance, cruiseDistance)) {
+        _cruiseDistance = cruiseDistance;
+        emit cruiseDistanceChanged(_cruiseDistance);
+    }
+}
+
+void MissionController::setHoverDistance(double hoverDistance)
+{
+    if (!qFuzzyCompare(_hoverDistance, hoverDistance)) {
+        _hoverDistance = hoverDistance;
+        emit hoverDistanceChanged(_hoverDistance);
+    }
+}
+
 void MissionController::_dirtyChanged(bool dirty)
 {
     if (dirty && _autoSync) {
@@ -1051,7 +1176,7 @@ void MissionController::_inProgressChanged(bool inProgress)
 
 bool MissionController::_findLastAltitude(double* lastAltitude, MAV_FRAME* frame)
 {
-    bool found = false;    
+    bool found = false;
     double foundAltitude;
     MAV_FRAME foundFrame;
 
