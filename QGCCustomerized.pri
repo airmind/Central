@@ -89,12 +89,14 @@ __mindskin__ {
             $$PWD/android/res/layout/main_activity.xml \
             $$PWD/android/res/menu/gatt_services.xml \
             $$PWD/android/res/menu/main.xml \
+            $$PWD/android/res/values/color.xml \
+            $$PWD/android/res/values/string.xml \
             $$PWD/android/src/org/qgroundcontrol/qgchelper/DeviceControlActivity.java \
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/DeviceScanActivity.java
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/BluetoothLeService.java
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/SampleGattAttributes.java
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommNative.java
-            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommInterface.java
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/DeviceScanActivity.java \
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/BluetoothLeService.java \
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/SampleGattAttributes.java \
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommNative.java \
+            $$PWD/android/src/org/qgroundcontrol/qgchelper/BLECommInterface.java \
 
     }
 
