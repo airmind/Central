@@ -805,7 +805,8 @@ void QGCApplication::showMessage(const QString& message)
     QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/UsbDeviceJNI", "showMessage", "(Ljava/lang/String;)V", jnameL.object<jstring>());
     cleanJavaException();
 #endif //__android__
-    
+
+
 #endif //__mindskin
 }
 
