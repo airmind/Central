@@ -6,16 +6,16 @@ import android.content.Intent;
  * Called from Qt-C++
  */
 public class BLEComm {
+    private static BluetoothLeService mBluetoothService;
     /**
      * called when app starts up and auto-connect BLE device/service/characteristic which has ever been connnected before
      */
     public static void connect(String device, String service, String characteristic) {
         System.out.println("auto connect to device:" + device + ", service:" + service + ", characteristic:" + characteristic);
 
-        // connect to device
         connectToDeice(device);
 
-        connectSevice(service);
+        connectToSevice(service);
 
         conncetToCharacteristic(characteristic);
 
@@ -23,16 +23,16 @@ public class BLEComm {
 
     // connect to device
     private static void connectToDeice(String device) {
-
+        mBluetoothService.connect(device);
     }
 
     // conncet to service
-    private static void connectSevice(String service) {
-
+    private static void connectToSevice(String service) {
+        //TODO
     }
 
     // connect to characteristic
     private static void conncetToCharacteristic(String characteristic) {
-        
+        //TODO
     }
 }
