@@ -1,4 +1,4 @@
-#CONFIG += __mindskin__
+CONFIG += __mindskin__
 # CONFIG += __remotehead__
 
 # Airmind - mind skin
