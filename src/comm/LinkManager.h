@@ -35,7 +35,7 @@
 //<<<<<<< HEAD
 //<<<<<<< account //switch 7
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 #include "BTSerialLink.h"
 #endif
 
@@ -144,17 +144,19 @@ public:
     const QList<SerialLink*> getSerialLinks();
 #endif
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     //BTSerialLink* getlink();
     //const QList<BTSerialLink*> getBTSerialLinks();
     QmlObjectListModel* getBTSeriallinks               (void) { return &_blelinks; }
 
+ #ifdef __ios__
     //for link operation call backs;
     void setCallbackDelegate(void*);
     bool discoverBTLinks(void * delegate);
     bool discoverServices(void*);
     bool discoverCharacteristics(void*);
     bool stopScanning();
+ #endif
     BTSerialLink* createConnectedBLELink(BTSerialConfiguration* config);
     BTSerialLink* createConnectedBLELink(const QString& identifier);
     //void didDiscoverBTLinks(QStringList* ids);
@@ -173,11 +175,12 @@ public:
     void didDisconnectBLELink(BTSerialLink* blelink);
     
     //have a try;
+ #ifdef __ios__
     void didDiscoverBLELinks(void* inrangelist, void* outrangelist);
     
     /// use Qt signal instead ?
     void didUpdateConnectedBLELinkRSSI(void* peripheral_link_list);
-
+ #endif
     
 #endif
 
@@ -233,7 +236,7 @@ public:
     void _addLink(LinkInterface* link);
 
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void _deleteLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
 #endif
@@ -274,15 +277,16 @@ signals:
 //<<<<<<< HEAD
     void linkConfigurationChanged();
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void newLink(BTSerialLink* link);
     void linkDeleted(BTSerialLink* link);
     void linkConnected(BTSerialLink* link);
     void linkDisconnected(BTSerialLink* link);
     //new signal for discovering;
+ #ifdef __ios__
     void peripheralsDiscovered(void* inrangelist, void* outrangelist);
     void bleLinkRSSIUpdated (void* peripheral_link_list);
-    
+ #endif
     // New vehicle has been seen on the link.
     void linkActive(BTSerialLink* link, int vehicleId, int vehicleFirmwareType, int vehicleType);
     // No longer hearing from any vehicles on this link.
@@ -313,7 +317,7 @@ private slots:
     void _activeLinkCheck(void);
 #endif
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void _bleLinkConnected(void);
     void _bleLinkDisconnected(void);
 #endif
@@ -330,7 +334,7 @@ private:
 #endif
 //<<<<<<< HEAD
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     BLEHelper* blehelper = NULL;
 #endif
     

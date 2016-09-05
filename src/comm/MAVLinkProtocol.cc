@@ -183,7 +183,7 @@ void MAVLinkProtocol::resetMetadataForLink(const LinkInterface *link)
 }
 
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 
 void MAVLinkProtocol::resetMetadataForLink(const BTSerialLink *link) {
     
@@ -769,8 +769,7 @@ void MAVLinkProtocol::_sendMessage(mavlink_message_t message)
         _sendMessage(link, message);
     }
     
-#if defined(__mindskin__) && defined(__ios__)
-
+#ifdef __mindskin__
     for (int i=0; i<_linkMgr->getBTSeriallinks()->count(); i++) {
         
         BTSerialLink* link = _linkMgr->getBTSeriallinks()->value<BTSerialLink*>(i);
@@ -830,7 +829,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
 //<<<<<<< HEAD
 
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 /**
  * @param link the link to send the message over
  * @param message message to send
@@ -850,11 +849,13 @@ void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message
         // Send the portion of the buffer now occupied by the message
         link->writeBytes((const char*)buffer, len);
 #ifdef _BLE_DEBUG_
+#ifdef __ios__
         //pop up debug view;
         BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
         debugview->presentDebugView();
         QString seq = QString::number(message.seq,16);
         debugview->addline(seq);
+#endif
         
 #endif
 

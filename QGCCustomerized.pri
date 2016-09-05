@@ -1,4 +1,4 @@
-CONFIG += __mindskin__
+#CONFIG += __mindskin__
 # CONFIG += __remotehead__
 
 # Airmind - mind skin
@@ -40,7 +40,9 @@ iOSBuild:__mindskin__ {
 }
 
 __mindskin__ {
+    INCLUDEPATH += BLE
     iOSBuild {
+        INCLUDEPATH += BLE/ios
         HEADERS += \
             BLE/ios/BTSerialLink_objc.h \
             BLE/BTSerialLink.h \
@@ -85,13 +87,14 @@ __mindskin__ {
 
     AndroidBuild {
         message("Adding mindskin Java Classes")
+        INCLUDEPATH += BLE/android
         HEADERS += \
-#            BLE/android/BTSerialLink_java.h \
-#            BLE/BTSerialLink.h \
+             $$PWD/libs/qtandroidble/src/qble.h \
+             $$PWD/BLE/BTSerialLink.h \
 
         SOURCES += \
-#            BLE/android/BTSerialLink.cc \
-#            BLE/android/BTSerialLink.java \
+            BLE/android/BTSerialLink.cc \
+             $$PWD/libs/qtandroidble/src/qble.cpp
 
         ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
         OTHER_FILES += \
