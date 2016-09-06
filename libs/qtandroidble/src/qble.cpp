@@ -49,6 +49,7 @@ static const char kJTag[] {"QBLE"};
 
 static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic)
 {
+    Q_UNUSED(thizA);
     const char* device = env->GetStringUTFChars(jdevice, NULL);
     const char* service = env->GetStringUTFChars(jservice, NULL);
     const char* characteristic = env->GetStringUTFChars(jcharateristic, NULL);
@@ -60,9 +61,56 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
     btconfig->configBLESerialLink(deviceAddress, deviceAddress, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
 
     //create a physical link and connect;
-    BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
+    /*BTSerialLink* blelink = */qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
 
-    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
+    if(device) env->ReleaseStringUTFChars(jdevice, device);
+    if(service) env->ReleaseStringUTFChars(jservice, service);
+    if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
+}
+
+static void jniConnected(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic)
+{
+    Q_UNUSED(thizA);
+    const char* device = env->GetStringUTFChars(jdevice, NULL);
+    const char* service = env->GetStringUTFChars(jservice, NULL);
+    const char* characteristic = env->GetStringUTFChars(jcharateristic, NULL);
+
+//    BTSerialConfiguration* btconfig = new BTSerialConfiguration(QString::fromUtf8(device));
+    QString sid = QString::fromUtf8(MAV_TRANSFER_SERVICE_UUID);
+    QString cid = QString::fromUtf8(MAV_TRANSFER_CHARACTERISTIC_UUID);
+    QString deviceAddress = QString::fromUtf8(device);
+//    btconfig->configBLESerialLink(deviceAddress, deviceAddress, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+
+    //create a physical link and connect;
+//    BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
+
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnected is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
+    if(device) env->ReleaseStringUTFChars(jdevice, device);
+    if(service) env->ReleaseStringUTFChars(jservice, service);
+    if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
+}
+
+static void jniDataArrived(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic, jbyteArray ba)
+{
+    Q_UNUSED(thizA);
+    const char* device = env->GetStringUTFChars(jdevice, NULL);
+    const char* service = env->GetStringUTFChars(jservice, NULL);
+    const char* characteristic = env->GetStringUTFChars(jcharateristic, NULL);
+
+//    BTSerialConfiguration* btconfig = new BTSerialConfiguration(QString::fromUtf8(device));
+    QString sid = QString::fromUtf8(MAV_TRANSFER_SERVICE_UUID);
+    QString cid = QString::fromUtf8(MAV_TRANSFER_CHARACTERISTIC_UUID);
+    QString deviceAddress = QString::fromUtf8(device);
+//    BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
+    int len = env->GetArrayLength (ba);
+    char* buf = new char[len];
+    env->GetByteArrayRegion (ba, 0, len, reinterpret_cast<jbyte*>(buf));
+
+    //get link as per config
+    //call link->didReadBytes(buf, len);
+
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniDataArrived is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
     if(device) env->ReleaseStringUTFChars(jdevice, device);
     if(service) env->ReleaseStringUTFChars(jservice, service);
     if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
@@ -88,7 +136,9 @@ void QBLE::setNativeMethods(void)
 
     //  REGISTER THE C++ FUNCTION WITH JNI
     JNINativeMethod javaMethods[] {
-        {"connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnect)}
+        {"connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnect)},
+        {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
+        {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)}
     };
 
     QAndroidJniEnvironment jniEnv;
