@@ -9,11 +9,10 @@
 #include <stdio.h>
 #include "BTSerialLink.h"
 #include <QtAndroidExtras/QAndroidJniObject>
-
+#include <QtAndroidExtras/QAndroidJniEnvironment>
 /****************************
  BLEHelper class implementation
  **/
-
 BLEHelper::BLEHelper(){
 }
 
@@ -173,6 +172,16 @@ BTSerialLink::~BTSerialLink()
     _disconnect();
 }
 
+#if defined(__mindskin__) && defined(__android__)
+void BTSerialLink::cleanJavaException(void)
+{
+    QAndroidJniEnvironment env;
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+#endif
 void BTSerialLink::setLinkConnectedStatus(BLE_LINK_STATUS status) {
     _linkstatus = status;
 }
@@ -227,18 +236,31 @@ void BTSerialLink::_writeDebugBytes(const char *data, qint16 size)
 
 void BTSerialLink::writeBytes(const char* data, qint64 size)
 {
+    if( data == NULL ||
+        size <= 0 ||
+        _config->getBLEPeripheralIdentifier().isEmpty() ||
+        _config->getBLEPeripheralServiceID().isEmpty() ||
+        _config->getBLEPeripheralCharacteristicID().isEmpty()) {
+        return;
+    }
+
     QAndroidJniObject deviceAddress = QAndroidJniObject::fromString(_config->getBLEPeripheralIdentifier());
     QAndroidJniObject serviceUUI = QAndroidJniObject::fromString(_config->getBLEPeripheralServiceID());
     QAndroidJniObject characteristicUUID = QAndroidJniObject::fromString(_config->getBLEPeripheralCharacteristicID());
-    QByteArray valByteArray(data,size);
-    QString valueStr(valByteArray);
-    QAndroidJniObject value = QAndroidJniObject::fromString(valueStr);
+
+    QAndroidJniEnvironment env;
+    jbyteArray ba = env->NewByteArray(size);
+    if(ba != NULL) {
+        env->SetByteArrayRegion(ba, 0, size, (jbyte *)data);
+    }
+
     QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm", "write", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                                deviceAddress.object<jstring>(),
                                                serviceUUI.object<jstring>(),
                                                characteristicUUID.object<jstring>(),
-                                               value.object<jstring>()
+                                               ba
                                                );
+    cleanJavaException();
 }
 
 
@@ -297,14 +319,20 @@ bool BTSerialLink::_disconnect(void)
  **/
 bool BTSerialLink::_connect()
 {
+    if(_config->getBLEPeripheralIdentifier().isEmpty()) return false;
+
     QAndroidJniObject deviceAddress = QAndroidJniObject::fromString(_config->getBLEPeripheralIdentifier());
     QAndroidJniObject serviceUUI = QAndroidJniObject::fromString(_config->getBLEPeripheralServiceID());
     QAndroidJniObject characteristicUUID = QAndroidJniObject::fromString(_config->getBLEPeripheralCharacteristicID());
-    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm", "connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm",
+                                               "connect",
+                                               "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                                deviceAddress.object<jstring>(),
                                                serviceUUI.object<jstring>(),
                                                characteristicUUID.object<jstring>()
                                                );
+    cleanJavaException();
     return true;
 }
 
