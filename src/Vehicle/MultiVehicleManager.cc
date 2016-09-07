@@ -134,7 +134,7 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
 }
 
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 
 void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
 {

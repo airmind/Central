@@ -446,35 +446,8 @@ bool QGCApplication::_initForNormalAppBoot(void)
 
 #ifdef __ios__
     //launch mindskin;
-    
     MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
-    
     skinroot -> launchMindskinUI();
-    
-    /*
-    self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
-    
-    // Override point for customization after application launch.
-    self.window.backgroundColor = [UIColor whiteColor];
-    
-    loginViewController=[[MainLoginViewController alloc] initWithNibName:@"VehicleSelectionViewController" bundle:nil];
-    loginViewController.managedObjectContext=self.managedObjectContext;
-    
-    
-    
-    self.navController = [[UINavigationController alloc]
-                          initWithRootViewController:loginViewController];
-    self.navController.navigationBar.barStyle= UIBarStyleBlackTranslucent;
-    //[navController setNavigationBarHidden:YES animated:YES];
-    
-    
-    window.rootViewController=self.navController;
-    //[window addSubview:navController.view];
-    
-    
-    [window makeKeyAndVisible];
-*/
-    
 #endif //__ios__
 #ifdef __android__
     qDebug()<<"Test from migu";

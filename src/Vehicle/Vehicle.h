@@ -226,7 +226,7 @@ public:
             JoystickManager*        joystickManager);
 //<<<<<<< HEAD
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     Vehicle(BTSerialLink*          link,
             int                     vehicleId,
             MAV_AUTOPILOT           firmwareType,
@@ -633,10 +633,9 @@ signals:
 private slots:
     void _mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message);
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void _mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message);
     void _linkInactiveOrDeleted(BTSerialLink* link);
-
 #endif
     //void _linkDisconnected(LinkInterface* link);
 //=======
@@ -675,7 +674,7 @@ private:
     bool _containsLink(LinkInterface* link);
     void _addLink(LinkInterface* link);
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     bool _containsLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
     
@@ -721,9 +720,8 @@ private:
     /// This way Link deletion works correctly.
     //QList<SharedLinkInterface> _links;
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     QList<BTSerialLink*> _blelinks;
-    
 #endif
 //=======
     QList<LinkInterface*> _links;

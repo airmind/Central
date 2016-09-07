@@ -28,8 +28,6 @@
 #if defined(__mindskin__) && defined(__ios__)
 #include "BTSerialLink.h"
 #include "BLEDebugTextView.h"
-
-
 #endif
 
 MainToolBarController::MainToolBarController(QObject* parent)

@@ -342,7 +342,7 @@ Vehicle::Vehicle(QObject* parent)
     _vibrationFactGroup.setVehicle(NULL);
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 
 
 Vehicle::Vehicle(BTSerialLink*             link,
@@ -655,7 +655,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 
 //<<<<<<< HEAD
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message) {
     if (message.sysid != _id && message.sysid != 0) {
         return;
@@ -1093,7 +1093,7 @@ void Vehicle::_addLink(LinkInterface* link)
     }
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 bool Vehicle::_containsLink(BTSerialLink* link)
 {
     foreach (BTSerialLink* alink, _blelinks) {
@@ -1135,7 +1135,7 @@ void Vehicle::_linkInactiveOrDeleted(LinkInterface* link)
 }
 
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 void Vehicle::_linkInactiveOrDeleted(BTSerialLink* link)
 {
     qCDebug(VehicleLog) << "_linkInactiveOrDeleted linkCount" << _links.count();

@@ -1,5 +1,5 @@
 CONFIG += __mindskin__
-DEFINES += __mindskin__
+# CONFIG += __remotehead__
 
 # Airmind - mind skin
 __mindskin__ {
@@ -9,6 +9,7 @@ __mindskin__ {
         DEFINES += _BLE_DEBUG_
     }
 
+    DEFINES += __mindskin__
 #exclusive macro
     DEFINES -= __remotehead__
 }
@@ -19,13 +20,14 @@ contains (DEFINES, __mindble__) {
 }
 
 # Airmind - Remote Head
-contains (DEFINES, __remotehead__) {
+__remotehead__ {
     message ("Use remote head")
 
     DebugBuild {
     DEFINES += _REMOTEHEAD_DEBUG_
     }
 
+    DEFINES += __remotehead__
 #exclusive macro
     DEFINES -= __mindskin__
 
@@ -33,14 +35,17 @@ contains (DEFINES, __remotehead__) {
 
 iOSBuild:__mindskin__ {
     BUNDLE.files       += $$PWD/mindskin/ios/TagNodesViewController.xib
+    BUNDLE.files       += $$PWD/mindskin/ios/RacerMainMenuViewController.xib
     LIBS               += -framework CoreBluetooth
 }
 
 __mindskin__ {
+    INCLUDEPATH += BLE
     iOSBuild {
+        INCLUDEPATH += BLE/ios
         HEADERS += \
             BLE/ios/BTSerialLink_objc.h \
-            BLE/ios/BTSerialLink.h \
+            BLE/BTSerialLink.h \
             mindskin/ios/qt2ioshelper.h \
             mindskin/ios/ConnectPopover.h \
             mindskin/ios/ConnectPopoverViewController.h \
@@ -50,7 +55,8 @@ __mindskin__ {
             mindskin/ios/MindSkinRootView_impl_objc.h \
             mindskin/ios/tagNodesViewController.h \
             mindskin/ios/mindskinMessageViewController.h \
-
+            mindskin/ios/RacerMainMenuView.h \
+            mindskin/ios/RacerMainMenuViewController.h \
 
         SOURCES += \
             mindskin/ios/MindStickButton.cpp \
@@ -61,7 +67,9 @@ __mindskin__ {
             mindskin/ios/MindStickButtonViewController.mm \
             mindskin/ios/MindSkinRootView_impl_objc.mm \
             mindskin/ios/tagNodesViewController.m \
-            mindskin/ios/mindskinMessageViewController.m \
+            mindskin/ios/mindskinMessageViewController.mm \
+            mindskin/ios/RacerMainMenuView.m \
+            mindskin/ios/RacerMainMenuViewController.m \
 
 
         DebugBuild {
@@ -79,6 +87,15 @@ __mindskin__ {
 
     AndroidBuild {
         message("Adding mindskin Java Classes")
+        INCLUDEPATH += BLE/android
+        HEADERS += \
+             $$PWD/libs/qtandroidble/src/qble.h \
+             $$PWD/BLE/BTSerialLink.h \
+
+        SOURCES += \
+            BLE/android/BTSerialLink.cc \
+             $$PWD/libs/qtandroidble/src/qble.cpp
+
         ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
         OTHER_FILES += \
             $$PWD/android/res/layout/actionbar_indeterminate_progress.xml \
@@ -96,8 +113,10 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/BLECommNative.java \
             $$PWD/android/src/org/airmind/ble/BLEComm.java \
             $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
-
     }
 }
+<<<<<<< HEAD
 
 DISTFILES +=
+=======
+>>>>>>> mindskin-gumingpo

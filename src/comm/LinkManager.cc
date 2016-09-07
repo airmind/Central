@@ -94,9 +94,6 @@ LinkManager::~LinkManager()
 #if defined(__mindskin__) && defined(__ios__)
     delete blehelper;
 #endif
-
-
-
 }
 
 void LinkManager::setToolbox(QGCToolbox *toolbox)
@@ -110,7 +107,8 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
+#ifdef __ios__
 //for BT LE;
 bool LinkManager::discoverBTLinks(void* delegate) {
     if (blehelper == NULL) {
@@ -130,60 +128,44 @@ void LinkManager::setCallbackDelegate(void* delegate) {
     }
     blehelper->setCallbackDelegate(delegate);
 }
-
+#endif
 BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config){
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
     if(blelink) {
         _addLink(blelink);
-    
         blelink->_connect();
-    
     }
-    
     return blelink;
-
 }
 
-
 BTSerialLink* LinkManager::createConnectedBLELink(const QString& identifier){
-    
     //BTSerialLink* blelink = new BTSerialLink(identifier);
     //blelink->_connect();
 }
 
-BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg) {
-    
-}
+BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg) { }
 
-bool LinkManager::connectBLELink(BTSerialLink* link) {
-    
-}
+bool LinkManager::connectBLELink(BTSerialLink* link) { }
 
-bool LinkManager::disconnectBLELink(BTSerialLink* link) {
-    
-}
-
-
+bool LinkManager::disconnectBLELink(BTSerialLink* link) {  }
 
 //new signal - have a try;
+#ifdef __ios__
 void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
     //inrangelist/outrangelist have platform dependent types so can not use directly in implementation. needs type conversion.
     emit peripheralsDiscovered(inrangelist, outrangelist);
 }
-
+#endif
 
 void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
     //set blelink status;
     if ((blelink->getLinkConfiguration())->getBLELinkConnectStage()==BLE_LINK_CONNECTED_CHARACTERISTIC) {
         blelink->setLinkConnectedStatus(BLE_LINK_ENDPOINT_CONNECTED);
-    }
-    else {
+    } else {
         blelink->setLinkConnectedStatus(BLE_LINK_HARDWARE_CONNECTED);
-        
     }
     emit linkConnected(blelink);
-
 }
 
 void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
@@ -192,12 +174,11 @@ void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
     emit linkDisconnected(blelink);
 }
 
+#ifdef __ios__
 void LinkManager::didUpdateConnectedBLELinkRSSI(void* peripheral_link_list) {
     emit bleLinkRSSIUpdated (peripheral_link_list);
 }
-
-
-
+#endif
 #endif
 
 LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)
@@ -329,7 +310,7 @@ void LinkManager::_addLink(LinkInterface* link)
     
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 /*
 
 bool LinkManager::containsLink(BTSerialLink* link) {

@@ -112,7 +112,7 @@ private slots:
     void _autopilotParametersReadyChanged(bool parametersReady);
     void _sendGCSHeartbeat(void);
     void _vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void _vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     
