@@ -115,8 +115,3 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
     }
 }
-<<<<<<< HEAD
-
-DISTFILES +=
-=======
->>>>>>> mindskin-gumingpo
