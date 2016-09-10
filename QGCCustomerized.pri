@@ -110,8 +110,9 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/DeviceScanActivity.java \
             $$PWD/android/src/org/airmind/ble/BluetoothLeService.java \
             $$PWD/android/src/org/airmind/ble/SampleGattAttributes.java \
-            $$PWD/android/src/org/airmind/ble/BLECommNative.java \
-            $$PWD/android/src/org/airmind/ble/BLEComm.java \
-            $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
+            $$PWD/android/src/org/airmind/ble/BTLinkIO.java \
+            $$PWD/android/src/org/airmind/ble/BTLinkIONative.java \
+            $$PWD/android/src/org/airmind/ble/LinkManager.java \
+            $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
     }
 }
