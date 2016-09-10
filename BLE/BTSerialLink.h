@@ -165,10 +165,6 @@ private:
 
 
 public:
-    
-#if defined(__mindskin__) && defined(__android__)
-    void cleanJavaException(void);
-#endif
     //set link operation call backs;
     void setLinkCallbackDelegte(void*);
     void setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler);

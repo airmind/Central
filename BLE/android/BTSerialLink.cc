@@ -143,7 +143,7 @@ BLE_LINK_CONNECT_STAGE BTSerialConfiguration::getBLELinkConnectStage() {
  BTSerialLink class;
 
  */
-
+extern void cleanJavaException(void);
 BTSerialLink::BTSerialLink(BTSerialConfiguration *config)
 : _mavlinkChannelSet(false)
 , _linkstatus(BLE_LINK_NOT_CONNECTED)
@@ -172,16 +172,6 @@ BTSerialLink::~BTSerialLink()
     _disconnect();
 }
 
-#if defined(__mindskin__) && defined(__android__)
-void BTSerialLink::cleanJavaException(void)
-{
-    QAndroidJniEnvironment env;
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
-}
-#endif
 void BTSerialLink::setLinkConnectedStatus(BLE_LINK_STATUS status) {
     _linkstatus = status;
 }
