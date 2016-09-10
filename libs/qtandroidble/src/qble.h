@@ -36,6 +36,8 @@
 #define QBLE_H
 
 #include <QtCore/qiodevice.h>
+#include <QtAndroidExtras/QtAndroidExtras>
+#include <QtAndroidExtras/QAndroidJniObject>
 
 QT_BEGIN_NAMESPACE
 
@@ -50,6 +52,7 @@ class QBLE : public QIODevice
 //    void close() Q_DECL_OVERRIDE;
 
 public:
+    static void setNativeMethods(const char* classname, JNINativeMethod javaMethods[]);
     static void setNativeMethods(void);
 
 protected:
