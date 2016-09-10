@@ -67,8 +67,9 @@ public class DeviceControlActivity extends Activity {
                 Log.e(TAG, "Unable to initialize Bluetooth");
                 finish();
             }
+            LinkManager.setBluetoothLeService(mBluetoothLeService);
             // Automatically connects to the device upon successful start-up initialization.
-            mBluetoothLeService.connect(mDeviceAddress);
+//            mBluetoothLeService.connect(mDeviceAddress);
         }
 
         @Override
