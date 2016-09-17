@@ -140,11 +140,27 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
 }
 
 BTSerialLink* LinkManager::createConnectedBLELink(const QString& identifier){
+    Q_UNUSED(identifier);
     //BTSerialLink* blelink = new BTSerialLink(identifier);
     //blelink->_connect();
+    return NULL;
 }
 
-BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg) { }
+BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg) {
+    if(_blelinks.count() == 0 || cfg == NULL) {
+        return NULL;
+    }
+
+    for(int i=0;i<_blelinks.count();i++) {
+        BTSerialLink* btLink = _blelinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* btLinkConfig = btLink->getLinkConfiguration();
+        if(btLinkConfig->equals(cfg)) {
+            return btLink;
+        }
+    }
+
+    return NULL;
+}
 
 bool LinkManager::connectBLELink(BTSerialLink* link) { }
 

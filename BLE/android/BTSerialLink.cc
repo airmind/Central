@@ -20,6 +20,7 @@ BLEHelper::~BLEHelper() {
 }
 
 void BLEHelper::setCallbackDelegate(void* delegate) {
+    Q_UNUSED(delegate);
 
 //    ble_wrapper->setCallbackDelegate(delegate);
 }
@@ -244,7 +245,7 @@ void BTSerialLink::writeBytes(const char* data, qint64 size)
         env->SetByteArrayRegion(ba, 0, size, (jbyte *)data);
     }
 
-    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm", "write", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BTLinkIO", "write", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                                deviceAddress.object<jstring>(),
                                                serviceUUI.object<jstring>(),
                                                characteristicUUID.object<jstring>(),
@@ -315,7 +316,7 @@ bool BTSerialLink::_connect()
     QAndroidJniObject serviceUUI = QAndroidJniObject::fromString(_config->getBLEPeripheralServiceID());
     QAndroidJniObject characteristicUUID = QAndroidJniObject::fromString(_config->getBLEPeripheralCharacteristicID());
 
-    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm",
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager",
                                                "connect",
                                                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                                                deviceAddress.object<jstring>(),
