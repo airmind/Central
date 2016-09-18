@@ -172,10 +172,11 @@ public class DeviceControlActivity extends Activity {
     protected void onResume() {
         super.onResume();
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-        if (mBluetoothLeService != null) {
-            final boolean result = mBluetoothLeService.connect(mDeviceAddress);
-            Log.d(TAG, "Connect request result=" + result);
-        }
+//        if (mBluetoothLeService != null) {
+//            final boolean result = mBluetoothLeService.connect(mDeviceAddress);
+//            Log.d(TAG, "Connect request result=" + result);
+//        }
+        LinkManagerNative.connect(mDeviceAddress,null,null);
     }
 
     @Override
@@ -208,7 +209,8 @@ public class DeviceControlActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_connect:
-                mBluetoothLeService.connect(mDeviceAddress);
+//                mBluetoothLeService.connect(mDeviceAddress);
+                LinkManagerNative.connect(mDeviceAddress,null,null);
                 return true;
             case R.id.menu_disconnect:
                 mBluetoothLeService.disconnect();

@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,6 +44,8 @@ public class DeviceScanActivity extends ListActivity {
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
 
+    Button connect = null;
+
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,6 +65,12 @@ public class DeviceScanActivity extends ListActivity {
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
+
+        LinkManager.setAdapter(mBluetoothAdapter);
+
+        LinkManager.setLeScanCallback(mLeScanCallback);
+
+        LinkManager.setLeDeviceListAdapter(mLeDeviceListAdapter);
 
         // Checks if Bluetooth is supported on the device.
         if (mBluetoothAdapter == null) {
@@ -118,6 +127,7 @@ public class DeviceScanActivity extends ListActivity {
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
 //        scanLeDevice(true);
+
     }
 
     @Override
@@ -176,7 +186,7 @@ public class DeviceScanActivity extends ListActivity {
     }
 
     // Adapter for holding devices found through scanning.
-    private class LeDeviceListAdapter extends BaseAdapter {
+    class LeDeviceListAdapter extends BaseAdapter {
         private ArrayList<BluetoothDevice> mLeDevices;
         private LayoutInflater mInflator;
 
