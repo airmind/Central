@@ -88,6 +88,7 @@ __mindskin__ {
     AndroidBuild {
         message("Adding mindskin Java Classes")
         INCLUDEPATH += BLE/android
+        INCLUDEPATH += libs/qtandroidble/src
         HEADERS += \
              $$PWD/libs/qtandroidble/src/qble.h \
              $$PWD/BLE/BTSerialLink.h \

@@ -5,7 +5,7 @@ package org.airmind.ble;
  */
 public class LinkManagerNative {
     //notify qt-linkmanager to connect the specified device
-    public static native void connect(String device, String service, String characteristic);
+    public static native void connect(String device, String service, String characteristic); // -> BTSerialLink
 
     //notify qt that the device has been connected
     public static native void connected(String device, String service, String characteristic);

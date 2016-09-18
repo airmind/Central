@@ -130,6 +130,17 @@ public:
 //    const QString characteristicID() {return characteristicID;}
     BLE_LINK_CONNECT_STAGE getBLELinkConnectStage();
     QString settingsURL();
+    inline bool equals(BTSerialConfiguration* other) {
+        if( this == other ||
+            (this->identifier.compare(other->identifier,Qt::CaseSensitive) == 0 &&
+            this->serviceID.compare(other->serviceID,Qt::CaseSensitive) == 0 &&
+            this->characteristicID.compare(other->characteristicID,Qt::CaseSensitive) == 0 ) )
+        {
+            return true;
+        }
+
+        return false;
+    }
 };
 
 /**
@@ -165,10 +176,6 @@ private:
 
 
 public:
-    
-#if defined(__mindskin__) && defined(__android__)
-    void cleanJavaException(void);
-#endif
     //set link operation call backs;
     void setLinkCallbackDelegte(void*);
     void setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler);
