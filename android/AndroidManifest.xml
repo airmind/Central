@@ -51,9 +51,6 @@
             android:name="org.airmind.ble.DeviceScanActivity"
             android:label="QGroundControl"
             android:screenOrientation="sensorLandscape">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
         </activity>
         <activity
             android:name="org.airmind.ble.DeviceControlActivity"
