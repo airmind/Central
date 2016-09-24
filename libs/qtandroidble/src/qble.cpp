@@ -51,15 +51,21 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
     const char* device = env->GetStringUTFChars(jdevice, NULL);
     const char* service = env->GetStringUTFChars(jservice, NULL);
     const char* characteristic = env->GetStringUTFChars(jcharateristic, NULL);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
 
     BTSerialConfiguration* btconfig = new BTSerialConfiguration(QString::fromUtf8(device));
     QString sid = QString::fromUtf8(MAV_TRANSFER_SERVICE_UUID);
     QString cid = QString::fromUtf8(MAV_TRANSFER_CHARACTERISTIC_UUID);
     QString deviceAddress = QString::fromUtf8(device);
     btconfig->configBLESerialLink(deviceAddress, deviceAddress, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->configBLESerialLink is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
 
     //create a physical link and connect;
+    if(qgcApp() == NULL) {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->qgcApp() is null is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
+    }
     /*BTSerialLink* blelink = */qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->createConnectedBLELink is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
 
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
     if(device) env->ReleaseStringUTFChars(jdevice, device);
@@ -186,9 +192,9 @@ QBLE::QBLE(QObject *parent) : QIODevice(parent)
 QBLE::~QBLE()
 {
 }
-void QBLE::setNativeMethods(const char* classname, JNINativeMethod javaMethods[])
+void QBLE::setNativeMethods(const char* classname, JNINativeMethod javaMethods[], int methodCount)
 {
-    if(classname == NULL || classname[0] == '\0' || javaMethods == NULL) {
+    if(classname == NULL || classname[0] == '\0' || javaMethods == NULL || methodCount == 0) {
         __android_log_print(ANDROID_LOG_INFO, kJTag, "invalid input parameters");
         return;
     }
@@ -206,8 +212,7 @@ void QBLE::setNativeMethods(const char* classname, JNINativeMethod javaMethods[]
         __android_log_print(ANDROID_LOG_ERROR, kJTag, "Couldn't find class: %s", classname);
         return;
     }
-
-    jint val = jniEnv->RegisterNatives(objectClass, javaMethods, sizeof(javaMethods) / sizeof(javaMethods[0]));
+    jint val = jniEnv->RegisterNatives(objectClass, javaMethods, methodCount);
 
     __android_log_print(ANDROID_LOG_INFO, kJTag, "Native Functions Registered for class:%s", classname);
 
@@ -230,13 +235,13 @@ void QBLE::setNativeMethods(void)
         {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
         {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)}
     };
-    setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods);
+    setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods, sizeof(linkManagerNativeMethods)/sizeof(linkManagerNativeMethods[0]));
 
     JNINativeMethod btLinkIONativeMethods[] {
         {"write", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniWrite)},
         {"read", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniRead)}
     };
-    setNativeMethods("org/airmind/ble/BTLinkIONative",btLinkIONativeMethods);
+    setNativeMethods("org/airmind/ble/BTLinkIONative",btLinkIONativeMethods, sizeof(btLinkIONativeMethods)/sizeof(btLinkIONativeMethods[0]));
 }
 
 QT_END_NAMESPACE

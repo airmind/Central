@@ -9,7 +9,7 @@ import android.bluetooth.BluetoothManager;
 import android.os.Build;
 
 import java.util.UUID;
-
+import android.util.Log;
 /**
  * Called from Qt-C++
  */
@@ -19,7 +19,7 @@ public class LinkManager {
     private static BluetoothLeService bluetoothLeService = null;
     private static LeScanCallback leScanCallback;
     private static DeviceScanActivity.LeDeviceListAdapter leDeviceListAdapter;
-
+    private static final String TAG = "LinkManager";
     public static void setAdapter(BluetoothAdapter adapter) {
         LinkManager.bluetoothadapter = adapter;
     }
@@ -51,12 +51,9 @@ public class LinkManager {
     public static void connect(String deviceAddress, String serviceUUID, String characteristicUUID) {
         UUID service = UUID.fromString(serviceUUID);
         UUID characteristic = UUID.fromString(characteristicUUID);
-//        bluetoothadapter.startLeScan(new UUID[]{service},leScanCallback);
+        Log.d(TAG,"auto connect to device-address:" + deviceAddress + ", service-UUID:" + serviceUUID + ", characteristic-UUID:" + characteristicUUID);
         if (bluetoothLeService != null){
             bluetoothLeService.connect(deviceAddress);
         }
-        System.out.println("auto connect to device-address:" + deviceAddress + ", service-UUID:"
-                + serviceUUID + ", characteristic-UUID:" + characteristicUUID);
     }
-
 }

@@ -30,7 +30,7 @@ import android.widget.Toast;
 import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
-
+import android.util.Log;
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
@@ -43,7 +43,7 @@ public class DeviceScanActivity extends ListActivity {
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
-
+    public static final String TAG = "DeviceScanActivity";
     Button connect = null;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -257,6 +257,7 @@ public class DeviceScanActivity extends ListActivity {
 
                 @Override
                 public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+                    Log.d(TAG,"detected device:" + device.getAddress());
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {

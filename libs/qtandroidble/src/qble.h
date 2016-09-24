@@ -52,7 +52,7 @@ class QBLE : public QIODevice
 //    void close() Q_DECL_OVERRIDE;
 
 public:
-    static void setNativeMethods(const char* classname, JNINativeMethod javaMethods[]);
+    static void setNativeMethods(const char* classname, JNINativeMethod javaMethods[], int methodCount);
     static void setNativeMethods(void);
 
 protected:

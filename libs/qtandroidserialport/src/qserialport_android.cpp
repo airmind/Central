@@ -136,6 +136,7 @@ void QSerialPortPrivate::setNativeMethods(void)
         __android_log_print(ANDROID_LOG_ERROR, kJTag, "Couldn't find class: %s", kJniClassName);
         return;
     }
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "Native Functions Registered for class:%s, total-size:%d, item-size:%d,item-count:%d", kJniClassName, sizeof(javaMethods),sizeof(javaMethods[0]),sizeof(javaMethods) / sizeof(javaMethods[0]));
 
     jint val = jniEnv->RegisterNatives(objectClass, javaMethods, sizeof(javaMethods) / sizeof(javaMethods[0]));
 

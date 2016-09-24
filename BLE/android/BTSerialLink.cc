@@ -245,7 +245,7 @@ void BTSerialLink::writeBytes(const char* data, qint64 size)
         env->SetByteArrayRegion(ba, 0, size, (jbyte *)data);
     }
 
-    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BTLinkIO", "write", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BTLinkIO", "write", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",
                                                deviceAddress.object<jstring>(),
                                                serviceUUI.object<jstring>(),
                                                characteristicUUID.object<jstring>(),
