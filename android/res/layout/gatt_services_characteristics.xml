@@ -29,6 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/label_device_address"
+            android:textColor="#FF000000"
             android:textSize="18sp" />
 
         <Space
@@ -39,6 +40,7 @@
             android:id="@+id/device_address"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="#FF000000"
             android:textSize="18sp" />
     </LinearLayout>
 
@@ -52,6 +54,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/label_state"
+            android:textColor="#FF000000"
             android:textSize="18sp" />
 
         <Space
@@ -63,6 +66,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/disconnected"
+            android:textColor="#FF000000"
             android:textSize="18sp" />
     </LinearLayout>
 
@@ -76,6 +80,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/label_data"
+            android:textColor="#FF000000"
             android:textSize="18sp" />
 
         <Space
@@ -86,6 +91,7 @@
             android:id="@+id/data_value"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="#FF000000"
             android:text="@string/no_data"
             android:textSize="18sp" />
     </LinearLayout>

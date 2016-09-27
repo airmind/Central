@@ -123,18 +123,25 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_activity);
-        final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
-        Button scanDevice = (Button) findViewById(R.id.ble_scan);
-        scanDevice.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                m_instance.startActivity(intent);
-            }
-        });
+//        setContentView(R.layout.main_activity);
+//        final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
+//        Button scanDevice = (Button) findViewById(R.id.ble_scan);
+//        scanDevice.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                m_instance.startActivity(intent);
+//            }
+//        });
         m_tts = new TextToSpeech(this, this);
         PowerManager pm = (PowerManager) m_instance.getSystemService(Context.POWER_SERVICE);
         m_wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "QGroundControl");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        final Intent intent = new Intent(this, DeviceScanActivity.class);
+        this.startActivity(intent);
     }
 
     @Override
