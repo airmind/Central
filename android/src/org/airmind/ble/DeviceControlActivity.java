@@ -73,6 +73,7 @@ public class DeviceControlActivity extends Activity {
             }
 
             LinkManager.setBluetoothLeService(mBluetoothLeService);
+            BTLinkIO.setBluetoothLeService(mBluetoothLeService);
             // Automatically connects to the device upon successful start-up initialization.
 //            mBluetoothLeService.connect(mDeviceAddress);
             LinkManagerNative.connect(mDeviceAddress,MAV_TRANSFER_SERVICE_UUID,MAV_TRANSFER_CHARACTERISTIC_UUID);

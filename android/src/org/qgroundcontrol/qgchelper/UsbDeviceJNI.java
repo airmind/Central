@@ -634,22 +634,22 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
         return m_openedDevices.get(idA);
     }
 
-    public static final int MSG_TYPE_TOAST = 1;
-    private static Handler m_handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_TYPE_TOAST:
-                    Toast toast = Toast.makeText(m_instance, (String) msg.obj, Toast.LENGTH_SHORT);
-                    toast.show();
-                    break;
-            }
-        }
-    };
+//    public static final int MSG_TYPE_TOAST = 1;
+//    private static Handler m_handler = new Handler() {
+//        @Override
+//        public void handleMessage(Message msg) {
+//            switch (msg.what) {
+//                case MSG_TYPE_TOAST:
+//                    Toast toast = Toast.makeText(m_instance, (String) msg.obj, Toast.LENGTH_SHORT);
+//                    toast.show();
+//                    break;
+//            }
+//        }
+//    };
 
     //Android implementation for Qt to showMessage()
-    public static void showMessage(String msg) {
-        Log.e(UsbDeviceJNI.class.getName(), "to show message for " + msg);
-        m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST, msg));
-    }
+//    public static void showMessage(String msg) {
+//        Log.e(UsbDeviceJNI.class.getName(), "to show message for " + msg);
+//        m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST, msg));
+//    }
 }
