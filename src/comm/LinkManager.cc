@@ -37,6 +37,10 @@
     #include "GPSManager.h"
 #endif
 
+#ifdef __android__
+#include <android/log.h>
+static const char kJTag[] {"LinkManager"};
+#endif
 QGC_LOGGING_CATEGORY(LinkManagerLog, "LinkManagerLog")
 QGC_LOGGING_CATEGORY(LinkManagerVerboseLog, "LinkManagerVerboseLog")
 
@@ -133,6 +137,9 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
     if(blelink) {
+#if __android__
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "createConnectedBLELink to add ble-link");
+#endif
         _addLink(blelink);
         blelink->_connect();
     }

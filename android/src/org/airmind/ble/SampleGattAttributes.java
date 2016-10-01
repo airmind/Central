@@ -29,24 +29,27 @@ public class SampleGattAttributes {
     public static String HEART_RATE_CONTROL_POINT = "00002a39-0000-1000-8000-00805f9b34fb"; //by myself
     //    public static String BATTERY_LEVEL = "00002A19-0000-1000-8000-00805f9b34fb"; //by myself
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
-
+    public static String MAV_TRANSFER_SERVICE_UUID = "E20A39F4-73F5-4BC4-A12F-17D1AD07A961";
+    public static String MAV_TRANSFER_CHARACTERISTIC_UUID = "08590F7E-DB05-467E-8757-72F6FAEB13D4";
     static {
         // Sample Services.
-        attributes.put("0000180d-0000-1000-8000-00805f9b34fb", "Heart Rate Service");
-//        attributes.put("0000180a-0000-1000-8000-00805f9b34fb", "Device Information Service");
-        attributes.put("0000180f-0000-1000-8000-00805f9b34fb", "Battery Service");// by myself
-        attributes.put("E20A39F4-73F5-4BC4-A12F-17D1AD07A961", "Transfer Service"); // by myself
+        attributes.put("0000180d-0000-1000-8000-00805f9b34fb".toUpperCase(), "Heart Rate Service");
+//        attributes.put("0000180a-0000-1000-8000-00805f9b34fb".toUpperCase(), "Device Information Service");
+        attributes.put("0000180f-0000-1000-8000-00805f9b34fb".toUpperCase(), "Battery Service");// by myself
+        attributes.put("E20A39F4-73F5-4BC4-A12F-17D1AD07A961".toUpperCase(), "Transfer Service"); // by myself
         // Sample Characteristics.
-        attributes.put(HEART_RATE_MEASUREMENT, "Heart Rate Measurement");
-        attributes.put(BODY_SENSOR_LOCATION, "Body Sensor Location");  //by myself
-        attributes.put(HEART_RATE_CONTROL_POINT, "Heart Rate Control");  //by myself
-        attributes.put("00002A19-0000-1000-8000-00805f9b34fb", "Battery Level");  //by myself
-        attributes.put("08590F7E-DB05-467E-8757-72F6FAEB13D4", "Transfer Characteristic"); // by myself
-        attributes.put("00002a29-0000-1000-8000-00805f9b34fb", "Manufacturer Name String");
+        attributes.put(HEART_RATE_MEASUREMENT.toUpperCase(), "Heart Rate Measurement");
+        attributes.put(BODY_SENSOR_LOCATION.toUpperCase(), "Body Sensor Location");  //by myself
+        attributes.put(HEART_RATE_CONTROL_POINT.toUpperCase(), "Heart Rate Control");  //by myself
+        attributes.put("00002A19-0000-1000-8000-00805f9b34fb".toUpperCase(), "Battery Level");  //by myself
+        attributes.put("08590F7E-DB05-467E-8757-72F6FAEB13D4".toUpperCase(), "Transfer Characteristic"); // by myself
+        attributes.put("00002a29-0000-1000-8000-00805f9b34fb".toUpperCase(), "Manufacturer Name String");
+        attributes.put(MAV_TRANSFER_SERVICE_UUID.toUpperCase(),"BLE-Write-Service");
+        attributes.put(MAV_TRANSFER_CHARACTERISTIC_UUID.toUpperCase(),"BLE-Write-Characteristic");
     }
 
     public static String lookup(String uuid, String defaultName) {
-        String name = attributes.get(uuid);
+        String name = attributes.get(uuid.toUpperCase());
         return name == null ? defaultName : name;
     }
 }

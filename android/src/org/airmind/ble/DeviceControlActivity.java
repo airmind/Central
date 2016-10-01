@@ -56,8 +56,6 @@ public class DeviceControlActivity extends Activity {
 
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
-    public static String MAV_TRANSFER_SERVICE_UUID = "E20A39F4-73F5-4BC4-A12F-17D1AD07A961";
-    public static String MAV_TRANSFER_CHARACTERISTIC_UUID = "08590F7E-DB05-467E-8757-72F6FAEB13D4";
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -76,7 +74,7 @@ public class DeviceControlActivity extends Activity {
             BTLinkIO.setBluetoothLeService(mBluetoothLeService);
             // Automatically connects to the device upon successful start-up initialization.
 //            mBluetoothLeService.connect(mDeviceAddress);
-            LinkManagerNative.connect(mDeviceAddress,MAV_TRANSFER_SERVICE_UUID,MAV_TRANSFER_CHARACTERISTIC_UUID);
+            LinkManagerNative.connect(mDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase());
         }
 
         @Override
@@ -259,9 +257,27 @@ public class DeviceControlActivity extends Activity {
 
         // Loops through available GATT Services.
         for (BluetoothGattService gattService : gattServices) {
+
             HashMap<String, String> currentServiceData = new HashMap<String, String>();
             uuid = gattService.getUuid().toString();
-            currentServiceData.put( LIST_NAME, SampleGattAttributes.lookup(uuid, unknownServiceString));
+            String serviceName = SampleGattAttributes.lookup(uuid, uuid);
+//            String serviceName = SampleGattAttributes.lookup(uuid, unknownServiceString);
+            boolean serviceExist = false;
+            if(gattServiceData != null && !gattServiceData.isEmpty()) {
+                for(int i=0;i<gattServiceData.size();i++) {
+                    HashMap<String, String> existServiceHashMap = gattServiceData.get(i);
+                    String existUuid = existServiceHashMap.get(LIST_UUID);
+                    if( existUuid != null && existUuid.equals(uuid)) {
+                        serviceExist = true;
+                        break;
+                    }
+                }
+            }
+
+            if(serviceExist) continue;
+
+            currentServiceData.put( LIST_NAME, serviceName);
+            Log.d(TAG,"GATT-Service: uuid:" + uuid + ", name:" + serviceName);
             currentServiceData.put(LIST_UUID, uuid);
             gattServiceData.add(currentServiceData);
 
@@ -274,8 +290,11 @@ public class DeviceControlActivity extends Activity {
                 charas.add(gattCharacteristic);
                 HashMap<String, String> currentCharaData = new HashMap<String, String>();
                 uuid = gattCharacteristic.getUuid().toString();
-                currentCharaData.put( LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
+//                String charName = SampleGattAttributes.lookup(uuid, unknownCharaString);
+                String charName = SampleGattAttributes.lookup(uuid, uuid);
+                currentCharaData.put( LIST_NAME, charName);
                 currentCharaData.put(LIST_UUID, uuid);
+                Log.d(TAG,"GATT-Character: uuid:" + uuid + ", name:" + charName);
                 gattCharacteristicGroupData.add(currentCharaData);
             }
             mGattCharacteristics.add(charas);
@@ -285,11 +304,13 @@ public class DeviceControlActivity extends Activity {
         SimpleExpandableListAdapter gattServiceAdapter = new SimpleExpandableListAdapter(
                 this,
                 gattServiceData,
-                android.R.layout.simple_expandable_list_item_2,
+                //android.R.layout.simple_expandable_list_item_2,
+                R.layout.mindskin_expandable_list_item_2,
                 new String[]{LIST_NAME, LIST_UUID},
                 new int[]{android.R.id.text1, android.R.id.text2},
                 gattCharacteristicData,
-                android.R.layout.simple_expandable_list_item_2,
+                //android.R.layout.simple_expandable_list_item_2,
+                R.layout.mindskin_expandable_list_item_2,
                 new String[]{LIST_NAME, LIST_UUID},
                 new int[]{android.R.id.text1, android.R.id.text2}
         );

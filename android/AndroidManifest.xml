@@ -59,7 +59,7 @@
             android:name="org.airmind.ble.BluetoothLeService"
             android:enabled="true" />
     </application>
-    <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="22"/>
+    <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="22"/>
 
     <!-- Needed to keep working while 'asleep' -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>

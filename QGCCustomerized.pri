@@ -103,6 +103,7 @@ __mindskin__ {
             $$PWD/android/res/layout/gatt_services_characteristics.xml \
             $$PWD/android/res/layout/listitem_device.xml \
             $$PWD/android/res/layout/main_activity.xml \
+            $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml \
             $$PWD/android/res/menu/gatt_services.xml \
             $$PWD/android/res/menu/main.xml \
             $$PWD/android/res/values/color.xml \
@@ -117,3 +118,6 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
     }
 }
+
+DISTFILES += \
+    $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml

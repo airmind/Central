@@ -21,7 +21,10 @@
 #ifdef __mobile__
 #include "MobileScreenMgr.h"
 #endif
-
+#ifdef __android__
+#include <android/log.h>
+static const char kJTag[] {"MultiVehicleManager"};
+#endif
 #include <QQmlEngine>
 
 QGC_LOGGING_CATEGORY(MultiVehicleManagerLog, "MultiVehicleManagerLog")
@@ -410,6 +413,9 @@ void MultiVehicleManager::setGcsHeartbeatEnabled(bool gcsHeartBeatEnabled)
 
 void MultiVehicleManager::_sendGCSHeartbeat(void)
 {
+#if __android__
+            __android_log_print(ANDROID_LOG_INFO, kJTag, "_sendGCSHeartbeat=> vehicle-count:%d",_vehicles.count());
+#endif
     for (int i=0; i< _vehicles.count(); i++) {
         Vehicle* vehicle = qobject_cast<Vehicle*>(_vehicles[i]);
 
