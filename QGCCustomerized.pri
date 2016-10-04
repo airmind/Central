@@ -41,6 +41,7 @@ __remotehead__ {
 iOSBuild:__mindskin__ {
     BUNDLE.files       += $$PWD/mindskin/ios/TagNodesViewController.xib
     BUNDLE.files       += $$PWD/mindskin/ios/RacerMainMenuViewController.xib
+    BUNDLE.files       += $$PWD/BLE/BEEP1C.WAV
     LIBS               += -framework CoreBluetooth
 }
 
@@ -49,6 +50,7 @@ __mindskin__ {
         HEADERS += \
             BLE/ios/BTSerialLink_objc.h \
             BLE/BTSerialLink.h \
+            mindskin/tagNodesManager.h \
             mindskin/ios/qt2ioshelper.h \
             mindskin/ios/ConnectPopover.h \
             mindskin/ios/ConnectPopoverViewController.h \
@@ -62,6 +64,7 @@ __mindskin__ {
             mindskin/ios/RacerMainMenuViewController.h \
 
         SOURCES += \
+            mindskin/tagNodesManager.cpp \
             mindskin/ios/MindStickButton.cpp \
 
         OBJECTIVE_SOURCES += \

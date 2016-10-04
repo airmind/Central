@@ -145,7 +145,12 @@ Vehicle::Vehicle(LinkInterface*             link,
 //=======
 //>>>>>>> upstream/master
 
+#ifndef __mindskin__
     connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, &Vehicle::_sendMessageOnLink, Qt::QueuedConnection);
+#else
+    connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, static_cast<void (Vehicle::*)(LinkInterface*, mavlink_message_t)>(&Vehicle::_sendMessageOnLink), Qt::QueuedConnection);
+#endif
+    
     connect(this, &Vehicle::flightModeChanged,          this, &Vehicle::_handleFlightModeChanged);
     connect(this, &Vehicle::armedChanged,               this, &Vehicle::_announceArmedChanged);
     _uas = new UAS(_mavlink, this, _firmwarePluginManager);
@@ -434,7 +439,11 @@ Vehicle::Vehicle(BTSerialLink*             link,
     connect(_mavlink, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this, static_cast<void (Vehicle::*)(BTSerialLink*, mavlink_message_t)>(&Vehicle::_mavlinkMessageReceived));
     
     //connect(this, &Vehicle::_sendMessageOnLinkOnThread,       this, &Vehicle::_sendMessage, Qt::QueuedConnection);
+#ifndef __mindskin__
     connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, &Vehicle::_sendMessageOnLink, Qt::QueuedConnection);
+#else
+    connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, static_cast<void (Vehicle::*)(LinkInterface*, mavlink_message_t)>(&Vehicle::_sendMessageOnLink), Qt::QueuedConnection);
+#endif
     connect(this, &Vehicle::flightModeChanged,          this, &Vehicle::_handleFlightModeChanged);
     connect(this, &Vehicle::armedChanged,               this, &Vehicle::_announceArmedChanged);
     _uas = new UAS(_mavlink, this, _firmwarePluginManager);
@@ -1160,6 +1169,64 @@ void Vehicle::sendMessage(mavlink_message_t message)
 */
 //=======
 //>>>>>>> master
+
+#ifdef __mindskin__
+#ifdef __ios__
+
+bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
+    //return BLE link as priority;
+    
+    if (_blelinks.count()) {
+        return sendMessageOnLink(_blelinks[0], message);
+    }
+    else {
+        return sendMessageOnLink(priorityLink(), message);
+    }
+
+}
+
+bool Vehicle::sendMessageOnLink(BTSerialLink* link, mavlink_message_t message)
+{
+    if (!link || !_blelinks.contains(link) || !link->isConnected()) {
+        return false;
+    }
+    
+    //emit _sendMessageOnLinkOnThread(link, message);
+    _sendMessageOnLink(link, message);
+    
+    return true;
+}
+
+void Vehicle::_sendMessageOnLink(BTSerialLink* link, mavlink_message_t message)
+{
+    // Make sure this is still a good link
+    if (!link || !_blelinks.contains(link) || !link->isConnected()) {
+        return;
+    }
+    
+    // Give the plugin a chance to adjust
+    _firmwarePlugin->adjustOutgoingMavlinkMessage(this, &message);
+    
+    static const uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
+    mavlink_finalize_message_chan(&message, _mavlink->getSystemId(), _mavlink->getComponentId(), link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
+    
+    // Write message into buffer, prepending start sign
+    uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+    int len = mavlink_msg_to_send_buffer(buffer, &message);
+    
+    //this safe method just emit signal to call writeBytes in another thread; we do not need this with iOS GDC, or Android async.
+    //link->writeBytesSafe((const char*)buffer, len);
+    link->writeBytes((const char*)buffer, len);
+    
+    _messagesSent++;
+    emit messagesSentChanged();
+}
+
+
+
+#endif
+#endif  //__mindskin__
+
 bool Vehicle::sendMessageOnLink(LinkInterface* link, mavlink_message_t message)
 {
     if (!link || !_links.contains(link) || !link->isConnected()) {
@@ -1214,6 +1281,7 @@ LinkInterface* Vehicle::priorityLink(void)
 #endif
     return _links.count() ? _links[0] : NULL;
 }
+
 
 void Vehicle::setLatitude(double latitude)
 {

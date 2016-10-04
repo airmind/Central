@@ -32,7 +32,7 @@
 #include "QGCTemporaryFile.h"
 #include "QGCToolbox.h"
 
-#ifdef __ios__
+#ifdef __mindskin__
 #include "BTSerialLink.h"
 #endif
 
