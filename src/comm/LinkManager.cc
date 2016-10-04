@@ -396,16 +396,22 @@ void LinkManager::_addLink(BTSerialLink* link) {
    // _bleLinkListMutex.lock();
     
     //if (!containsLink(link)) {
-    if (_blelinks.contains(link)) {
+    if (!_blelinks.contains(link)) {
         // Find a mavlink channel to use for this link
+        int y=0;
         for (int i=0; i<32; i++) {
-            if (!(_mavlinkChannelsUsedBitMask && 1 << i)) {
+            if (!(_mavlinkChannelsUsedBitMask & 1 << i)) {
                 mavlink_reset_channel_status(i);
                 link->_setMavlinkChannel(i);
                 _mavlinkChannelsUsedBitMask |= i << i;
                 break;
             }
+            y++;
         }
+        if (y==31) {
+            int x = y;
+        }
+        link->getMavlinkChannel();
         
         _blelinks.append(link);
         //_bleLinkListMutex.unlock();

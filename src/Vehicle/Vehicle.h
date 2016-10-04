@@ -437,11 +437,21 @@ public:
     /// Sends a message to the specified link
     /// @return true: message sent, false: Link no longer connected
     bool sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
+#ifdef __mindskin__
+    bool sendMessageOnLink(BTSerialLink* link, mavlink_message_t message);
+#endif
 
+    
+#ifndef __mindskin__
     /// Sends a message to the priority link
     /// @return true: message sent, false: Link no longer connected
     bool sendMessageOnPriorityLink(mavlink_message_t message) { return sendMessageOnLink(priorityLink(), message); }
+#else
+    bool sendMessageOnPriorityLink(mavlink_message_t message) ;
 
+#endif
+    
+    
     /// Sends the specified messages multiple times to the vehicle in order to attempt to
     /// guarantee that it makes it to the vehicle.
     void sendMessageMultiple(mavlink_message_t message);
@@ -661,7 +671,12 @@ private slots:
     //void _sendMessage(mavlink_message_t message);
 //=======
 //>>>>>>> master
+#ifdef __mindskin__
+    void _sendMessageOnLink(BTSerialLink* link, mavlink_message_t message);
+#endif
     void _sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
+
+    
     void _sendMessageMultipleNext(void);
     void _addNewMapTrajectoryPoint(void);
     void _parametersReady(bool parametersReady);

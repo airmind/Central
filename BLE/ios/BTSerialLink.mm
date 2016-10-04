@@ -22,7 +22,7 @@
 #include "BTSerialLink.h"
 #include "qt2ioshelper.h"
 
-#import "ConnectPopoverViewController.h"
+//#import "ConnectPopoverViewController.h"
 #include "QGCApplication.h"
 
 static NSString * const kServiceUUID = @"FC00"; //mindstick
@@ -84,6 +84,9 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(BOOL) discoverCharacteristics:(NSObject*)delegate;
 -(void) stopScanning;
 -(CBPeripheral*)getCBPeripheralFromIdentifier:(NSString*)identifier;
+-(BOOL) createBTSerialLinkFromConfig:(BTSerialConfiguration_objc*)btcfg;
+//Obj-C does not support method overloading, so use different name;
+-(BOOL) createBTSerialLinkFromPeripheral:(BLE_Discovered_Peripheral*)blep;
 
 -(void)addLink:(BTSerialLink_objc*)link;
 -(void)deleteLink:(BTSerialLink_objc*)link;
@@ -551,8 +554,10 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
             dispatch_async(dispatch_get_main_queue(), ^{
                 
                 qgcApp()->toolbox()->linkManager()->didDiscoverBLELinks((__bridge void*)p_in, (__bridge void*)p_out);
+                
+                //TODO: do type check to ensure target call back handler conform with protocol;
 
-                //[(ConnectPopoverViewController*)delegatecontroller didDiscoverBTLinksInRange:p_in outOfRange:p_out];
+                [delegatecontroller didDiscoverBTLinksInRange:p_in outOfRange:p_out];
                 
                 
             });
@@ -756,7 +761,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     dispatch_async(dispatch_get_main_queue(), ^{
         
         
-        //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
+        [delegatecontroller didConnectedBTLink:peripheral result:YES];
         //call back to LinkManager to emit signal to update UI;
         qgcApp()->toolbox()->linkManager()->didConnectBLELink((__bridge BTSerialLink*)[link getCallerLinkPointer]);
         
@@ -807,13 +812,13 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
 
     //did write and call back;
-    dispatch_async(dispatch_get_main_queue(), ^{
+    //dispatch_async(dispatch_get_main_queue(), ^{
         
         
         //[(ConnectPopoverViewController*)delegatecontroller didReadBytes:characteristic.value];
         NSData* data = characteristic.value;
         ((__bridge BTSerialLink*)([link getCallerLinkPointer]))->didReadBytes((const char*)[data bytes], [data length]);
-    });
+    //});
 
     NSString* aStr= [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
     NSLog(@"%@, %d", aStr, [characteristic.value length]);
