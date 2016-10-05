@@ -531,7 +531,6 @@
     if (yor) {
         //connected, make the beep sound;
         int idx = [btlinksarray indexOfObject:cbp];
-        //[self dismissPopoverView];
         
         NSString *soundPath = [[NSBundle mainBundle] pathForResource:@"BEEP1C" ofType:@"WAV"];
         SystemSoundID soundID;
