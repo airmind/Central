@@ -540,7 +540,7 @@
         //get tag node system ID;
         
         //get into main menu UI;
-        //[self showMindStickStatusIcon];
+        //[self ];
         
     }
     else {
