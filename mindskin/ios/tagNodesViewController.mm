@@ -596,25 +596,6 @@
     }
 }
 
--(void)dismissPopoverView {
-    //dismiss this popover;
-    CGRect viewFrame = [self.view frame];
-    [UIView animateWithDuration:0.2
-                          delay:0
-                        options:UIViewAnimationOptionBeginFromCurrentState
-                     animations:^{
-                         [self.view setFrame:CGRectMake(viewFrame.origin.x+200, 60, 200, viewFrame.size.width)];
-                         
-                     }
-                     completion:^(BOOL finished){
-                         if (finished) {
-                             [ self.view removeFromSuperview];
-                             presented=NO;
-                         }
-                         
-                     }];
-    
-}
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
