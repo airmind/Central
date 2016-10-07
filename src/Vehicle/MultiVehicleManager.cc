@@ -54,7 +54,7 @@ MultiVehicleManager::MultiVehicleManager(QGCApplication* app)
         _gcsHeartbeatTimer.start();
     }
 
-    _disconnectedVehicle = new Vehicle(this);
+    _disconnectedVehicle = new Vehicle(MAV_AUTOPILOT_PX4, MAV_TYPE_QUADROTOR, this);
 }
 
 void MultiVehicleManager::setToolbox(QGCToolbox *toolbox)
@@ -173,6 +173,9 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
     
     _vehicles.append(vehicle);
     
+    // Send QGC heartbeat ASAP, this allows PX4 to start accepting commands
+    _sendGCSHeartbeat();
+
     emit vehicleAdded(vehicle);
     
     setActiveVehicle(vehicle);

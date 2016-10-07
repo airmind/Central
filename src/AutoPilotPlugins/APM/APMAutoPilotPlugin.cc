@@ -37,7 +37,10 @@ APMAutoPilotPlugin::APMAutoPilotPlugin(Vehicle* vehicle, QObject* parent)
     , _cameraComponent(NULL)
     , _flightModesComponent(NULL)
     , _powerComponent(NULL)
+#if 0
+        // Temporarily removed, waiting for new command implementation
     , _motorComponent(NULL)
+#endif
     , _radioComponent(NULL)
     , _safetyComponent(NULL)
     , _sensorsComponent(NULL)
@@ -63,9 +66,11 @@ const QVariantList& APMAutoPilotPlugin::vehicleComponents(void)
             _airframeComponent->setupTriggerSignals();
             _components.append(QVariant::fromValue((VehicleComponent*)_airframeComponent));
 
-            _radioComponent = new APMRadioComponent(_vehicle, this);
-            _radioComponent->setupTriggerSignals();
-            _components.append(QVariant::fromValue((VehicleComponent*)_radioComponent));
+            if ( _vehicle->supportsRadio() ) {
+                _radioComponent = new APMRadioComponent(_vehicle, this);
+                _radioComponent->setupTriggerSignals();
+                _components.append(QVariant::fromValue((VehicleComponent*)_radioComponent));
+            }
 
             _flightModesComponent = new APMFlightModesComponent(_vehicle, this);
             _flightModesComponent->setupTriggerSignals();
@@ -79,11 +84,15 @@ const QVariantList& APMAutoPilotPlugin::vehicleComponents(void)
             _powerComponent->setupTriggerSignals();
             _components.append(QVariant::fromValue((VehicleComponent*)_powerComponent));
 
+#if 0
+    // Temporarily removed, waiting for new command implementation
+
             if (_vehicle->multiRotor() || _vehicle->vtol()) {
                 _motorComponent = new MotorComponent(_vehicle, this);
                 _motorComponent->setupTriggerSignals();
                 _components.append(QVariant::fromValue((VehicleComponent*)_motorComponent));
             }
+#endif
 
             _safetyComponent = new APMSafetyComponent(_vehicle, this);
             _safetyComponent->setupTriggerSignals();

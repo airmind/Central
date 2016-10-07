@@ -8,10 +8,31 @@
 
 #import <UIKit/UIKit.h>
 
-@interface tagNodesViewController : UIViewController <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate>{
-    IBOutlet UITableView* tagnodeslist;
+typedef enum {
+    CONN_ALLLINKS,
+    BT_SCANNING,
+    BT_DISCOVERED,
+    
+} CONN_STAGE;
+
+
+@interface tagNodesViewController : UIViewController <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate> {
+    
+    //ConnectPopoverViewController* tagnodelistviewcontroller;
+    
+    IBOutlet UITableView* tagnodeslistview;
     IBOutlet UIImageView* tagImage;
     IBOutlet UIButton* wifiButton;
+    
+    NSArray* conarray;
+    NSMutableArray* btlinksarray;
+    
+    BOOL presented;
+    CONN_STAGE conn_stage;
+    
+    void* delegate;
+
+
 }
 
 -(IBAction)onWifiButtonTapped:(id)sender;

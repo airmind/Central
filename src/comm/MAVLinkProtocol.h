@@ -150,7 +150,6 @@ public slots:
     void receiveBytes(BTSerialLink* link, QByteArray b);
 #endif
     
-//<<<<<<< HEAD
     //void linkConnected(void);
     //void linkDisconnected(void);
 
@@ -169,8 +168,6 @@ public slots:
     
     /** @brief Set the rate at which heartbeats are emitted */
     //void setHeartbeatRate(int rate);
-//=======
-//>>>>>>> upstream/master
     /** @brief Set the system id of this application */
     void setSystemId(int id);
 
@@ -300,17 +297,13 @@ private slots:
     void _vehicleCountChanged(int count);
     
 private:
-//<<<<<<< HEAD
     //void _linkStatusChanged(LinkInterface* link, bool connected);
 //#ifdef __ios__
     //void _linkStatusChanged(BTSerialLink* link, bool connected);
 //#endif
-//=======
     void _sendMessage(mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
-
-//>>>>>>> upstream/master
 
 #ifdef __mindskin__
     /** @brief Send MAVLink message */
@@ -334,7 +327,6 @@ private:
     static const char*  _tempLogFileTemplate;    ///< Template for temporary log file
     static const char*  _logFileExtension;       ///< Extension for log files
 #endif
-//<<<<<<< HEAD
     
     /// List of all links connected to protocol. We keep SharedLinkInterface objects
     /// which are QSharedPointer's in order to maintain reference counts across threads.
@@ -347,8 +339,6 @@ private:
     //QTimer  _heartbeatTimer;    ///< Timer to emit heartbeats
     //int     _heartbeatRate;     ///< Heartbeat rate, controls the timer interval
     //bool    _heartbeatsEnabled; ///< Enabled/disable heartbeat emission
-//=======
-//>>>>>>> upstream/master
 
     LinkManager*            _linkMgr;
     MultiVehicleManager*    _multiVehicleManager;

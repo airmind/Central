@@ -166,12 +166,8 @@ public:
     Q_PROPERTY(Fact* temperature        READ temperature        CONSTANT)
     Q_PROPERTY(Fact* cellCount          READ cellCount          CONSTANT)
 
-    /// If percentRemaining falls below this value, warning will be output through speech
-    Q_PROPERTY(Fact* percentRemainingAnnounce READ percentRemainingAnnounce CONSTANT)
-
     Fact* voltage                   (void) { return &_voltageFact; }
     Fact* percentRemaining          (void) { return &_percentRemainingFact; }
-    Fact* percentRemainingAnnounce  (void);
     Fact* mahConsumed               (void) { return &_mahConsumedFact; }
     Fact* current                   (void) { return &_currentFact; }
     Fact* temperature               (void) { return &_temperatureFact; }
@@ -182,14 +178,12 @@ public:
 
     static const char* _voltageFactName;
     static const char* _percentRemainingFactName;
-    static const char* _percentRemainingAnnounceFactName;
     static const char* _mahConsumedFactName;
     static const char* _currentFactName;
     static const char* _temperatureFactName;
     static const char* _cellCountFactName;
 
     static const char* _settingsGroup;
-    static const int   _percentRemainingAnnounceDefault;
 
     static const double _voltageUnavailable;
     static const int    _percentRemainingUnavailable;
@@ -206,10 +200,6 @@ private:
     Fact            _currentFact;
     Fact            _temperatureFact;
     Fact            _cellCountFact;
-
-    /// This fact is global to all Vehicles. We must allocated the first time we need it so we don't
-    /// run into QSettings application setup ordering issues.
-    static SettingsFact* _percentRemainingAnnounceFact;
 };
 
 class Vehicle : public FactGroup
@@ -238,9 +228,9 @@ public:
 #endif
 //=======
 
-    // The following is used to create a disconnected Vehicle. A disconnected vehicle is primarily used to access FactGroup information
-    // without needing a real connection.
-    Vehicle(QObject* parent = NULL);
+    // The following is used to create a disconnected Vehicle. Disconnected vehicles are used used to access FactGroup information
+    // without needing a real connection as well as offline mission planning.
+    Vehicle(MAV_AUTOPILOT firmwareType, MAV_TYPE vehicleType, QObject* parent = NULL);
 
 //>>>>>>> upstream/master
     ~Vehicle();
@@ -289,6 +279,11 @@ public:
     Q_PROPERTY(bool                 multiRotor              READ multiRotor                                             CONSTANT)
     Q_PROPERTY(bool                 vtol                    READ vtol                                                   CONSTANT)
     Q_PROPERTY(bool                 rover                   READ rover                                                  CONSTANT)
+    Q_PROPERTY(bool                 supportsManualControl   READ supportsManualControl                                  CONSTANT)
+    Q_PROPERTY(bool        supportsThrottleModeCenterZero   READ supportsThrottleModeCenterZero                         CONSTANT)
+    Q_PROPERTY(bool                 supportsJSButton        READ supportsJSButton                                       CONSTANT)
+    Q_PROPERTY(bool                 supportsRadio           READ supportsRadio                                          CONSTANT)
+    Q_PROPERTY(bool                 sub                     READ sub                                                    CONSTANT)
     Q_PROPERTY(bool                 autoDisconnect          MEMBER _autoDisconnect                                      NOTIFY autoDisconnectChanged)
     Q_PROPERTY(QString              prearmError             READ prearmError            WRITE setPrearmError            NOTIFY prearmErrorChanged)
     Q_PROPERTY(int                  motorCount              READ motorCount                                             CONSTANT)
@@ -306,6 +301,9 @@ public:
 
     /// true: pauseVehicle command is supported
     Q_PROPERTY(bool pauseVehicleSupported READ pauseVehicleSupported CONSTANT)
+
+    /// true: Orbit mode is supported by this vehicle
+    Q_PROPERTY(bool orbitModeSupported READ orbitModeSupported CONSTANT)
 
     // FactGroup object model properties
 
@@ -363,6 +361,13 @@ public:
     /// Command vehicle to change to the specified relatice altitude
     Q_INVOKABLE void guidedModeChangeAltitude(double altitudeRel);
 
+    /// Command vehicle to orbit given center point
+    ///     @param centerCoord Center Coordinates
+    ///     @param radius Distance from vehicle to centerCoord
+    ///     @param velocity Orbit velocity (positive CW, negative CCW)
+    ///     @param altitude Desired Vehicle Altitude
+    Q_INVOKABLE void guidedModeOrbit(const QGeoCoordinate& centerCoord = QGeoCoordinate(), double radius = NAN, double velocity = NAN, double altitude = NAN);
+
     /// Command vehicle to pause at current location. If vehicle supports guide mode, vehicle will be left
     /// in guided mode after pause.
     Q_INVOKABLE void pauseVehicle(void);
@@ -379,14 +384,18 @@ public:
     /// Clear Messages
     Q_INVOKABLE void clearMessages();
 
+#if 0
+    // Temporarily removed, waiting for new command implementation
     /// Test motor
     ///     @param motor Motor number, 1-based
     ///     @param percent 0-no power, 100-full power
     ///     @param timeoutSecs Number of seconds for motor to run
     Q_INVOKABLE void motorTest(int motor, int percent, int timeoutSecs);
+#endif
 
     bool guidedModeSupported(void) const;
     bool pauseVehicleSupported(void) const;
+    bool orbitModeSupported(void) const;
 
     // Property accessors
 
@@ -428,11 +437,21 @@ public:
     /// Sends a message to the specified link
     /// @return true: message sent, false: Link no longer connected
     bool sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
+#ifdef __mindskin__
+    bool sendMessageOnLink(BTSerialLink* link, mavlink_message_t message);
+#endif
 
+    
+#ifndef __mindskin__
     /// Sends a message to the priority link
     /// @return true: message sent, false: Link no longer connected
     bool sendMessageOnPriorityLink(mavlink_message_t message) { return sendMessageOnLink(priorityLink(), message); }
+#else
+    bool sendMessageOnPriorityLink(mavlink_message_t message) ;
 
+#endif
+    
+    
     /// Sends the specified messages multiple times to the vehicle in order to attempt to
     /// guarantee that it makes it to the vehicle.
     void sendMessageMultiple(mavlink_message_t message);
@@ -468,6 +487,12 @@ public:
     bool multiRotor(void) const;
     bool vtol(void) const;
     bool rover(void) const;
+    bool sub(void) const;
+
+    bool supportsManualControl(void) const;
+    bool supportsThrottleModeCenterZero(void) const;
+    bool supportsRadio(void) const;
+    bool supportsJSButton(void) const;
 
     void setFlying(bool flying);
     void setGuidedMode(bool guidedMode);
@@ -645,7 +670,12 @@ private slots:
     //void _sendMessage(mavlink_message_t message);
 //=======
 //>>>>>>> master
+#ifdef __mindskin__
+    void _sendMessageOnLink(BTSerialLink* link, mavlink_message_t message);
+#endif
     void _sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
+
+    
     void _sendMessageMultipleNext(void);
     void _addNewMapTrajectoryPoint(void);
     void _parametersReady(bool parametersReady);

@@ -134,7 +134,9 @@ void MindSkinRootView::showMessage(const QString& msg) {
     //todo: try to get a link to see if its racer or mindpx
     //launch racer by default;
     
-    UIViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"RacerMainMenuViewController" bundle:nil];
+    UIViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
+
+    //UIViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"RacerMainMenuViewController" bundle:nil];
     skinrootcontroller = racermainctlr;
     
     [rootcontroller presentViewController:racermainctlr animated:YES completion:^{

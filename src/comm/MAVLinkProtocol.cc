@@ -250,6 +250,9 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
     // Since receiveBytes signals cross threads we can end up with signals in the queue
     // that come through after the link is disconnected. For these we just drop the data
     // since the link is closed.
+    
+    int cnt =_linkMgr->getBTSeriallinks()->count();
+    
     if (!_linkMgr->getBTSeriallinks()->contains(link)) {
         return;
     }
@@ -521,6 +524,7 @@ void MAVLinkProtocol::receiveBytes(LinkInterface* link, QByteArray b)
     // Since receiveBytes signals cross threads we can end up with signals in the queue
     // that come through after the link is disconnected. For these we just drop the data
     // since the link is closed.
+    
     if (!_linkMgr->links()->contains(link)) {
         return;
     }
