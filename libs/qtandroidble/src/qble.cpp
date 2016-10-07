@@ -64,10 +64,8 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
     if(qgcApp() == NULL) {
         __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->qgcApp() is null is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
     }
-    /*BTSerialLink* blelink = */qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
-    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->createConnectedBLELink is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
+    qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
 
-    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
     if(device) env->ReleaseStringUTFChars(jdevice, device);
     if(service) env->ReleaseStringUTFChars(jservice, service);
     if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
@@ -107,8 +105,6 @@ static void jniDataArrived(JNIEnv *env, jobject thizA, jstring jdevice, jstring 
     QString did = QString::fromUtf8(device);
     QString sid = QString::fromUtf8(service);
     QString cid = QString::fromUtf8(characteristic);
-//    QString sid = QString::fromUtf8(MAV_TRANSFER_SERVICE_UUID);
-//    QString cid = QString::fromUtf8(MAV_TRANSFER_CHARACTERISTIC_UUID);
     BTSerialConfiguration* btconfig = new BTSerialConfiguration(did);
     btconfig->configBLESerialLink(did, did, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
     BTSerialLink* bleLink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
@@ -161,8 +157,6 @@ static void jniRead(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservic
     QString did = QString::fromUtf8(device);
     QString sid = QString::fromUtf8(service);
     QString cid = QString::fromUtf8(characteristic);
-//    QString sid = QString::fromUtf8(MAV_TRANSFER_SERVICE_UUID);
-//    QString cid = QString::fromUtf8(MAV_TRANSFER_CHARACTERISTIC_UUID);
     BTSerialConfiguration* btconfig = new BTSerialConfiguration(did);
     btconfig->configBLESerialLink(did, did, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
     BTSerialLink* bleLink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);

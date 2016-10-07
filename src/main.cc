@@ -260,6 +260,7 @@ int main(int argc, char *argv[])
         if (!app->_initForNormalAppBoot()) {
             return -1;
         }
+        qDebug() << "Enter app event-loop";
         exitCode = app->exec();
     }
 

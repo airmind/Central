@@ -1,4 +1,4 @@
-CONFIG += __mindskin__
+CONFIG += __mindskin__ installer
 # CONFIG += __remotehead__
 # CONFIG += __dronetag__
 
@@ -95,6 +95,9 @@ __mindskin__ {
 
     AndroidBuild {
         message("Adding mindskin Java Classes")
+        message(file1 $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak)
+        message(file2 $${DESTDIR}/../android-build/__qt5__android__files__/src/org/qtproject/qt5/android/bindings/QtActivity.java)
+        message(file 3 $${DESTDIR})
         INCLUDEPATH += BLE/android
         INCLUDEPATH += libs/qtandroidble/src
         HEADERS += \
@@ -124,8 +127,16 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/BTLinkIONative.java \
             $$PWD/android/src/org/airmind/ble/LinkManager.java \
             $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
+            $$PWD/android/src/org/qtproject/qt5/android/bindings/QtActivity.java \
+            $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java
+      DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
+#DebugBuild {
+#      QMAKE_POST_LINK += && cp -fv $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak $${DESTDIR}/android-build/__qt5__android__files__/src/org/qtproject/qt5/android/bindings/QtActivity.java
+#}
+#ReleaseBuild {
+#      QMAKE_POST_LINK += && cp -fv $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak $${DESTDIR}/android-build/src/org/qtproject/qt5/android/bindings/QtActivity.java
+#}
     }
 }
 
-DISTFILES += \
-    $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
+

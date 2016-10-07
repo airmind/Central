@@ -433,33 +433,33 @@ bool QGCApplication::_initForNormalAppBoot(void)
     connect(this, &QGCApplication::lastWindowClosed, this, QGCApplication::quit);
 
 #ifdef __mobile__
+    #ifdef __mindskin__
+        //mindskin entry;
+            //load root window for mindskin;
+            _qmlAppEngine = new QQmlApplicationEngine(this);
+            _qmlAppEngine->addImportPath("qrc:/qml");
+            _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
+            _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
+            _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
+        //    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
 
-#ifdef __mindskin__
-    //mindskin entry;
-    //load root window for mindskin;
-    _qmlAppEngine = new QQmlApplicationEngine(this);
-    _qmlAppEngine->addImportPath("qrc:/qml");
-    _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
-    _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
-    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNativeMindskinRoot.qml")));
-//    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
-
-#ifdef __ios__
-    //launch mindskin;
-    MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
-    skinroot -> launchMindskinUI();
-#endif //__ios__
-#ifdef __android__
-    qDebug()<<"Test from migu";
-    showMessage("Test from migu");
-#endif //__android__
-#else //__mindskin__
-    _qmlAppEngine = new QQmlApplicationEngine(this);
-    _qmlAppEngine->addImportPath("qrc:/qml");
-    _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
-    _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
-    _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
-#endif
+        #ifdef __ios__
+            //launch mindskin;
+            MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
+            skinroot -> launchMindskinUI();
+        #endif //__ios__
+        #ifdef __android__
+//            qDebug()<<"Test from migu";
+//            showMessage("Test from migu");
+            startMindSkinUI();
+        #endif //__android__
+    #else //__mindskin__
+        _qmlAppEngine = new QQmlApplicationEngine(this);
+        _qmlAppEngine->addImportPath("qrc:/qml");
+        _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
+        _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
+        _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
+    #endif
 #else //__mobile__
     // Start the user interface
     MainWindow* mainWindow = MainWindow::_create();
@@ -694,6 +694,7 @@ void QGCApplication::reportMissingParameter(int componentId, const QString& name
 /// Called when the delay timer fires to show the missing parameters warning
 void QGCApplication::_missingParamsDisplay(void)
 {
+    qDebug()<<"_missingParamsDisplay";
     Q_ASSERT(_missingParams.count());
 
     QString params;
@@ -735,6 +736,13 @@ void QGCApplication::cleanJavaException(void)
         env->ExceptionDescribe();
         env->ExceptionClear();
     }
+}
+
+void QGCApplication::startMindSkinUI()
+{
+    qDebug() << "android startMindSkinUI()";
+    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/UsbDeviceJNI", "startMindSkinUI", "()V");
+    cleanJavaException();
 }
 #endif
 

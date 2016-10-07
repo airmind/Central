@@ -53,6 +53,8 @@ public class BluetoothLeService extends Service {
     public final static String EXTRA_DATA =
             "com.example.bluetooth.le.EXTRA_DATA";
 
+    public final static String EXTRA_DATA_BYTEARRAY = "com.example.bluetooth.le.EXTRA_DATA_BYTEARRAY";
+
     public final static UUID UUID_HEART_RATE_MEASUREMENT =
             UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
 
@@ -129,9 +131,20 @@ public class BluetoothLeService extends Service {
             final int heartRate = characteristic.getIntValue(format, 1);
             Log.d(TAG, String.format("Received heart rate: %d", heartRate));
             intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
+        }  if(UUID.fromString(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase()).equals(characteristic.getUuid())) {
+            final byte[] data = characteristic.getValue();
+            if (data != null && data.length > 0) {
+                intent.putExtra(EXTRA_DATA_BYTEARRAY, data);
+                LinkManagerNative.dataArrived(mBluetoothDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase(),data);
+                final StringBuilder stringBuilder = new StringBuilder(data.length);
+                for (byte byteChar : data)
+                    stringBuilder.append(String.format("%02X ", byteChar));
+                intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
+            }
         } else {
             // For all other profiles, writes the data formatted in HEX.
             final byte[] data = characteristic.getValue();
+            intent.putExtra(EXTRA_DATA_BYTEARRAY, data);
             if (data != null && data.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for (byte byteChar : data)

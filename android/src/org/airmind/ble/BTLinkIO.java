@@ -23,10 +23,10 @@ import java.util.UUID;
          System.out.println("write to deviceAddress:" + deviceAddress + ", service-UUID:" +
                  serviceUUID + ", characteristic-uuid:" + characteristicUUID +
                  ", with value:" + (data != null ? new String(data) : "null"));
-         BluetoothGattDescriptor descriptor = characteristicUUID.getDescriptor(
-                 UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
-         descriptor.setValue(data);
-         bluetoothGatt.writeDescriptor(descriptor);
+//         BluetoothGattDescriptor descriptor = characteristicUUID.getDescriptor(
+//                 UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
+//         descriptor.setValue(data);
+//         bluetoothGatt.writeDescriptor(descriptor);
      }
 
      @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)

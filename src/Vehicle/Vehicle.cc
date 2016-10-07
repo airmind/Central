@@ -1171,8 +1171,6 @@ void Vehicle::sendMessage(mavlink_message_t message)
 //>>>>>>> master
 
 #ifdef __mindskin__
-#ifdef __ios__
-
 bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
     //return BLE link as priority;
     
@@ -1221,10 +1219,6 @@ void Vehicle::_sendMessageOnLink(BTSerialLink* link, mavlink_message_t message)
     _messagesSent++;
     emit messagesSentChanged();
 }
-
-
-
-#endif
 #endif  //__mindskin__
 
 bool Vehicle::sendMessageOnLink(LinkInterface* link, mavlink_message_t message)

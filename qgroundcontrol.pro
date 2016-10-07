@@ -65,7 +65,7 @@ CONFIG += \
     silent
 }
 
-QT += \
+QT += core \
     concurrent \
     gui \
     location \
