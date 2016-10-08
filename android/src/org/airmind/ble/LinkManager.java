@@ -17,16 +17,9 @@ public class LinkManager {
     private static BluetoothAdapter bluetoothadapter = null;
     private static BluetoothManager bluetoothManager = null;
     private static BluetoothLeService bluetoothLeService = null;
-    private static LeScanCallback leScanCallback;
-    private static DeviceScanActivity.LeDeviceListAdapter leDeviceListAdapter;
     private static final String TAG = "LinkManager";
     public static void setAdapter(BluetoothAdapter adapter) {
         LinkManager.bluetoothadapter = adapter;
-    }
-
-    public static void setLeDeviceListAdapter(DeviceScanActivity.LeDeviceListAdapter
-                                                      leDeviceListAdapter) {
-        LinkManager.leDeviceListAdapter = leDeviceListAdapter;
     }
 
     /**
@@ -41,11 +34,6 @@ public class LinkManager {
     public static void setBluetoothLeService(BluetoothLeService bluetoothLeService) {
         LinkManager.bluetoothLeService = bluetoothLeService;
     }
-
-    public static void setLeScanCallback(LeScanCallback LeScanCallback ){
-        LinkManager.leScanCallback = LeScanCallback;
-    }
-
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     public static void connect(String deviceAddress, String serviceUUID, String characteristicUUID) {

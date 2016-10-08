@@ -126,19 +126,29 @@ public class DeviceControlActivity extends Activity {
                 public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
                     if (mGattCharacteristics != null) {
                         final BluetoothGattCharacteristic characteristic = mGattCharacteristics.get(groupPosition).get(childPosition);
+                        if(characteristic.getUuid().toString().toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
+//                            new Thread() {
+//                                public void run() {
+//                                    LinkManagerNative.connect(mDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase());
+//                                }
+//                            }.start();
+                        }
                         final int charaProp = characteristic.getProperties();
-                        if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                        if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                            Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" is readable");
                             // If there is an active notification on a characteristic, clear
                             // it first so it doesn't update the data field on the user interface.
-                            if (mNotifyCharacteristic != null) {
-                                mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                                mNotifyCharacteristic = null;
-                            }
+//                            if (mNotifyCharacteristic != null) {
+//                                mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+//                                mNotifyCharacteristic = null;
+//                            }
                             mBluetoothLeService.readCharacteristic(characteristic);
                         }
-                        if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                            mNotifyCharacteristic = characteristic;
+                        if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+//                            mNotifyCharacteristic = characteristic;
+                            Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" can be notified");
                             mBluetoothLeService.setCharacteristicNotification( characteristic, true);
+                            mBluetoothLeService.readCharacteristic(characteristic);
                         }
                         return true;
                     }
@@ -255,6 +265,10 @@ public class DeviceControlActivity extends Activity {
         ArrayList<ArrayList<HashMap<String, String>>> gattCharacteristicData = new ArrayList<ArrayList<HashMap<String, String>>>();
         mGattCharacteristics = new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
 
+        //
+        //
+        boolean foundMavLinkService = false;
+        boolean foundMavLinkChracteristic = false;
         // Loops through available GATT Services.
         for (BluetoothGattService gattService : gattServices) {
 
@@ -276,6 +290,9 @@ public class DeviceControlActivity extends Activity {
 
             if(serviceExist) continue;
 
+            if(uuid != null && uuid.toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase())) {
+                foundMavLinkService = true;
+            }
             currentServiceData.put( LIST_NAME, serviceName);
             Log.d(TAG,"GATT-Service: uuid:" + uuid + ", name:" + serviceName);
             currentServiceData.put(LIST_UUID, uuid);
@@ -296,10 +313,16 @@ public class DeviceControlActivity extends Activity {
                 currentCharaData.put(LIST_UUID, uuid);
                 Log.d(TAG,"GATT-Character: uuid:" + uuid + ", name:" + charName);
                 gattCharacteristicGroupData.add(currentCharaData);
+
+                if(uuid != null && uuid.toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
+                    foundMavLinkChracteristic = true;
+                }
             }
             mGattCharacteristics.add(charas);
             gattCharacteristicData.add(gattCharacteristicGroupData);
         }
+
+        Log.d(TAG,"foundMavLinkService:" + foundMavLinkService + ", foundMavLinkChracteristic:" + foundMavLinkChracteristic);
 
         SimpleExpandableListAdapter gattServiceAdapter = new SimpleExpandableListAdapter(
                 this,

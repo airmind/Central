@@ -89,19 +89,91 @@ public class BluetoothLeService extends Service {
             }
         }
 
+        /**
+         * Callback reporting the result of a characteristic read operation.
+         *
+         * @param gatt GATT client invoked {@link BluetoothGatt#readCharacteristic}
+         * @param characteristic Characteristic that was read from the associated
+         *                       remote device.
+         * @param status {@link BluetoothGatt#GATT_SUCCESS} if the read operation
+         *               was completed successfully.
+         */
         @Override
-        public void onCharacteristicRead(BluetoothGatt gatt,
-                                         BluetoothGattCharacteristic characteristic,
-                                         int status) {
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG,"onCharacteristicRead() for characteristic-uuid:"+characteristic.getUuid().toString());
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
         }
 
+        /**
+         * Callback triggered as a result of a remote characteristic notification.
+         *
+         * @param gatt GATT client the characteristic is associated with
+         * @param characteristic Characteristic that has been updated as a result
+         *                       of a remote notification event.
+         */
         @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt,
-                                            BluetoothGattCharacteristic characteristic) {
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            Log.d(TAG,"onCharacteristicChanged() for characteristic-uuid:"+characteristic.getUuid().toString());
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+        }
+
+        /**
+         * Callback indicating the result of a characteristic write operation.
+         *
+         * <p>If this callback is invoked while a reliable write transaction is
+         * in progress, the value of the characteristic represents the value
+         * reported by the remote device. An application should compare this
+         * value to the desired value to be written. If the values don't match,
+         * the application must abort the reliable write transaction.
+         *
+         * @param gatt GATT client invoked {@link BluetoothGatt#writeCharacteristic}
+         * @param characteristic Characteristic that was written to the associated
+         *                       remote device.
+         * @param status The result of the write operation
+         *               {@link BluetoothGatt#GATT_SUCCESS} if the operation succeeds.
+         */
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        }
+
+        /**
+         * Callback reporting the result of a descriptor read operation.
+         *
+         * @param gatt GATT client invoked {@link BluetoothGatt#readDescriptor}
+         * @param descriptor Descriptor that was read from the associated
+         *                   remote device.
+         * @param status {@link BluetoothGatt#GATT_SUCCESS} if the read operation
+         *               was completed successfully
+         */
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            Log.d(TAG,"onDescriptorRead()=> device:" + gatt.getDevice().getAddress() + ", descriptor:" + descriptor.toString() + ", status:" + status);
+        }
+
+        /**
+         * Callback indicating the result of a descriptor write operation.
+         *
+         * @param gatt GATT client invoked {@link BluetoothGatt#writeDescriptor}
+         * @param descriptor Descriptor that was writte to the associated
+         *                   remote device.
+         * @param status The result of the write operation
+         *               {@link BluetoothGatt#GATT_SUCCESS} if the operation succeeds.
+         */
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            Log.d(TAG,"onDescriptorWrite()=> device:" + gatt.getDevice().getAddress() + ", descriptor:" + descriptor.toString() + ", status:" + status);
+        }
+
+        @Override
+        public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+            Log.d(TAG,"onReadRemoteRssi()=> device:" + gatt.getDevice().getAddress() + ", rssi:" + rssi + ", status:" + status);
+        }
+
+        @Override
+        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+            Log.d(TAG,"onMtuChanged()=> device:" + gatt.getDevice().getAddress() + ", mtu:" + mtu + ", status:" + status);
         }
     };
 
@@ -110,8 +182,7 @@ public class BluetoothLeService extends Service {
         sendBroadcast(intent);
     }
 
-    private void broadcastUpdate(final String action,
-                                 final BluetoothGattCharacteristic characteristic) {
+    private void broadcastUpdate(final String action, final BluetoothGattCharacteristic characteristic) {
 
         final Intent intent = new Intent(action);
 
@@ -131,7 +202,8 @@ public class BluetoothLeService extends Service {
             final int heartRate = characteristic.getIntValue(format, 1);
             Log.d(TAG, String.format("Received heart rate: %d", heartRate));
             intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
-        }  if(UUID.fromString(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase()).equals(characteristic.getUuid())) {
+        }  if(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase().equals(characteristic.getUuid().toString().toLowerCase())) {
+            Log.d(TAG,"get Mavlink notification-value:");
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
                 intent.putExtra(EXTRA_DATA_BYTEARRAY, data);
@@ -140,6 +212,7 @@ public class BluetoothLeService extends Service {
                 for (byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
+                Log.d(TAG,"get Mavlink notification-value:" + stringBuilder.toString());
             }
         } else {
             // For all other profiles, writes the data formatted in HEX.
@@ -290,8 +363,7 @@ public class BluetoothLeService extends Service {
      * @param characteristic Characteristic to act on.
      * @param enabled        If true, enable notification.  False otherwise.
      */
-    public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
-                                              boolean enabled) {
+    public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
@@ -299,9 +371,9 @@ public class BluetoothLeService extends Service {
         mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
 
         // This is specific to Heart Rate Measurement.
-        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
-                    UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
+        if ( UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid()) ||
+             SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase().equals(characteristic.getUuid().toString().toLowerCase())) {
+            BluetoothGattDescriptor descriptor = characteristic.getDescriptor( UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
             mBluetoothGatt.writeDescriptor(descriptor);
         }

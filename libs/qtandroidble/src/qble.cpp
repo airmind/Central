@@ -45,6 +45,16 @@ QT_BEGIN_NAMESPACE
 static const char kJniClassName[] {"org/airmind/ble/BLECommNative"};
 static const char kJTag[] {"QBLE"};
 
+/*
+
+10-08 21:54:26.122 10412-10412/org.mavlink.qgroundcontrol I/QBLE: jniConnect is called, device:6C:6F:39:7A:E4:BD, service:e20a39f4-73f5-4bc4-a12f-17d1ad07a961, characteristic:08590f7e-db05-467e-8757-72f6faeb13d4
+10-08 21:54:26.122 10412-10412/org.mavlink.qgroundcontrol I/QBLE: jniConnect->configBLESerialLink is called, device:6C:6F:39:7A:E4:BD, service:e20a39f4-73f5-4bc4-a12f-17d1ad07a961, characteristic:08590f7e-db05-467e-8757-72f6faeb13d4
+10-08 21:54:26.122 10412-10412/org.mavlink.qgroundcontrol D/QGroundControl: ../Central/BLE/android/BTSerialLink.cc:168 (BTSerialLink::BTSerialLink(BTSerialConfiguration*, MAVLinkProtocol*)): Bluetooth serial comm Created  "6C:6F:39:7A:E4:BD"
+10-08 21:54:26.122 10412-10412/org.mavlink.qgroundcontrol I/LinkManager: createConnectedBLELink to add ble-link
+10-08 21:54:26.123 10412-10412/org.mavlink.qgroundcontrol D/LinkManager: auto connect to device-address:6C:6F:39:7A:E4:BD, service-UUID:E20A39F4-73F5-4BC4-A12F-17D1AD07A961, characteristic-UUID:08590F7E-DB05-467E-8757-72F6FAEB13D4
+10-08 21:54:26.123 10412-10412/org.mavlink.qgroundcontrol D/BluetoothGatt: setCharacteristicNotification() - uuid: 08590f7e-db05-467e-8757-72f6faeb13d4 enable: true
+
+ * */
 static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic)
 {
     Q_UNUSED(thizA);
@@ -54,8 +64,8 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
 
     BTSerialConfiguration* btconfig = new BTSerialConfiguration(QString::fromUtf8(device));
-    QString sid = QString::fromUtf8(MAV_TRANSFER_SERVICE_UUID);
-    QString cid = QString::fromUtf8(MAV_TRANSFER_CHARACTERISTIC_UUID);
+    QString sid = QString::fromUtf8(service);
+    QString cid = QString::fromUtf8(characteristic);
     QString deviceAddress = QString::fromUtf8(device);
     btconfig->configBLESerialLink(deviceAddress, deviceAddress, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->configBLESerialLink is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
