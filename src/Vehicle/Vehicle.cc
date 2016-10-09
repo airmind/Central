@@ -1106,13 +1106,14 @@ void Vehicle::_addLink(LinkInterface* link)
 #ifdef __mindskin__
 bool Vehicle::_containsLink(BTSerialLink* link)
 {
-    foreach (BTSerialLink* alink, _blelinks) {
-        if (alink == link) {
-            return true;
-        }
-    }
+    return _blelinks.contains(link);
+//    foreach (BTSerialLink* alink, _blelinks) {
+//        if (alink == link) {
+//            return true;
+//        }
+//    }
     
-    return false;
+//    return false;
 }
 
 void Vehicle::_addLink(BTSerialLink* link)
@@ -1175,9 +1176,11 @@ bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
     //return BLE link as priority;
     
     if (_blelinks.count()) {
+        qDebug()<<"Vehicle::sendMessageOnPriorityLink for ble";
         return sendMessageOnLink(_blelinks[0], message);
     }
     else {
+        qDebug()<<"Vehicle::sendMessageOnPriorityLink for non-ble";
         return sendMessageOnLink(priorityLink(), message);
     }
 
@@ -1185,10 +1188,21 @@ bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
 
 bool Vehicle::sendMessageOnLink(BTSerialLink* link, mavlink_message_t message)
 {
-    if (!link || !_blelinks.contains(link) || !link->isConnected()) {
+    if (!link) {
+        qDebug()<<"Vehicle::sendMessageOnLink => link is null";
         return false;
     }
-    
+
+    if (!_blelinks.contains(link)) {
+        qDebug()<<"Vehicle::sendMessageOnLink => not contains the link";
+        return false;
+    }
+
+    if (!link->isConnected()) {
+        qDebug()<<"Vehicle::sendMessageOnLink => the link is not connected";
+        return false;
+    }
+    qDebug()<<"Vehicle::sendMessageOnLink => to send mavlink msg on ble link";
     //emit _sendMessageOnLinkOnThread(link, message);
     _sendMessageOnLink(link, message);
     

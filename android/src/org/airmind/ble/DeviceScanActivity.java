@@ -31,6 +31,7 @@ import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
 import android.util.Log;
+import android.view.KeyEvent;
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */

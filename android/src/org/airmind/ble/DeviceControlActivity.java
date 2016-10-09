@@ -127,11 +127,7 @@ public class DeviceControlActivity extends Activity {
                     if (mGattCharacteristics != null) {
                         final BluetoothGattCharacteristic characteristic = mGattCharacteristics.get(groupPosition).get(childPosition);
                         if(characteristic.getUuid().toString().toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
-//                            new Thread() {
-//                                public void run() {
-//                                    LinkManagerNative.connect(mDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase());
-//                                }
-//                            }.start();
+                            BTLinkIO.setPeerMavLinkWriteCharacteristic(characteristic);
                         }
                         final int charaProp = characteristic.getProperties();
                         if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {

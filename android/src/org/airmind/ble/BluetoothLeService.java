@@ -34,6 +34,11 @@ public class BluetoothLeService extends Service {
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
+
+    public String getBluetoothDeviceAddress() {
+        return mBluetoothDeviceAddress;
+    }
+
     private String mBluetoothDeviceAddress;
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
@@ -355,6 +360,45 @@ public class BluetoothLeService extends Service {
             return;
         }
         mBluetoothGatt.readCharacteristic(characteristic);
+    }
+
+//        if (mNotifyCharacteristic != null) {
+//            mBluetoothLeService.setCharacteristicNotification(
+//                    mNotifyCharacteristic, false);
+//            mNotifyCharacteristic = null;
+//        }
+//        mBluetoothLeService.writeCharacteristic(characteristic,value);
+    /**
+     * Request a write on a given {@code BluetoothGattCharacteristic}. The write result is reported
+     * asynchronously through the {@code BluetoothGattCallback#onCharacteristicRead(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
+     * callback.
+     *
+     * @param characteristic The characteristic to write on.
+     */
+    public void writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] value) {
+        if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+            Log.w(TAG, "[writeCharacteristic] BluetoothAdapter not initialized");
+            return;
+        }
+
+        if(characteristic == null) {
+            Log.w(TAG, "[writeCharacteristic] characteristic is null");
+            return;
+        }
+
+        if(value == null) {
+            Log.w(TAG, "[writeCharacteristic] value is null");
+            return;
+        }
+
+        characteristic.setValue(value);
+        /*
+          Writes a given characteristic and its values to the associated remote device.
+         <p>Once the write operation has been completed, the
+         {@link BluetoothGattCallback#onCharacteristicWrite} callback is invoked,
+         reporting the result of the operation.
+        */
+        mBluetoothGatt.writeCharacteristic(characteristic);
     }
 
     /**

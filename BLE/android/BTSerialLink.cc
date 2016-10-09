@@ -352,7 +352,9 @@ void BTSerialLink::_socketError(QAbstractSocket::SocketError socketError)
  **/
 bool BTSerialLink::isConnected() const
 {
-    if (_linkstatus == BLE_LINK_NOT_CONNECTED) {
+
+//    if (_linkstatus == BLE_LINK_NOT_CONNECTED) {
+    if(_config->getBLELinkConnectStage() == BLE_LINK_NOT_CONNECTED) {
         return false;
     }
     return true;
