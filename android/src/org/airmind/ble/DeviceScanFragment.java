@@ -65,7 +65,7 @@ public class DeviceScanFragment extends Activity {
 
         LinkManager.setAdapter(mBluetoothAdapter);
 
-        LinkManager.setLeScanCallback(mLeScanCallback);
+//        LinkManager.setLeScanCallback(mLeScanCallback);
 
 //        LinkManager.setLeDeviceListAdapter(mLeDeviceListAdapter);
 

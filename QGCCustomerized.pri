@@ -115,6 +115,7 @@ __mindskin__ {
             $$PWD/android/res/layout/listitem_device.xml \
             $$PWD/android/res/layout/main_activity.xml \
             $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml \
+            $$PWD/android/res/layout/fragment_comm_selection.xml \
             $$PWD/android/res/menu/gatt_services.xml \
             $$PWD/android/res/menu/main.xml \
             $$PWD/android/res/values/color.xml \
@@ -127,8 +128,10 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/BTLinkIONative.java \
             $$PWD/android/src/org/airmind/ble/LinkManager.java \
             $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
+            $$PWD/android/src/org/airmind/ble/DeviceScanFragment.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtActivity.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java
+
       DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
 #DebugBuild {
 #      QMAKE_POST_LINK += && cp -fv $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak $${DESTDIR}/android-build/__qt5__android__files__/src/org/qtproject/qt5/android/bindings/QtActivity.java

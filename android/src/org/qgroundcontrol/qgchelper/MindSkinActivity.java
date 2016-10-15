@@ -61,7 +61,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.airmind.ble.DeviceScanActivity;
+import org.airmind.ble.DeviceScanFragment;
+//import org.airmind.ble.DeviceScanActivity;
 //import org.airmind.ble.MindSkinActivity;
 //import org.airmind.ble.MindSkinQtActivity;
 //-- Text To Speech
@@ -632,7 +633,7 @@ public class MindSkinActivity extends QtActivity implements TextToSpeech.OnInitL
                     toast.show();
                     break;
                 case MSG_TYPE_START_MINDSKIN_UI:
-                    final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
+                    final Intent intent = new Intent(m_instance, DeviceScanFragment.class);
                     m_instance.startActivity(intent);
                     break;
             }
@@ -649,7 +650,7 @@ public class MindSkinActivity extends QtActivity implements TextToSpeech.OnInitL
           Log.d(TAG, "startMindSkinUI");
           m_handler.postDelayed(new Runnable() {
               public void run() {
-                  final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
+                  final Intent intent = new Intent(m_instance, DeviceScanFragment.class);
                   m_instance.startActivity(intent);
               }
           }, 3000);
