@@ -824,7 +824,7 @@ AndroidBuild {
         $$PWD/android/src/com/hoho/android/usbserial/driver/UsbSerialDriver.java \
         $$PWD/android/src/com/hoho/android/usbserial/driver/UsbSerialProber.java \
         $$PWD/android/src/com/hoho/android/usbserial/driver/UsbSerialRuntimeException.java \
-        $$PWD/android/src/org/qgroundcontrol/qgchelper/UsbDeviceJNI.java \
+        $$PWD/android/src/org/qgroundcontrol/qgchelper/MindSkinActivity.java \
         $$PWD/android/src/org/qgroundcontrol/qgchelper/UsbIoManager.java
 
     DISTFILES += \

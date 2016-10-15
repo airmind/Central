@@ -17,6 +17,16 @@ import QGroundControl   1.0
 Window {
     id:         _rootWindow
     visible:    true
-
+    TextEdit {
+        id:             mindSkinMessageText
+        readOnly:       true
+        text:           "MindSkin"
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        opacity: 1
+        color:"#FF0000"
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode:       TextEdit.WordWrap
+    }
 }
 

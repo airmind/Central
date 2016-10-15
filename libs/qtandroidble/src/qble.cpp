@@ -54,8 +54,8 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
 
     BTSerialConfiguration* btconfig = new BTSerialConfiguration(QString::fromUtf8(device));
-    QString sid = QString::fromUtf8(MAV_TRANSFER_SERVICE_UUID);
-    QString cid = QString::fromUtf8(MAV_TRANSFER_CHARACTERISTIC_UUID);
+    QString sid = QString::fromUtf8(service);
+    QString cid = QString::fromUtf8(characteristic);
     QString deviceAddress = QString::fromUtf8(device);
     btconfig->configBLESerialLink(deviceAddress, deviceAddress, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->configBLESerialLink is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
@@ -109,6 +109,7 @@ static void jniDataArrived(JNIEnv *env, jobject thizA, jstring jdevice, jstring 
     btconfig->configBLESerialLink(did, did, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
     BTSerialLink* bleLink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
     if(bleLink != NULL) {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "jniDataArrived is called, device:%s, service:%s, characteristic:%s, found the link", device, service, characteristic);
         int len = env->GetArrayLength (data);
         char* buf = new char[len];
         env->GetByteArrayRegion (data, 0, len, reinterpret_cast<jbyte*>(buf));

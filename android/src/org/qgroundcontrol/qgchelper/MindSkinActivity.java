@@ -23,7 +23,7 @@ package org.qgroundcontrol.qgchelper;
 //  Written by: Mike Goza April 2014
 //
 //  These routines interface with the Android USB Host devices for serial port communication.
-//  The code uses the usb-serial-for-android software library.  The UsbDeviceJNI class is the
+//  The code uses the usb-serial-for-android software library.  The MindSkinActivity class is the
 //  interface to the C++ routines through jni calls.  Do not change the functions without also
 //  changing the corresponding calls in the C++ routines or you will break the interface.
 //
@@ -66,9 +66,9 @@ import org.airmind.ble.DeviceScanActivity;
 //import org.airmind.ble.MindSkinQtActivity;
 //-- Text To Speech
 
-public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListener {
+public class MindSkinActivity extends QtActivity implements TextToSpeech.OnInitListener {
     public static int BAD_PORT = 0;
-    private static UsbDeviceJNI m_instance;
+    private static MindSkinActivity m_instance;
     private static UsbManager m_manager;    //  ANDROID USB HOST CLASS
     private static List<UsbSerialDriver> m_devices; //  LIST OF CURRENT DEVICES
     private static HashMap<Integer, UsbSerialDriver> m_openedDevices;   //  LIST OF OPENED DEVICES
@@ -77,7 +77,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  USED TO DETECT WHEN A DEVICE HAS BEEN UNPLUGGED
     private BroadcastReceiver m_UsbReceiver = null;
     private final static ExecutorService m_Executor = Executors.newSingleThreadExecutor();
-    private static final String TAG = "QGC_UsbDeviceJNI";
+    private static final String TAG = "QGC_MindSkinActivity";
     private static TextToSpeech m_tts;
     private static PowerManager.WakeLock m_wl;
 
@@ -107,7 +107,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     //  Constructor.  Only used once to create the initial instance for the static functions.
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public UsbDeviceJNI() {
+    public MindSkinActivity() {
         m_instance = this;
         m_openedDevices = new HashMap<Integer, UsbSerialDriver>();
         m_userData = new HashMap<Integer, Integer>();
@@ -193,7 +193,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     public static String[] availableDevicesInfo() {
         //  GET THE LIST OF CURRENT DEVICES
         if (!getCurrentDevices()) {
-            Log.e(TAG, "UsbDeviceJNI instance not present");
+            Log.e(TAG, "MindSkinActivity instance not present");
             return null;
         }
 
@@ -641,7 +641,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
 
     //Android implementation for Qt to showMessage()
     public static void showMessage(String msg) {
-        Log.e(UsbDeviceJNI.class.getName(), "to show message for " + msg);
+        Log.e(MindSkinActivity.class.getName(), "to show message for " + msg);
         m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST, msg));
     }
 
