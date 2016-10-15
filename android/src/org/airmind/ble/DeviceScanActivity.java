@@ -30,6 +30,8 @@ import android.widget.Toast;
 import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
+import java.util.UUID;
+
 import android.util.Log;
 import android.view.KeyEvent;
 /**
@@ -173,7 +175,9 @@ public class DeviceScanActivity extends ListActivity {
             }, SCAN_PERIOD);
 
             mScanning = true;
-            mBluetoothAdapter.startLeScan(mLeScanCallback);
+            UUID[] uuids = {UUID.fromString(SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID)};
+//            mBluetoothAdapter.startLeScan(mLeScanCallback);
+            mBluetoothAdapter.startLeScan(uuids, mLeScanCallback);
         } else {
             mScanning = false;
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
