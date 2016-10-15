@@ -80,7 +80,7 @@ bool GAudioOutput::say(const QString& inText)
     if (!muted && !qgcApp()->runningUnitTests()) {
 #if defined __android__
 #if defined QGC_SPEECH_ENABLED
-        static const char V_jniClassName[] {"org/qgroundcontrol/qgchelper/UsbDeviceJNI"};
+        static const char V_jniClassName[] {"org/qgroundcontrol/qgchelper/MindSkinActivity"};
         QAndroidJniEnvironment env;
         if (env->ExceptionCheck()) {
             env->ExceptionDescribe();

@@ -45,7 +45,7 @@
 #include <android/log.h>
 
 QT_BEGIN_NAMESPACE
-static const char V_jniClassName[] {"org/qgroundcontrol/qgchelper/UsbDeviceJNI"};
+static const char V_jniClassName[] {"org/qgroundcontrol/qgchelper/MindSkinActivity"};
 static const char V_TAG[] {"QGC_QSerialPortInfo"};
 
 extern void cleanJavaException();
