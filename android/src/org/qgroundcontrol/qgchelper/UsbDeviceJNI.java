@@ -45,6 +45,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import android.view.ViewGroup;
 
 import com.hoho.android.usbserial.driver.CdcAcmSerialDriver;
 import com.hoho.android.usbserial.driver.Cp2102SerialDriver;
@@ -53,6 +54,7 @@ import com.hoho.android.usbserial.driver.ProlificSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 
+import org.airmind.view.MindSkinContainer;
 import org.mavlink.qgroundcontrol.R;
 import org.qtproject.qt5.android.bindings.QtActivity;
 
@@ -123,15 +125,15 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_activity);
-        final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
-        Button scanDevice = (Button) findViewById(R.id.ble_scan);
-        scanDevice.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                m_instance.startActivity(intent);
-            }
-        });
+        //        setContentView(R.layout.main_activity);
+        //        final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
+        //        Button scanDevice = (Button) findViewById(R.id.ble_scan);
+        //        scanDevice.setOnClickListener(new View.OnClickListener() {
+        //            @Override
+        //            public void onClick(View view) {
+        //                m_instance.startActivity(intent);
+        //            }
+        //        });
         m_tts = new TextToSpeech(this, this);
         PowerManager pm = (PowerManager) m_instance.getSystemService(Context.POWER_SERVICE);
         m_wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "QGroundControl");
@@ -645,4 +647,14 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
         Log.e(UsbDeviceJNI.class.getName(), "to show message for " + msg);
         m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST, msg));
     }
+
+@Override
+protected void onStart() {
+    super.onStart();
+    ViewGroup view = (ViewGroup) this.findViewById(android.R.id.content);
+    if (view != null) {
+        MindSkinContainer mindSkinContainer = new MindSkinContainer(this, view);
+        view.addView(mindSkinContainer);
+    }
+}
 }

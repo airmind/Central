@@ -118,5 +118,19 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/BLECommNative.java \
             $$PWD/android/src/org/airmind/ble/BLEComm.java \
             $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
+
+            # views
+            $$PWD/android/src/org/airmind/view/BaseFragment.java \
+            $$PWD/android/src/org/airmind/view/FlightFragment.java \
+            $$PWD/android/src/org/airmind/view/MindSkinBaseLayout.java \
+            $$PWD/android/src/org/airmind/view/MindSkinContainer.java \
+            $$PWD/android/src/org/airmind/view/MindSkinLayout.java \
+            # xml layout
+            $$PWD/android/res/layout/activity_qt.xml \
+            $$PWD/android/res/layout/fragment_flight.xml \
+            $$PWD/android/res/layout/include_qt_content.xml \
+            #drawable
+            $$PWD/android/res/drawable \
+
     }
 }
