@@ -17,15 +17,16 @@
             />
 
         <Button
-            android:id="@+id/selection"
+            android:id="@+id/scan"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="200dp"
-            android:text="BLE"/>
+            android:text="Scan"/>
     </FrameLayout>
 
     <ListView
+        android:id="@+id/device_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="2"/>

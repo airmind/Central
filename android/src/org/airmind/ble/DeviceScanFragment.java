@@ -17,12 +17,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 /**
  * Created by caprin on 16-10-15.
@@ -39,16 +41,20 @@ public class DeviceScanFragment extends Activity {
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
     public static final String TAG = "DeviceScanActivity";
-    Button connect = null;
+    Button scan = null;
+    private ListView deviceList;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.fragment_comm_selection);
-//        getActionBar().setTitle(R.string.title_devices);
-//        mHandler = new Handler();
+
+        deviceList = (ListView) findViewById(R.id.device_list);
+
+        scan = (Button) findViewById(R.id.scan);
+
+        mHandler = new Handler();
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -64,10 +70,6 @@ public class DeviceScanFragment extends Activity {
         mBluetoothAdapter = bluetoothManager.getAdapter();
 
         LinkManager.setAdapter(mBluetoothAdapter);
-
-//        LinkManager.setLeScanCallback(mLeScanCallback);
-
-//        LinkManager.setLeDeviceListAdapter(mLeDeviceListAdapter);
 
         // Checks if Bluetooth is supported on the device.
         if (mBluetoothAdapter == null) {
@@ -88,6 +90,19 @@ public class DeviceScanFragment extends Activity {
             }
         }
 
+        scan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mBluetoothAdapter.isEnabled()) {
+                    scanLeDevice(true);
+                } else {
+                    scanLeDevice(false);
+                }
+            }
+        });
+
+        mLeDeviceListAdapter = new LeDeviceListAdapter();
+        deviceList.setAdapter(mLeDeviceListAdapter);
     }
 
     @Override
@@ -102,7 +117,30 @@ public class DeviceScanFragment extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        scanLeDevice(false);
+    }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+    private void scanLeDevice(final boolean enable) {
+        if (enable) {
+            // Stops scanning after a pre-defined scan period.
+            mHandler.postDelayed(new Runnable() {
+                @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+                @Override
+                public void run() {
+                    mScanning = false;
+                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                }
+            }, SCAN_PERIOD);
+
+            mScanning = true;
+//            UUID[] uuids = {UUID.fromString(SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID)};
+            mBluetoothAdapter.startLeScan(mLeScanCallback);
+//            mBluetoothAdapter.startLeScan(uuids, mLeScanCallback);
+        } else {
+            mScanning = false;
+            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+        }
     }
 
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
