@@ -132,6 +132,19 @@ __mindskin__ {
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtActivity.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java
 
+            # views
+            $$PWD/android/src/org/airmind/view/BaseFragment.java \
+            $$PWD/android/src/org/airmind/view/FlightFragment.java \
+            $$PWD/android/src/org/airmind/view/MindSkinBaseLayout.java \
+            $$PWD/android/src/org/airmind/view/MindSkinContainer.java \
+            $$PWD/android/src/org/airmind/view/MindSkinLayout.java \
+            # xml layout
+            $$PWD/android/res/layout/activity_qt.xml \
+            $$PWD/android/res/layout/fragment_flight.xml \
+            $$PWD/android/res/layout/include_qt_content.xml \
+            #drawable
+            $$PWD/android/res/drawable \
+
       DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
 #DebugBuild {
 #      QMAKE_POST_LINK += && cp -fv $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak $${DESTDIR}/android-build/__qt5__android__files__/src/org/qtproject/qt5/android/bindings/QtActivity.java
