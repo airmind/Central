@@ -25,7 +25,7 @@ public class LinkManager {
     /**
      * called when app starts up and auto-connect BLE device/service/characteristic which has
      * ever been connnected before
-     */
+    */
 
     public static void setBluetoothManager(BluetoothManager bluetoothManager) {
         LinkManager.bluetoothManager = bluetoothManager;

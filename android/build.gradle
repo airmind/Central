@@ -36,15 +36,15 @@ android {
      * Changing them manually might break the compilation!
      *******************************************************/
 
-    compileSdkVersion androidCompileSdkVersion.toInteger()
+    compileSdkVersion 24
 
-    buildToolsVersion '23.0.0'
+    buildToolsVersion '24.0.0'
 
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
             /*java.srcDirs = [qt5AndroidDir + '/src', 'src', 'java']*/
-            java.srcDirs = ['src', 'java']
+            java.srcDirs = ['src', 'java', 'src/Mavlink/src']
             aidl.srcDirs = [qt5AndroidDir + '/src', 'src', 'aidl']
             res.srcDirs = [qt5AndroidDir + '/res', 'res']
             resources.srcDirs = ['src']
