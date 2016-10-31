@@ -17,6 +17,7 @@ allprojects {
 apply plugin: 'com.android.application'
 
 dependencies {
+    compile project(':mavlink')
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:23.0.0'
     compile 'com.android.support:support-v4:23.0.0'
@@ -36,15 +37,15 @@ android {
      * Changing them manually might break the compilation!
      *******************************************************/
 
-    compileSdkVersion 24
+    compileSdkVersion androidCompileSdkVersion.toInteger()
 
-    buildToolsVersion '24.0.0'
+    buildToolsVersion androidBuildToolsVersion
 
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
             /*java.srcDirs = [qt5AndroidDir + '/src', 'src', 'java']*/
-            java.srcDirs = ['src', 'java', 'src/Mavlink/src']
+            java.srcDirs = ['src', 'java']
             aidl.srcDirs = [qt5AndroidDir + '/src', 'src', 'aidl']
             res.srcDirs = [qt5AndroidDir + '/res', 'res']
             resources.srcDirs = ['src']
@@ -57,4 +58,10 @@ android {
     lintOptions {
         abortOnError false
     }
+
+/*    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+*/
 }

@@ -29,10 +29,7 @@ DebugBuild {
 }
 
 # Load additional config flags from user_config.pri
-exists(user_config.pri):infile(user_config.pri, CONFIG) {
-    CONFIG += $$fromfile(user_config.pri, CONFIG)
-    message($$sprintf("Using user-supplied additional config: '%1' specified in user_config.pri", $$fromfile(user_config.pri, CONFIG)))
-}
+exists(user_config.pri):include(user_config.pri)
 
 # Bluetooth
 contains (DEFINES, QGC_DISABLE_BLUETOOTH) {

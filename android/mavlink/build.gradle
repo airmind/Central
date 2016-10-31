@@ -1,0 +1,14 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+sourceSets {
+    main {
+        java.srcDirs = ['src']
+    }
+}
+
+jar {
+    destinationDir (new File("${rootDir}/libs"))
+}
