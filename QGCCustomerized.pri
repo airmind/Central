@@ -6,7 +6,8 @@ iOSBuild:__mindskin__ {
 }
 
 __mindskin__ {
-    INCLUDEPATH += BLE
+    INCLUDEPATH += BLE mindskin
+    HEADERS += $$PWD/mindskin/mindskinlog.h
     iOSBuild {
         INCLUDEPATH += BLE/ios
         HEADERS += \
@@ -98,5 +99,3 @@ __mindskin__ {
       DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
     }
 }
-
-

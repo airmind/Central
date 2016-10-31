@@ -29,7 +29,10 @@ DebugBuild {
 }
 
 # Load additional config flags from user_config.pri
-exists(user_config.pri):include(user_config.pri)
+exists(user_config.pri) {
+message("To include user_config.pri")
+include(user_config.pri)
+}
 
 # Bluetooth
 contains (DEFINES, QGC_DISABLE_BLUETOOTH) {

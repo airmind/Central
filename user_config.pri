@@ -1,4 +1,4 @@
-CONFIG += __mindskin__ installer
+CONFIG += __mindskin__
 # CONFIG += __remotehead__
 # CONFIG += __dronetag__
 
@@ -15,6 +15,7 @@ __mindskin__ {
     }
 
     DEFINES += __mindskin__
+    DEFINES += __mindskin_DEBUG__
 #exclusive macro
     DEFINES -= __remotehead__
 }
@@ -37,3 +38,5 @@ __remotehead__ {
     DEFINES -= __mindskin__
 
 }
+
+message(DEFINES $${DEFINES})

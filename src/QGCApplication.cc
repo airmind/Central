@@ -29,6 +29,10 @@
 #include <QBluetoothLocalDevice>
 #endif
 
+#ifdef __mindskin__
+#include <mindskinlog.h>
+#endif
+
 #if defined (__mindskin__) && defined(__ios__)
 #include "MindSkinRootView.h"
 #endif
@@ -451,6 +455,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
         #ifdef __android__
 //            qDebug()<<"Test from migu";
 //            showMessage("Test from migu");
+            MINDSKIN_Log()<<"to call startMindSkinUI()";
             startMindSkinUI();
         #endif //__android__
     #else //__mindskin__
