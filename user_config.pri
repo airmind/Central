@@ -37,37 +37,3 @@ __remotehead__ {
     DEFINES -= __mindskin__
 
 }
-__mindskin__ {
-    INCLUDEPATH += BLE
-    iOSBuild {
-        INCLUDEPATH += BLE/ios
-        HEADERS += \
-            BLE/ios/BTSerialLink_objc.h \
-            BLE/BTSerialLink.h \
-            mindskin/tagNodesManager.h \
-            mindskin/ios/qt2ioshelper.h \
-            mindskin/ios/ConnectPopover.h \
-            mindskin/ios/ConnectPopoverViewController.h \
-            mindskin/ios/MindStickButton.h \
-            mindskin/ios/MindStickButtonViewController.h \
-            mindskin/MindSkinRootView.h \
-            mindskin/ios/MindSkinRootView_impl_objc.h \
-            mindskin/ios/tagNodesViewController.h \
-            mindskin/ios/mindskinMessageViewController.h \
-            mindskin/ios/RacerMainMenuView.h \
-            mindskin/ios/RacerMainMenuViewController.h
-
-        DebugBuild {
-            HEADERS += \
-                mindskin/ios/BLEDebugTextView.h \
-                mindskin/ios/BLEDebugTextViewController.h
-        }
-    }
-
-    AndroidBuild {
-        INCLUDEPATH += BLE/android
-        INCLUDEPATH += libs/qtandroidble/src
-        HEADERS +=  $$PWD/libs/qtandroidble/src/qble.h \
-                    $$PWD/BLE/BTSerialLink.h
-    }
-}

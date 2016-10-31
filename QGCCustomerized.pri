@@ -1,43 +1,3 @@
-CONFIG += __mindskin__ installer
-# CONFIG += __remotehead__
-# CONFIG += __dronetag__
-
-# Airmind - mind skin
-__mindskin__ {
-    message ("Use mind skin")
-
-    DebugBuild {
-        DEFINES += _BLE_DEBUG_
-    }
-
-    __dronetag__ {
-        DEFINES += __dronetag__
-    }
-
-    DEFINES += __mindskin__
-#exclusive macro
-    DEFINES -= __remotehead__
-}
-
-# Airmind - BLE
-contains (DEFINES, __mindble__) {
-    message ("Enable BLE")
-}
-
-# Airmind - Remote Head
-__remotehead__ {
-    message ("Use remote head")
-
-    DebugBuild {
-    DEFINES += _REMOTEHEAD_DEBUG_
-    }
-
-    DEFINES += __remotehead__
-#exclusive macro
-    DEFINES -= __mindskin__
-
-}
-
 iOSBuild:__mindskin__ {
     BUNDLE.files       += $$PWD/mindskin/ios/TagNodesViewController.xib
     BUNDLE.files       += $$PWD/mindskin/ios/RacerMainMenuViewController.xib
@@ -89,15 +49,9 @@ __mindskin__ {
                 mindskin/ios/BLEDebugTextViewController.mm \
 
         }
-
-
     }
 
     AndroidBuild {
-        message("Adding mindskin Java Classes")
-        message(file1 $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak)
-        message(file2 $${DESTDIR}/../android-build/__qt5__android__files__/src/org/qtproject/qt5/android/bindings/QtActivity.java)
-        message(file 3 $${DESTDIR})
         INCLUDEPATH += BLE/android
         INCLUDEPATH += libs/qtandroidble/src
         HEADERS += \
@@ -130,28 +84,18 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
             $$PWD/android/src/org/airmind/ble/DeviceScanFragment.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtActivity.java \
-            $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java
-
-            # views
+            $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java \
             $$PWD/android/src/org/airmind/view/BaseFragment.java \
             $$PWD/android/src/org/airmind/view/FlightFragment.java \
             $$PWD/android/src/org/airmind/view/MindSkinBaseLayout.java \
             $$PWD/android/src/org/airmind/view/MindSkinContainer.java \
             $$PWD/android/src/org/airmind/view/MindSkinLayout.java \
-            # xml layout
             $$PWD/android/res/layout/activity_qt.xml \
             $$PWD/android/res/layout/fragment_flight.xml \
             $$PWD/android/res/layout/include_qt_content.xml \
-            #drawable
             $$PWD/android/res/drawable \
 
       DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
-#DebugBuild {
-#      QMAKE_POST_LINK += && cp -fv $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak $${DESTDIR}/android-build/__qt5__android__files__/src/org/qtproject/qt5/android/bindings/QtActivity.java
-#}
-#ReleaseBuild {
-#      QMAKE_POST_LINK += && cp -fv $${BASEDIR}/android/src/org/qtproject/qt5/android/bindings/QtActivity.java.bak $${DESTDIR}/android-build/src/org/qtproject/qt5/android/bindings/QtActivity.java
-#}
     }
 }
 
