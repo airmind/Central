@@ -1,8 +1,5 @@
 #ifndef MINDSKINLOG_H
 #define MINDSKINLOG_H
-#ifdef __mindskin_DEBUG__
-#include <QDebug>
-#define MINDSKIN_Log qDebug
-#endif
+void MINDSKIN_Log(const char *msg, ...);
 #endif // MINDSKINLOG_H
 

@@ -455,7 +455,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
         #ifdef __android__
 //            qDebug()<<"Test from migu";
 //            showMessage("Test from migu");
-            MINDSKIN_Log()<<"to call startMindSkinUI()";
+            MINDSKIN_Log("to call startMindSkinUI()");
             startMindSkinUI();
         #endif //__android__
     #else //__mindskin__

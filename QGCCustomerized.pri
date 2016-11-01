@@ -39,6 +39,7 @@ __mindskin__ {
             mindskin/ios/mindskinMessageViewController.mm \
             mindskin/ios/RacerMainMenuView.m \
             mindskin/ios/RacerMainMenuViewController.m \
+            mindskin/ios/mindskinlog.mm \
 
 
         DebugBuild {
@@ -61,7 +62,8 @@ __mindskin__ {
 
         SOURCES += \
             BLE/android/BTSerialLink.cc \
-             $$PWD/libs/qtandroidble/src/qble.cpp
+            $$PWD/libs/qtandroidble/src/qble.cpp \
+            mindskin/android/mindskinlog.cc \
 
         ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
         OTHER_FILES += \
