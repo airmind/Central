@@ -122,6 +122,30 @@ static void jniDataArrived(JNIEnv *env, jobject thizA, jstring jdevice, jstring 
     if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
 }
 
+static void jniDiscover(JNIEnv *env, jobject thizA)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniDiscover is called");
+    qgcApp()->toolbox()->linkManager()->discoverBTLinks(0);
+}
+
+static void jniDidDiscover(JNIEnv *env, jobject thizA)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniDidDiscover is called");
+    qgcApp()->toolbox()->linkManager()->didDiscoverBLELinks(0,0);
+}
+
+static void jniStopScanning(JNIEnv *env, jobject thizA)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniStopScanning is called");
+    qgcApp()->toolbox()->linkManager()->stopScanning();
+}
+
 static void jniWrite(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic, jbyteArray data)
 {
     Q_UNUSED(thizA);
@@ -228,7 +252,10 @@ void QBLE::setNativeMethods(void)
     JNINativeMethod linkManagerNativeMethods[] {
         {"connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnect)},
         {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
-        {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)}
+        {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)},
+        {"discover","(V)V",reinterpret_cast<void *>(jniDiscover)},
+        {"didDiscover","(V)V",reinterpret_cast<void *>(jniDidDiscover)},
+        {"stopScanning","(V)V",reinterpret_cast<void *>(jniStopScanning)}
     };
     setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods, sizeof(linkManagerNativeMethods)/sizeof(linkManagerNativeMethods[0]));
 

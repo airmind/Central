@@ -49,7 +49,7 @@ MainToolBarController::MainToolBarController(QObject* parent)
     connect(qgcApp()->toolbox()->mavlinkProtocol(),     &MAVLinkProtocol::radioStatusChanged, this, &MainToolBarController::_telemetryChanged);
 
 #else
-#ifdef __ios__
+#if defined(__ios__) || defined(__android__)
     //has to use static cast for overloaded signals. Qt is terrible ...
     /*connect(qgcApp()->toolbox()->linkManager(),     static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkConnected),            this, static_cast<void (MainToolBarController::*)(LinkInterface*)>(&MainToolBarController::_linkConnected));
     
@@ -155,13 +155,15 @@ void MainToolBarController::onConnect(QString conf)
 }
 */
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 void MainToolBarController::onConnectTapped(QString conf)
 {
+    Q_UNUSED(conf);
 }
 
 void MainToolBarController::onConnectTappedDismiss(QString conf)
 {
+    Q_UNUSED(conf);
 }
 
 /***
@@ -206,27 +208,31 @@ void _bleLinkRSSIUpdated (void* peripheral_link_list) {
 */
 
 void MainToolBarController::_linkConnected                 (BTSerialLink* link) {
+#ifdef __ios__
     //_updateConnection();
     //dismiss popover;
     popover->dismissPopover();
-    
+
     //show mindstick button;
     mindstickButton = new MindStickButton();
     mindstickButton->showButton();
-    
-#ifdef _BLE_DEBUG_
-    //pop up debug view;
-    BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
-    debugview->presentDebugView();
-    QString line ="BLE link connected.";
-    debugview->addline(line);
-    
+
+    #ifdef _BLE_DEBUG_
+        //pop up debug view;
+        BLEDebugTextView* debugview = qgcApp()->toolbox()->linkManager()->openDebugView();
+        debugview->presentDebugView();
+        QString line ="BLE link connected.";
+        debugview->addline(line);
+
+    #endif
 #endif
-    
-    
+#ifdef __android__
+    Q_UNUSED(link);
+#endif
 }
 
 void MainToolBarController::_linkDisconnected              (BTSerialLink* link) {
+#ifdef __ios__
     //_updateConnection();
     
     //delete mindstick button;
@@ -235,17 +241,28 @@ void MainToolBarController::_linkDisconnected              (BTSerialLink* link) 
         delete mindstickButton;
         mindstickButton = NULL;
     }
-    
-    
+#endif
+#ifdef __android__
+    Q_UNUSED(link);
+    //TBD
+#endif
 }
 
 
 void MainToolBarController::_peripheralsDiscovered(void* inrangelist, void* outrangelist) {
+#ifdef __ios__
     popover->peripheralsDiscovered(inrangelist, outrangelist);
+#endif
+#ifdef __android__
+    Q_UNUSED(inrangelist);
+    Q_UNUSED(outrangelist);
+    //TBD
+#endif
 }
 
 
 void MainToolBarController::_bleLinkRSSIUpdated (void* peripheral_link_list) {
+    Q_UNUSED(peripheral_link_list);
     //update RSSI value in UI;
 }
 

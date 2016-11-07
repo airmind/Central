@@ -44,4 +44,12 @@ public class LinkManager {
             bluetoothLeService.connect(deviceAddress);
         }
     }
+
+    public static void discover() {
+        Log.d(TAG, "discover is called");
+    }
+
+    public static void stopScanning() {
+        Log.d(TAG, "stopScanning is called");
+    }
 }

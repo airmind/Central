@@ -40,6 +40,9 @@
 #ifdef __android__
 #include <android/log.h>
 static const char kJTag[] {"LinkManager"};
+#include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras/QAndroidJniEnvironment>
+extern void cleanJavaException(void);
 #endif
 QGC_LOGGING_CATEGORY(LinkManagerLog, "LinkManagerLog")
 QGC_LOGGING_CATEGORY(LinkManagerVerboseLog, "LinkManagerVerboseLog")
@@ -112,27 +115,46 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 }
 
 #ifdef __mindskin__
-#ifdef __ios__
 //for BT LE;
 bool LinkManager::discoverBTLinks(void* delegate) {
-    if (blehelper == NULL) {
-        //create blehelper object;
-        blehelper = new BLEHelper();
-    }
-    blehelper->discover(delegate);
+    #ifdef __ios__
+        if (blehelper == NULL) {
+            //create blehelper object;
+            blehelper = new BLEHelper();
+        }
+        blehelper->discover(delegate);
+    #endif
+    #ifdef __android__
+        Q_UNUSED(delegate);
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "discover", "(V)V" );
+        cleanJavaException();
+    #endif
+    return true;
 }
 
 bool LinkManager::stopScanning() {
-    blehelper->stopScanning();
+    #ifdef __ios__
+        blehelper->stopScanning();
+    #endif
+    #ifdef __android__
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "stopScanning", "(V)V" );
+        cleanJavaException();
+    #endif
+    return true;
 }
 
 void LinkManager::setCallbackDelegate(void* delegate) {
-    if(blehelper==NULL) {
-        blehelper = new BLEHelper();
-    }
-    blehelper->setCallbackDelegate(delegate);
+    #ifdef __ios__
+        if(blehelper==NULL) {
+            blehelper = new BLEHelper();
+        }
+        blehelper->setCallbackDelegate(delegate);
+    #endif
+    #ifdef __android__
+            Q_UNUSED(delegate);
+    #endif
 }
-#endif
+
 BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config){
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
@@ -169,12 +191,18 @@ BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg)
     return NULL;
 }
 
-bool LinkManager::connectBLELink(BTSerialLink* link) { }
+bool LinkManager::connectBLELink(BTSerialLink* link) {
+    Q_UNUSED(link);
+    return true;
+}
 
-bool LinkManager::disconnectBLELink(BTSerialLink* link) {  }
+bool LinkManager::disconnectBLELink(BTSerialLink* link) {
+    Q_UNUSED(link);
+    return true;
+}
 
 //new signal - have a try;
-#ifdef __ios__
+#if defined(__ios__) || defined(__android__)
 void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
     //inrangelist/outrangelist have platform dependent types so can not use directly in implementation. needs type conversion.
     emit peripheralsDiscovered(inrangelist, outrangelist);
@@ -197,7 +225,7 @@ void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
     emit linkDisconnected(blelink);
 }
 
-#ifdef __ios__
+#if defined(__ios__)||defined(__android__)
 void LinkManager::didUpdateConnectedBLELinkRSSI(void* peripheral_link_list) {
     emit bleLinkRSSIUpdated (peripheral_link_list);
 }

@@ -149,7 +149,7 @@ public:
     //const QList<BTSerialLink*> getBTSerialLinks();
     QmlObjectListModel* getBTSeriallinks               (void) { return &_blelinks; }
 
- #ifdef __ios__
+ #if defined(__ios__)||defined(__android__)
     //for link operation call backs;
     void setCallbackDelegate(void*);
     bool discoverBTLinks(void * delegate);
@@ -157,6 +157,7 @@ public:
     bool discoverCharacteristics(void*);
     bool stopScanning();
  #endif
+
     BTSerialLink* createConnectedBLELink(BTSerialConfiguration* config);
     BTSerialLink* createConnectedBLELink(const QString& identifier);
     //void didDiscoverBTLinks(QStringList* ids);
@@ -175,7 +176,7 @@ public:
     void didDisconnectBLELink(BTSerialLink* blelink);
     
     //have a try;
- #ifdef __ios__
+ #if defined(__ios__)||defined(__android__)
     void didDiscoverBLELinks(void* inrangelist, void* outrangelist);
     
     /// use Qt signal instead ?
@@ -283,7 +284,7 @@ signals:
     void linkConnected(BTSerialLink* link);
     void linkDisconnected(BTSerialLink* link);
     //new signal for discovering;
- #ifdef __ios__
+ #if defined(__ios__) || defined(__android__)
     void peripheralsDiscovered(void* inrangelist, void* outrangelist);
     void bleLinkRSSIUpdated (void* peripheral_link_list);
  #endif

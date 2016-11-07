@@ -1,7 +1,7 @@
 #include <mindskinlog.h>
 #include <QDebug>
 
-void MINDSKIN_Log(const char *msg, ...) {
+void MSLog(const char *msg, ...) {
     #ifndef __mindskin_DEBUG__
         return;
     #endif
