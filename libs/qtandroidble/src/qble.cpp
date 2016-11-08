@@ -130,12 +130,62 @@ static void jniDiscover(JNIEnv *env, jobject thizA)
     qgcApp()->toolbox()->linkManager()->discoverBTLinks(0);
 }
 
-static void jniDidDiscover(JNIEnv *env, jobject thizA)
+static void jniDidDiscover(JNIEnv *env, jobject thizA, jstring inRangeFileName, jstring outRangeFileName)
 {
     Q_UNUSED(env);
     Q_UNUSED(thizA);
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniDidDiscover is called");
+    const char* inFName = env->GetStringUTFChars(inRangeFileName, NULL);
+    const char* outFName = env->GetStringUTFChars(outRangeFileName, NULL);
+
+    QString inF = QString::fromUtf8(inFName);
+    QString outF = QString::fromUtf8(outFName);
+
+    QFile inRangeFile(inF);
+    bool validInRangeFile = false;
+    QString line;
+    if(inRangeFile.exists()) {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniDidDiscover] to handle inRangeFile:%s",inFName);
+        if(inRangeFile.size() > 0) {
+            if(inRangeFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                validInRangeFile = true;
+                QTextStream in(&inRangeFile);
+                while(!in.atEnd()) {
+                    line =in.readLine();
+                    __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniDidDiscover.inRange] %s",line.toLatin1().data());
+                }
+                inRangeFile.close();
+            }
+
+        }
+    }
+
+    QFile outRangeFile(outF);
+    bool validOutRangeFile = false;
+    if(outRangeFile.exists()) {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniDidDiscover] to handle outRangeFile:%s",outFName);
+        if(outRangeFile.size() > 0) {
+            if(outRangeFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                validOutRangeFile = true;
+                QTextStream out(&outRangeFile);
+                while(!out.atEnd()) {
+                    line = out.readLine();
+                    __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniDidDiscover.outRange] %s",line.toLatin1().data());
+                }
+                outRangeFile.close();
+            }
+        }
+    }
+
+    if(!validInRangeFile && !validOutRangeFile) {
+        goto done;
+    }
+
     qgcApp()->toolbox()->linkManager()->didDiscoverBLELinks(0,0);
+
+done:
+    if(inFName) env->ReleaseStringUTFChars(inRangeFileName, inFName);
+    if(outFName) env->ReleaseStringUTFChars(outRangeFileName, outFName);
 }
 
 static void jniStopScanning(JNIEnv *env, jobject thizA)
@@ -254,7 +304,7 @@ void QBLE::setNativeMethods(void)
         {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
         {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)},
         {"discover","(V)V",reinterpret_cast<void *>(jniDiscover)},
-        {"didDiscover","(V)V",reinterpret_cast<void *>(jniDidDiscover)},
+        {"didDiscover","((Ljava/lang/String;(Ljava/lang/String;)V",reinterpret_cast<void *>(jniDidDiscover)},
         {"stopScanning","(V)V",reinterpret_cast<void *>(jniStopScanning)}
     };
     setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods, sizeof(linkManagerNativeMethods)/sizeof(linkManagerNativeMethods[0]));
