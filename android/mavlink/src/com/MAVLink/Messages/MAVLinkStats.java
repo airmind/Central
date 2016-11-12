@@ -25,6 +25,7 @@ public class MAVLinkStats /* implements Serializable */{
     /**
      * Check the new received packet to see if has lost someone between this and
      * the last packet
+     *
      * 
      * @param packet
      *            Packet that should be checked
