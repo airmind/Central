@@ -17,4 +17,9 @@ public class LinkManagerNative {
 
     //After got the data from peer-BLE, notify qt-c++ side of the data-arrival
     public static native void dataArrived(String deviceAddress, String serviceUUID, String characteristicUUID, byte[] dataA);
+
+    /**
+    * connect to uav via tcp socket
+    */
+    public static native void tcpConnect(String host, int port);
 }

@@ -52,4 +52,8 @@ public class LinkManager {
     public static void stopScanning() {
         Log.d(TAG, "stopScanning is called");
     }
+
+    public static void tcpConnected(String host, int port) {
+        Log.d(TAG, "[tcpConnected] host:" + host + ", port:" + port);
+    }
 }

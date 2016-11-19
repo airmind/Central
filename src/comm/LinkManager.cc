@@ -602,6 +602,20 @@ void LinkManager::setConnectionsSuspended(QString reason)
 void LinkManager::_linkConnected(void)
 {
     emit linkConnected((LinkInterface*)sender());
+    #ifdef __mindskin__
+        #ifdef __android__
+            LinkInterface* link = (LinkInterface*)sender();
+            LinkConfiguration* linkCfg = link->getLinkConfiguration();
+            if(linkCfg->type() == LinkConfiguration::TypeTcp) {
+                TCPConfiguration* tcpLinkCfg = (TCPConfiguration*)linkCfg;
+                QString host = tcpLinkCfg->host();
+                int port = tcpLinkCfg->port();
+                QAndroidJniObject jHost = QAndroidJniObject::fromString(host);
+                QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "tcpConnected", "(Ljava/lang/String;I)V", jHost.object<jstring>(), port);
+                cleanJavaException();
+            }
+        #endif //__android__
+    #endif
 }
 
 void LinkManager::_linkDisconnected(void)

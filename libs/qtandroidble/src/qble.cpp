@@ -188,6 +188,26 @@ done:
     if(outFName) env->ReleaseStringUTFChars(outRangeFileName, outFName);
 }
 
+static void jniTcpConnect(JNIEnv *env, jobject thizA, jstring host, jint port)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniTcpConnect is called");
+
+    static int tcpLinkIndex = 0;
+    const char* chost = env->GetStringUTFChars(host, NULL);
+    QString sHost = QString::fromUtf8(chost);
+    QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",chost, tcpLinkIndex++);
+    LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
+    TCPConfiguration* tcpConfig = (TCPConfiguration*)linkConfig;
+    tcpConfig->setHost(sHost);
+    tcpConfig->setPort((quint16)port);
+    qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
+    qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
+
+    if(chost) env->ReleaseStringUTFChars(host, chost);
+}
+
 static void jniStopScanning(JNIEnv *env, jobject thizA)
 {
     Q_UNUSED(env);
@@ -304,8 +324,9 @@ void QBLE::setNativeMethods(void)
         {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
         {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)},
         {"discover","(V)V",reinterpret_cast<void *>(jniDiscover)},
-        {"didDiscover","((Ljava/lang/String;(Ljava/lang/String;)V",reinterpret_cast<void *>(jniDidDiscover)},
-        {"stopScanning","(V)V",reinterpret_cast<void *>(jniStopScanning)}
+        {"didDiscover","(Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniDidDiscover)},
+        {"stopScanning","(V)V",reinterpret_cast<void *>(jniStopScanning)},
+        {"tcpConnect", "(Ljava/lang/String;I)V",reinterpret_cast<void *>(jniTcpConnect)}
     };
     setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods, sizeof(linkManagerNativeMethods)/sizeof(linkManagerNativeMethods[0]));
 
