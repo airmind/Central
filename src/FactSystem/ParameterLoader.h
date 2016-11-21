@@ -107,7 +107,13 @@ protected:
     Vehicle*            _vehicle;
     MAVLinkProtocol*    _mavlink;
     
+    //parameterId:param_index in PARAM_VALUE(#22) MAVLink_MSG
+    //parameterName:param_id in PARAM_VALUE(#22) MAVLink_MSG
     void _parameterUpdate(int uasId, int componentId, QString parameterName, int parameterCount, int parameterId, int mavType, QVariant value);
+#ifdef __mindskin__
+    void notifyParameterProgress(float progress);
+    void parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value);
+#endif
     void _valueUpdated(const QVariant& value);
     void _restartWaitingParamTimer(void);
     void _waitingParamTimeout(void);

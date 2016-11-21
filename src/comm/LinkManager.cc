@@ -603,18 +603,18 @@ void LinkManager::_linkConnected(void)
 {
     emit linkConnected((LinkInterface*)sender());
     #ifdef __mindskin__
-        #ifdef __android__
+          #ifdef __android__
             LinkInterface* link = (LinkInterface*)sender();
             LinkConfiguration* linkCfg = link->getLinkConfiguration();
             if(linkCfg->type() == LinkConfiguration::TypeTcp) {
-                TCPConfiguration* tcpLinkCfg = (TCPConfiguration*)linkCfg;
+                TCPConfiguration* tcpLinkCfg = qobject_cast<TCPConfiguration*>(linkCfg);
                 QString host = tcpLinkCfg->host();
                 int port = tcpLinkCfg->port();
                 QAndroidJniObject jHost = QAndroidJniObject::fromString(host);
                 QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "tcpConnected", "(Ljava/lang/String;I)V", jHost.object<jstring>(), port);
                 cleanJavaException();
             }
-        #endif //__android__
+          #endif //__android__
     #endif
 }
 

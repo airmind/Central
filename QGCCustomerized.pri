@@ -101,3 +101,6 @@ __mindskin__ {
       DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
     }
 }
+
+DISTFILES += \
+    $$PWD/android/src/org/airmind/ble/ParameterManager.java

@@ -1,4 +1,6 @@
-CONFIG += __mindskin__
+MobileBuild {
+    CONFIG += __mindskin__
+}
 # CONFIG += __remotehead__
 # CONFIG += __dronetag__
 

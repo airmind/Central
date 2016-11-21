@@ -25,6 +25,15 @@
 #include <QDebug>
 #include <QVariantAnimation>
 
+#ifdef __mindskin__
+#ifdef __android__
+#include <android/log.h>
+static const char kJTag[] {"ParameterManager"};
+#include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras/QAndroidJniEnvironment>
+extern void cleanJavaException(void);
+#endif
+#endif
 /* types for local parameter cache */
 typedef QPair<int, QVariant> ParamTypeVal;
 typedef QPair<QString, ParamTypeVal> NamedParam;
@@ -82,6 +91,22 @@ ParameterLoader::~ParameterLoader()
 {
     delete _parameterMetaData;
 }
+#ifdef __mindskin__
+void ParameterLoader::notifyParameterProgress(float progress) {
+#ifdef __android__
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterListProgress", "(F)V", progress);
+        cleanJavaException();
+#endif //__android__
+}
+
+void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value) {
+#ifdef __android__
+    QAndroidJniObject jParameterName = QAndroidJniObject::fromString(parameterName);
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterUpdate", "(IIILjava/lang/String;FII)V", vehicleId, componentId, mavType, jParameterName.object<jstring>(),value.toFloat(),parameterIndex,parameterCount);
+    cleanJavaException();
+#endif //__android__
+}
+#endif
 
 /// Called whenever a parameter is updated or first seen.
 void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString parameterName, int parameterCount, int parameterId, int mavType, QVariant value)
@@ -232,9 +257,15 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
         if (_prevWaitingReadParamIndexCount + _prevWaitingReadParamNameCount != 0) {
             // Set progress to 0 if not already there
             emit parameterListProgress(0);
+#ifdef __mindskin__
+            notifyParameterProgress(0);
+#endif
         }
     } else {
         emit parameterListProgress((float)(_totalParamCount - readWaitingParamCount) / (float)_totalParamCount);
+#ifdef __mindskin__
+        notifyParameterProgress((float)(_totalParamCount - readWaitingParamCount) / (float)_totalParamCount);
+#endif
     }
 
     // Get parameter set version
@@ -292,7 +323,9 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
     Fact* fact = _mapParameterName2Variant[componentId][parameterName].value<Fact*>();
     Q_ASSERT(fact);
     fact->_containerSetRawValue(value);
-
+#ifdef __mindskin__
+    parameterUpdate(uasId,componentId,mavType,parameterName,parameterCount,parameterId,value);
+#endif
     if (componentParamsComplete) {
         if (componentId == _defaultComponentId) {
             // Add meta data to default component. We need to do this before we setup the group map since group
@@ -366,6 +399,11 @@ void ParameterLoader::refreshAllParameters(uint8_t componentID)
         _initialRequestTimeoutTimer.start();
     }
 
+#ifdef __mindskin__
+    if(componentID == MAV_COMP_ID_ALL) {
+        _totalParamCount = 0;
+    }
+#endif
     // Reset index wait lists
     foreach (int cid, _paramCountMap.keys()) {
         // Add/Update all indices to the wait list, parameter index is 0-based
@@ -701,7 +739,8 @@ void ParameterLoader::_tryCacheHashLoad(int uasId, int componentId, QVariant has
 {
     uint32_t crc32_value = 0;
     /* The datastructure of the cache table */
-    MapID2NamedParam cache_map;
+    MapID2NamedParam cache_map; //map:[id:int,(name:QString,(type:int,value:QVariant))]
+
     QFile cache_file(parameterCacheFile(uasId, componentId));
     if (!cache_file.exists()) {
         /* no local cache, just wait for them to come in*/

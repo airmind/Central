@@ -199,7 +199,7 @@ static void jniTcpConnect(JNIEnv *env, jobject thizA, jstring host, jint port)
     QString sHost = QString::fromUtf8(chost);
     QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",chost, tcpLinkIndex++);
     LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
-    TCPConfiguration* tcpConfig = (TCPConfiguration*)linkConfig;
+    TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
     tcpConfig->setHost(sHost);
     tcpConfig->setPort((quint16)port);
     qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
@@ -214,6 +214,19 @@ static void jniStopScanning(JNIEnv *env, jobject thizA)
     Q_UNUSED(thizA);
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniStopScanning is called");
     qgcApp()->toolbox()->linkManager()->stopScanning();
+}
+
+static void jniRefreshAllParameters(JNIEnv *env, jobject thizA)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniRefreshAllParameters is called");
+
+    Vehicle*  _vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
+    if (_vehicle) {
+         AutoPilotPlugin* _autopilot = _vehicle->autopilotPlugin();
+        _autopilot->refreshAllParameters();
+    }
 }
 
 static void jniWrite(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic, jbyteArray data)
@@ -335,6 +348,12 @@ void QBLE::setNativeMethods(void)
         {"read", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniRead)}
     };
     setNativeMethods("org/airmind/ble/BTLinkIONative",btLinkIONativeMethods, sizeof(btLinkIONativeMethods)/sizeof(btLinkIONativeMethods[0]));
+
+    JNINativeMethod parametersNativeMethods[] {
+        {"refreshAllParameters", "(V)V",reinterpret_cast<void *>(jniRefreshAllParameters)}
+    };
+    setNativeMethods("org/airmind/ble/ParameterManager",parametersNativeMethods, sizeof(parametersNativeMethods)/sizeof(parametersNativeMethods[0]));
+
 }
 
 QT_END_NAMESPACE
