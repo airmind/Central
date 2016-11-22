@@ -24,7 +24,6 @@ import android.widget.Toast;
 import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 /**
  * Created by caprin on 16-10-15.
@@ -39,10 +38,13 @@ public class DeviceScanFragment extends Activity {
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 60000;
     public static final String TAG = "DeviceScanActivity";
     Button scan = null;
     private ListView deviceList;
+    private int[] Rssi;
+    private int rp = 0;
+    private int avgRssi;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
@@ -55,6 +57,8 @@ public class DeviceScanFragment extends Activity {
         scan = (Button) findViewById(R.id.scan);
 
         mHandler = new Handler();
+
+        Rssi = new int[10];
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -147,19 +151,38 @@ public class DeviceScanFragment extends Activity {
             new BluetoothAdapter.LeScanCallback() {
 
                 @Override
-                public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-                    Log.d(TAG, "detected device:" + device.getAddress());
+                public void onLeScan(final BluetoothDevice device, final int rssi, byte[]
+                        scanRecord) {
+                    Log.d(TAG, "detected device:" + device.getAddress() + "rssi =" + rssi);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             mLeDeviceListAdapter.addDevice(device);
                             mLeDeviceListAdapter.notifyDataSetChanged();
+                            getRssi(rssi, rp);
+                            rp++;
+                            if (rp == 10) {
+                                rp = 0;
+                            }
                         }
                     });
                 }
             };
 
-    class LeDeviceListAdapter extends BaseAdapter {
+    private void getRssi(int r, int rp) {
+        int sum = 0;
+        Rssi[rp] = r;
+        Log.d(TAG, "rssi array = " + Rssi[rp]);
+        for (int i = 0; i < 10; i++) {
+            sum = sum + Rssi[i];
+        }
+        avgRssi = sum / 10;
+//        avgRssi = r;
+        Log.d(TAG, "avgRssi =" + avgRssi);
+        mLeDeviceListAdapter.notifyDataSetChanged();
+    }
+
+    private class LeDeviceListAdapter extends BaseAdapter {
         private ArrayList<BluetoothDevice> mLeDevices;
         private LayoutInflater mInflator;
 
@@ -220,6 +243,11 @@ public class DeviceScanFragment extends Activity {
                 viewHolder.deviceName.setText(R.string.unknown_device);
             viewHolder.deviceAddress.setText(device.getAddress());
 
+            if (avgRssi > -50) {
+                view.setVisibility(View.VISIBLE);
+            }else {
+                view.setVisibility(View.INVISIBLE);
+            }
             return view;
         }
     }
@@ -230,3 +258,4 @@ public class DeviceScanFragment extends Activity {
     }
 
 }
+
