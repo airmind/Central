@@ -1,3 +1,4 @@
+package org.airmind.ble;
 import android.util.Log;
 public class ParameterManager {
     private static final String TAG = "ParameterManager";

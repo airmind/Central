@@ -85,6 +85,7 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/BTLinkIONative.java \
             $$PWD/android/src/org/airmind/ble/LinkManager.java \
             $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
+            $$PWD/android/src/org/airmind/ble/ParameterManager.java \
             $$PWD/android/src/org/airmind/ble/DeviceScanFragment.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtActivity.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java \
@@ -97,10 +98,6 @@ __mindskin__ {
             $$PWD/android/res/layout/fragment_flight.xml \
             $$PWD/android/res/layout/include_qt_content.xml \
             $$PWD/android/res/drawable \
-
       DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
     }
 }
-
-DISTFILES += \
-    $$PWD/android/src/org/airmind/ble/ParameterManager.java

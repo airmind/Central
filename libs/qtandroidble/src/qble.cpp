@@ -203,8 +203,10 @@ static void jniTcpConnect(JNIEnv *env, jobject thizA, jstring host, jint port)
     tcpConfig->setHost(sHost);
     tcpConfig->setPort((quint16)port);
     qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
-    qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
-
+    bool ret = QMetaObject::invokeMethod(qgcApp()->toolbox()->linkManager(),"createConnectedLink",Qt::AutoConnection, Q_ARG(LinkConfiguration*, linkConfig));
+    if(!ret) {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniTcpConnect] failed to call LinkManager.createConnectedLink()");
+    }
     if(chost) env->ReleaseStringUTFChars(host, chost);
 }
 
@@ -333,12 +335,12 @@ void QBLE::setNativeMethods(void)
 
     //  REGISTER THE C++ FUNCTION WITH JNI
     JNINativeMethod linkManagerNativeMethods[] {
-        {"connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnect)},
-        {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
-        {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)},
         {"discover","(V)V",reinterpret_cast<void *>(jniDiscover)},
         {"didDiscover","(Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniDidDiscover)},
         {"stopScanning","(V)V",reinterpret_cast<void *>(jniStopScanning)},
+        {"connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnect)},
+        {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
+        {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)},
         {"tcpConnect", "(Ljava/lang/String;I)V",reinterpret_cast<void *>(jniTcpConnect)}
     };
     setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods, sizeof(linkManagerNativeMethods)/sizeof(linkManagerNativeMethods[0]));
@@ -353,7 +355,6 @@ void QBLE::setNativeMethods(void)
         {"refreshAllParameters", "(V)V",reinterpret_cast<void *>(jniRefreshAllParameters)}
     };
     setNativeMethods("org/airmind/ble/ParameterManager",parametersNativeMethods, sizeof(parametersNativeMethods)/sizeof(parametersNativeMethods[0]));
-
 }
 
 QT_END_NAMESPACE
