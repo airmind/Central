@@ -70,7 +70,7 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
     if(service) env->ReleaseStringUTFChars(jservice, service);
     if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
 }
-
+/*
 static void jniConnected(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic)
 {
     Q_UNUSED(thizA);
@@ -94,6 +94,7 @@ static void jniConnected(JNIEnv *env, jobject thizA, jstring jdevice, jstring js
     if(service) env->ReleaseStringUTFChars(jservice, service);
     if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
 }
+*/
 
 static void jniDataArrived(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic, jbyteArray data)
 {
@@ -231,7 +232,8 @@ static void jniRefreshAllParameters(JNIEnv *env, jobject thizA)
     }
 }
 
-static void jniWrite(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic, jbyteArray data)
+/*
+ static void jniWrite(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic, jbyteArray data)
 {
     Q_UNUSED(thizA);
     const char* device = env->GetStringUTFChars(jdevice, NULL);
@@ -282,7 +284,7 @@ static void jniRead(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservic
     if(service) env->ReleaseStringUTFChars(jservice, service);
     if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
 }
-
+*/
 /*!
     Constructs a new serial port object with the given \a parent.
 */
@@ -335,24 +337,21 @@ void QBLE::setNativeMethods(void)
 
     //  REGISTER THE C++ FUNCTION WITH JNI
     JNINativeMethod linkManagerNativeMethods[] {
-        {"discover","(V)V",reinterpret_cast<void *>(jniDiscover)},
+        {"discover","()V",reinterpret_cast<void *>(jniDiscover)},
         {"didDiscover","(Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniDidDiscover)},
-        {"stopScanning","(V)V",reinterpret_cast<void *>(jniStopScanning)},
+        {"stopScanning","()V",reinterpret_cast<void *>(jniStopScanning)},
         {"connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnect)},
-        {"connected", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnected)},
-        {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)},
         {"tcpConnect", "(Ljava/lang/String;I)V",reinterpret_cast<void *>(jniTcpConnect)}
     };
     setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods, sizeof(linkManagerNativeMethods)/sizeof(linkManagerNativeMethods[0]));
 
     JNINativeMethod btLinkIONativeMethods[] {
-        {"write", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniWrite)},
-        {"read", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniRead)}
+        {"dataArrived", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V",reinterpret_cast<void *>(jniDataArrived)}
     };
     setNativeMethods("org/airmind/ble/BTLinkIONative",btLinkIONativeMethods, sizeof(btLinkIONativeMethods)/sizeof(btLinkIONativeMethods[0]));
 
     JNINativeMethod parametersNativeMethods[] {
-        {"refreshAllParameters", "(V)V",reinterpret_cast<void *>(jniRefreshAllParameters)}
+        {"refreshAllParameters", "()V",reinterpret_cast<void *>(jniRefreshAllParameters)}
     };
     setNativeMethods("org/airmind/ble/ParameterManager",parametersNativeMethods, sizeof(parametersNativeMethods)/sizeof(parametersNativeMethods[0]));
 }
