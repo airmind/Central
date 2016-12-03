@@ -19,4 +19,6 @@ public class LinkManagerNative {
     * connect to uav via tcp socket
     */
     public static native void tcpConnect(String host, int port);
+
+    public static native void shutdown();
 }

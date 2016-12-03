@@ -84,7 +84,9 @@ ParameterLoader::ParameterLoader(Vehicle* vehicle)
 
     // Ensure the cache directory exists
     QFileInfo(QSettings().fileName()).dir().mkdir("ParamCache");
+#ifndef __mindskin__
     refreshAllParameters();
+#endif
 }
 
 ParameterLoader::~ParameterLoader()

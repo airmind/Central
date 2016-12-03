@@ -7,6 +7,7 @@ import android.os.Build;
 
 import java.util.UUID;
 import android.util.Log;
+
 /**
  * Called from Qt-C++
  */
@@ -52,6 +53,13 @@ public class LinkManager {
 
     public static void tcpConnected(String host, int port) {
         Log.d(TAG, "[tcpConnected] host:" + host + ", port:" + port);
-        ParameterManager.refreshAllParameters1();
+        new Thread() {
+            public void run() {
+                try{
+                    Thread.sleep(2000);
+                } catch(InterruptedException v){System.out.println(v);}
+                ParameterManager.refreshAllParameters1();
+            }
+        }.start();
     }
 }

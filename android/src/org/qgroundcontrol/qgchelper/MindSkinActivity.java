@@ -65,6 +65,7 @@ import org.airmind.ble.DeviceScanFragment;
 //import org.airmind.ble.DeviceScanActivity;
 //import org.airmind.ble.MindSkinActivity;
 //import org.airmind.ble.MindSkinQtActivity;
+import org.airmind.ble.LinkManagerNative;
 //-- Text To Speech
 
 public class MindSkinActivity extends QtActivity implements TextToSpeech.OnInitListener {
@@ -133,7 +134,7 @@ public class MindSkinActivity extends QtActivity implements TextToSpeech.OnInitL
 
     @Override
     protected void onDestroy() {
-         Log.d(TAG,"onDestroy()");
+        Log.d(TAG,"onDestroy()");
         super.onDestroy();
         m_tts.shutdown();
     }

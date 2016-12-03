@@ -211,6 +211,18 @@ static void jniTcpConnect(JNIEnv *env, jobject thizA, jstring host, jint port)
     if(chost) env->ReleaseStringUTFChars(host, chost);
 }
 
+static void jniShutdown(JNIEnv *env, jobject thizA)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniShutdown is called");
+
+    bool ret = QMetaObject::invokeMethod(qgcApp()->toolbox()->linkManager(),"shutdown",Qt::AutoConnection);
+    if(!ret) {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniShutdown] failed to call LinkManager.createConnectedLink()");
+    }
+}
+
 static void jniStopScanning(JNIEnv *env, jobject thizA)
 {
     Q_UNUSED(env);
@@ -341,7 +353,8 @@ void QBLE::setNativeMethods(void)
         {"didDiscover","(Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniDidDiscover)},
         {"stopScanning","()V",reinterpret_cast<void *>(jniStopScanning)},
         {"connect", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",reinterpret_cast<void *>(jniConnect)},
-        {"tcpConnect", "(Ljava/lang/String;I)V",reinterpret_cast<void *>(jniTcpConnect)}
+        {"tcpConnect", "(Ljava/lang/String;I)V",reinterpret_cast<void *>(jniTcpConnect)},
+        {"shutdown","()V",reinterpret_cast<void *>(jniShutdown)},
     };
     setNativeMethods("org/airmind/ble/LinkManagerNative",linkManagerNativeMethods, sizeof(linkManagerNativeMethods)/sizeof(linkManagerNativeMethods[0]));
 

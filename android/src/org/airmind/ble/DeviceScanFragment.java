@@ -131,6 +131,12 @@ public class DeviceScanFragment extends Activity implements IParametersControlle
         scanLeDevice(false);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LinkManagerNative.shutdown();
+    }
+
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void scanLeDevice(final boolean enable) {
         if (enable) {
