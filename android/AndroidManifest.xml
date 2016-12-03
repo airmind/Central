@@ -47,7 +47,7 @@
             <meta-data android:name="android.app.background_running" android:value="false"/>
             <!-- Background running -->
         </activity>
-        <activity android:name="org.airmind.ble.DeviceScanFragment" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="sensorLandscape">
+        <activity android:name="org.airmind.ble.DeviceScanFragment" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="sensorLandscape" android:theme="@style/Theme.AppCompat.NoActionBar">
         <meta-data android:name="android.app.lib_name" android:value="-- %%INSERT_APP_LIB_NAME%% --"/>
         </activity>
         <activity android:name="org.airmind.ble.DeviceControlActivity" android:screenOrientation="sensorLandscape" android:label="-- %%INSERT_APP_NAME%% --">
@@ -59,6 +59,8 @@
 
     <!-- Needed to keep working while 'asleep' -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 
     <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
          Remove the comment if you do not require these default permissions. -->

@@ -2,9 +2,6 @@ package org.airmind.ble;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothAdapter.LeScanCallback;
-import android.bluetooth.BluetoothClass;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.os.Build;
 
@@ -55,5 +52,6 @@ public class LinkManager {
 
     public static void tcpConnected(String host, int port) {
         Log.d(TAG, "[tcpConnected] host:" + host + ", port:" + port);
+        ParameterManager.refreshAllParameters1();
     }
 }

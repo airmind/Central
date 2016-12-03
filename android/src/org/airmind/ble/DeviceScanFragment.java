@@ -17,10 +17,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.airmind.controller.IParametersController;
 import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
@@ -30,7 +33,9 @@ import java.util.UUID;
  * Created by caprin on 16-10-15.
  */
 
-public class DeviceScanFragment extends Activity {
+public class DeviceScanFragment extends Activity implements IParametersController{
+
+    private ProgressBar progressBar;
 
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private BluetoothAdapter mBluetoothAdapter;
@@ -50,11 +55,16 @@ public class DeviceScanFragment extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_comm_selection);
 
+        ParameterManager.setController(this);
+
         deviceList = (ListView) findViewById(R.id.device_list);
+        progressBar = (ProgressBar) findViewById(R.id.activity_device_scan_progressbar);
 
         scan = (Button) findViewById(R.id.scan);
 
         mHandler = new Handler();
+
+        progressBar.setMax(100);
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -98,7 +108,7 @@ public class DeviceScanFragment extends Activity {
 //                } else {
 //                    scanLeDevice(false);
 //                }
-                  LinkManagerNative.tcpConnect("192.168.0.99",6789);
+                LinkManagerNative.tcpConnect("192.168.0.99", 6789);
             }
         });
 
@@ -160,6 +170,22 @@ public class DeviceScanFragment extends Activity {
                 }
             };
 
+    @Override
+    public void onParametersProgressChanged(float progress) {
+        final int pro = (int) (progress * 100);
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setProgress(pro);
+            }
+        });
+    }
+
+    @Override
+    public void onParametersUpdated(int vehicleId, int componentId, int mavType, String parameterName, float parameterValue, int parameterIndex, int parameterCount) {
+
+    }
+
     class LeDeviceListAdapter extends BaseAdapter {
         private ArrayList<BluetoothDevice> mLeDevices;
         private LayoutInflater mInflator;
@@ -215,10 +241,11 @@ public class DeviceScanFragment extends Activity {
 
             BluetoothDevice device = mLeDevices.get(i);
             final String deviceName = device.getName();
-            if (deviceName != null && deviceName.length() > 0)
+            if (deviceName != null && deviceName.length() > 0){
                 viewHolder.deviceName.setText(deviceName);
-            else
+            }else{
                 viewHolder.deviceName.setText(R.string.unknown_device);
+            }
             viewHolder.deviceAddress.setText(device.getAddress());
 
             return view;
