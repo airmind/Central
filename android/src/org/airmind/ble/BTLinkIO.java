@@ -1,3 +1,21 @@
+/**
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @author caprin
+ * @author MINGPO GU
+ * Created: Sep 7, 2016
+ */
 package org.airmind.ble;
 
 import android.annotation.TargetApi;
@@ -8,10 +26,8 @@ import android.os.Build;
 import java.util.UUID;
 import android.util.Log;
 import android.bluetooth.BluetoothGattService;
-/**
- * Created by caprin on 16-9-7.
- */
- public class BTLinkIO {
+
+public class BTLinkIO {
      public static String TAG = "BTLinkIO";
      private static BluetoothLeService bluetoothLeService;
 
@@ -46,6 +62,14 @@ import android.bluetooth.BluetoothGattService;
         }
         return c;
     }
+
+    /**
+     *  To write data to specified BLE device/service/characteristic-UUID
+     * @param deviceAddress BLE device-UUID
+     * @param serviceUUID   BLE service-UUID
+     * @param characteristicUUID BLE chracteristic-UUID
+     * @param data data to be write to connected BLE device
+     */
      @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
      public static void write(String deviceAddress, String serviceUUID, String characteristicUUID, byte[] data) {
          Log.d(TAG, "write to deviceAddress:" + deviceAddress + ", service-UUID:" +
@@ -56,16 +80,6 @@ import android.bluetooth.BluetoothGattService;
                  /* && deviceAddress != null && serviceUUID != null && characteristicUUID != null*/ ) {
              bluetoothLeService.writeCharacteristic(peerMavLinkWriteCharacteristic, data);
          }
-     }
-
-     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-     public static void read(String deviceAddress, String serviceUUID, BluetoothGattCharacteristic characteristicUUID, byte[] data) {
-         System.out.println("read from deviceAddress:" + deviceAddress + ", service-UUID:" +
-                 serviceUUID + ", characteristic-uuid:" + characteristicUUID.toString() +
-                 ", with value:" + (data != null ? new String(data) : "null"));
-         UUID service = UUID.fromString(serviceUUID);
-         bluetoothLeService.readCharacteristic(characteristicUUID);
-         data = characteristicUUID.getValue();
      }
  }
 

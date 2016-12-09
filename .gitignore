@@ -80,3 +80,5 @@ android/.build
 # doxygen
 src/html/
 src/latex/
+android/libs/mavlink.jar
+android/android.iml
