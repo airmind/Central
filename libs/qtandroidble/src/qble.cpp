@@ -42,7 +42,6 @@
 #include "QGCApplication.h"
 QT_BEGIN_NAMESPACE
 
-static const char kJniClassName[] {"org/airmind/ble/BLECommNative"};
 static const char kJTag[] {"QBLE"};
 
 static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservice, jstring jcharateristic)

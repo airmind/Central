@@ -27,19 +27,15 @@ void BLEHelper::setCallbackDelegate(void* delegate) {
 
 
 void BLEHelper::discover(void*) {
-    //    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm", "discover", "(Ljava/lang/String;)V", jnameL.object<jstring>());
 }
 
 void BLEHelper::discoverServices(void*){
-    //    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm", "discoverServices", "(Ljava/lang/String;)V", jnameL.object<jstring>());
 }
 
 void BLEHelper::discoverCharacteristics(void*){
-    //    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm", "discoverCharacteristics", "(Ljava/lang/String;)V", jnameL.object<jstring>());
 }
 
 void BLEHelper::stopScanning(){
-    //    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/BLEComm", "stopScanning", "(Ljava/lang/String;)V", jnameL.object<jstring>());
 }
 
 //====BTSerialConfig
