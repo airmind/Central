@@ -61,7 +61,7 @@ public class ParameterManager{
 
     /**
      * After called refreshAllParameters(), Report paramter values one by one
-     * @param vehicleId
+     * @param vehicleId aircraft's system-id
      * @param componentId see MAV_COMPONENT at {@link http://mavlink.org/messages/common}
      * @param mavType see MAV_PARAM_TYPE at {@link http://mavlink.org/messages/common}
      *        <p>
