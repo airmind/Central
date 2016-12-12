@@ -30,9 +30,11 @@ public class ParameterManager{
     private static final String TAG = "ParameterManager";
 
     /**
-    * refresh/get all parameters from UAV
-    */
-    private static native void refreshAllParameters();
+     * Refresh/get all parameters from UAV.
+     * To get refresh progress, see {@link #parameterListProgress(float)}.
+     * To get updated parameter one by one, see {@link #parameterUpdate(int, int, int, String, float, int, int)}
+     */
+    public static native void refreshAllParameters();
 
     public static void refreshAllParameters1(){
         if(controller != null){
@@ -47,7 +49,7 @@ public class ParameterManager{
     }
 
     /**
-     * Report the progress of refreshing parameters
+     * After called {@link #refreshAllParameters()}, to report the progress of refreshing parameters.
      * @param progress [0,1]
      */
     public static void parameterListProgress(float progress) {
@@ -60,10 +62,10 @@ public class ParameterManager{
     }
 
     /**
-     * After called refreshAllParameters(), Report paramter values one by one
+     * After called {@link #refreshAllParameters()}, to report paramter one by one.
      * @param vehicleId aircraft's system-id
-     * @param componentId see MAV_COMPONENT at {@link http://mavlink.org/messages/common}
-     * @param mavType see MAV_PARAM_TYPE at {@link http://mavlink.org/messages/common}
+     * @param componentId see MAV_COMPONENT at {@linktourl http://mavlink.org/messages/common}.
+     * @param mavType see MAV_PARAM_TYPE at {@linktourl http://mavlink.org/messages/common}.
      *        <p>
      *        <ul>
      *                <li>1 MAV_PARAM_TYPE_UINT8</li>

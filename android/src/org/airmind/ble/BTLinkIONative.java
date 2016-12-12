@@ -21,7 +21,7 @@ package org.airmind.ble;
 public class BTLinkIONative {
 
     /**
-     * Called when data comes from connected BLE-device
+     * Called when data comes from connected BLE-device.
      * @param deviceAddress BLE device-UUID
      * @param serviceUUID   BLE service-UUID
      * @param characteristicUUID BLE characeristic-UUID

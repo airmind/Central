@@ -38,7 +38,7 @@ public class LinkManager {
 
     /**
      * called when app starts up and auto-connect BLE device/service/characteristic which has
-     * ever been connnected before
+     * ever been connnected before.
     */
 
     public static void setBluetoothManager(BluetoothManager bluetoothManager) {
@@ -50,7 +50,7 @@ public class LinkManager {
     }
 
     /**
-     * Called from QT to connect to specified BLE-device
+     * Called from QT to connect to specified BLE-device.
      * @param deviceAddress BLE device-UUID
      * @param serviceUUID   BLE service-UUID
      * @param characteristicUUID BLE charateristic-UUID
@@ -66,21 +66,21 @@ public class LinkManager {
     }
 
     /**
-     *Called from QT to discover BLE devices
+     *Called from QT to discover BLE devices.
      */
     public static void discover() {
         Log.d(TAG, "discover is called");
     }
 
     /**
-     * Called from QT to stop BLE device scanning
+     * Called from QT to stop BLE device scanning.
      */
     public static void stopScanning() {
         Log.d(TAG, "stopScanning is called");
     }
 
     /**
-     * Called from QT after TCP is connected, here to refresh/retrieve UAV parameters
+     * After called {@link LinkManagerNative#tcpConnect(String, int)}, to report the connection is connected if success.
      * @param host
      * @param port
      */

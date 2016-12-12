@@ -64,7 +64,7 @@ public class BTLinkIO {
     }
 
     /**
-     *  To write data to specified BLE device/service/characteristic-UUID
+     *  To write data to specified BLE device/service/characteristic-UUID.
      * @param deviceAddress BLE device-UUID
      * @param serviceUUID   BLE service-UUID
      * @param characteristicUUID BLE chracteristic-UUID
