@@ -37,8 +37,6 @@ public class LinkManagerNative {
      */
     public static native void stopScanning();
 
-    //notify qt-linkmanager to connect the specified device
-
     /**
      * To connect BLE device specified via device parameter
      * @param device BLE device-UUID

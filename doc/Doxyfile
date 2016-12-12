@@ -25,7 +25,7 @@ DOXYFILE_ENCODING      = UTF-8
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = "QGroundControl"
+PROJECT_NAME           = "MindSkin"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number.
 # This could be handy for archiving the generated documentation or
@@ -569,7 +569,8 @@ WARN_LOGFILE           = doxy.log
 # with spaces.
 
 #INPUT                  = ../src
-INPUT                  = ../android/src
+#INPUT                  = ../android/src
+INPUT                   = ../android/src/org/airmind/ble/LinkManager.java ../android/src/org/airmind/ble/LinkManagerNative.java ../android/src/org/airmind/ble/BTLinkIO.java ../android/src/org/airmind/ble/BTLinkIONative.java ../android/src/org/airmind/ble/ParameterManager.java
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
