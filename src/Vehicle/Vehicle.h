@@ -662,6 +662,12 @@ private slots:
     void _mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message);
     void _linkInactiveOrDeleted(BTSerialLink* link);
 
+    //Link Radio goes out of range;
+    void _radioLinkOutOfRange(BTSerialLink* link);
+    //Link Radio approaching out range zone;
+    void _radioLinkLowAlert(BTSerialLink* link);
+    //Link Radio approaching out range zone;
+    void _radioLinkGetIntoRange(BTSerialLink* link);
 #endif
     //void _linkDisconnected(LinkInterface* link);
 //=======

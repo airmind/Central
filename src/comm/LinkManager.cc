@@ -132,12 +132,82 @@ void LinkManager::setCallbackDelegate(void* delegate) {
 }
 
 BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config){
+    
+    //trycreateblelink; _hardwareconnect, didconnectblehardware, _addlink/connect, didconnectlink;
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
     if(blelink) {
-        _addLink(blelink);
+        //_addLink(blelink);
+        //check if existing link;
+        if (_blelinks.contains(blelink)) {
+            return blelink;
+        }
+        
+        //check if same config exists; currently only one link to a same characteristic is allowed to prevent interfere with each other.
+        bool found = false;
+        for (int i=0; i<_blelinks.count(); i++) {
+            BTSerialLink* blink = _blelinks.value<BTSerialLink*>(i);
+            BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+            Q_ASSERT(cfg);
+            
+            //BTSerialConfiguration* cfg_newlink = blelink->getLinkConfiguration();
+            
+            if (cfg == config) {
+                found = true;
+                break;
+            }
+        }
+        
+        if (found) {
+            //not allowed;
+            return NULL;
+        }
+
+        
+        //check if periheral connected;
+        found=false;
+        for (int i=0; i<_blelinks.count(); i++) {
+            BTSerialLink* blink = _blelinks.value<BTSerialLink*>(i);
+            BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+            Q_ASSERT(cfg);
+            
+            BTSerialConfiguration* cfg_newlink = blelink->getLinkConfiguration();
+            
+            if (cfg->getBLEPeripheralIdentifier() == cfg_newlink->getBLEPeripheralIdentifier()) {
+                found = true;
+                break;
+            }
+        }
+
+        
+        if (found == true) {
+            
+            //populate logic link right now.
+            blelink->_connect();
+        
+            return blelink;
+        }
+
+        int res = _registerTrialConnect(blelink);
+        
+        if (res == -3) {
+            return blelink;
+        }
+        else if (res == -2) {
+            //try connecting to same characteristic, now allowed;
+            return NULL;
+        }
+        else if (res == -1) {
+            //peripheral already in line for connect;
+            return blelink;
+        }
+        else {
+            //new link request, do hardware connect first;
+            blelink->_hardwareConnect();
+            return blelink;
+            
+        }
     
-        blelink->_connect();
     
     }
     
@@ -146,22 +216,133 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
 }
 
 
+
 BTSerialLink* LinkManager::createConnectedBLELink(const QString& identifier){
     
     //BTSerialLink* blelink = new BTSerialLink(identifier);
     //blelink->_connect();
 }
 
+int LinkManager::_registerTrialConnect(BTSerialLink* blelink) {
+    
+
+    //check if exists in trial line;
+    if (_bletriallinks.contains(blelink)) {
+        return -3;
+    }
+    
+    //check if same config exists;
+    bool found=false;
+    for (int i=0; i<_bletriallinks.count(); i++) {
+        BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+        Q_ASSERT(cfg);
+        
+        BTSerialConfiguration* cfg_newlink = blelink->getLinkConfiguration();
+        
+        if (cfg == cfg_newlink) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        
+        //not allowed;
+        return -2;
+    }
+
+    
+    //check if same peripheral on trial;
+    found=false;
+    for (int i=0; i<_bletriallinks.count(); i++) {
+        BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+        Q_ASSERT(cfg);
+            
+        BTSerialConfiguration* cfg_newlink = blelink->getLinkConfiguration();
+            
+        if (cfg->getBLEPeripheralIdentifier() == cfg_newlink->getBLEPeripheralIdentifier()) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        
+        _bletriallinks.append(blelink);
+        return -1;
+    }
+    else {
+        _bletriallinks.append(blelink);
+        return 0;
+    
+    }
+    
+}
+
+bool LinkManager::_removeTrialConnect(BTSerialLink* blelink) {
+    int i = _bletriallinks.indexOf(blelink);
+    
+    if (i != -1) {
+        _bletriallinks.removeAt(i);
+        return true;
+    }
+    
+    return false;
+
+}
+
+
 BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg) {
     
 }
 
-bool LinkManager::connectBLELink(BTSerialLink* link) {
+bool LinkManager::connectLink(BTSerialLink* link) {
     
 }
 
-bool LinkManager::disconnectBLELink(BTSerialLink* link) {
+bool LinkManager::disconnectLink(BTSerialLink* link) {
+    if (!link || !_blelinks.contains(link)) {
+        return false;
+    }
     
+    //link->_disconnect();
+    BTSerialConfiguration* config = link->getLinkConfiguration();
+    QString uuid = config->getBLEPeripheralIdentifier();
+    if (config) {
+        if (_autoconnectConfigurations.contains(config)) {
+            config->setLink(NULL);
+        }
+    }
+    _deleteLink(link);
+    if (_autoconnectConfigurations.contains(config)) {
+        qCDebug(LinkManagerLog) << "Removing disconnected autoconnect config" << config->name();
+        _autoconnectConfigurations.removeOne(config);
+        delete config;
+    }
+    
+    //disconnect objc logical link;
+    link->_disconnect();
+    
+    bool found = false;
+    //check for peripheral with no logical link and disconnect;
+    for (int i=0; i<_blelinks.count(); i++) {
+        BTSerialLink* blink = _blelinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+        Q_ASSERT(cfg);
+        
+        
+        if (cfg->getBLEPeripheralIdentifier() == uuid) {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        // disconnect peripheral physically;
+        link->_hardwareDisconnect();
+    }
+    return true;
+
 }
 
 
@@ -172,19 +353,110 @@ void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
     emit peripheralsDiscovered(inrangelist, outrangelist);
 }
 
+void LinkManager::didConnectBLEHardware(QString peripheralUUID) {
+    bool found=false;
+    BTSerialLink* blink;
+    int i;
+    for (i=0; i<_bletriallinks.count(); i++) {
+        blink = _bletriallinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+        Q_ASSERT(cfg);
+        
+        if (cfg->getBLEPeripheralIdentifier() == peripheralUUID) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        //connect to endpoint;
+        blink->_connect();
+    }
+    else {
+        return;
+    }
+    
+
+}
+
+
+//Do we still follow this try/connect pattern?
+void LinkManager::failedConnectBLEHardware(QString peripheralUUID) {
+    //remove all pending trial links;
+    bool found=false;
+    BTSerialLink* blink;
+    int i;
+    for (i=0; i<_bletriallinks.count(); i++) {
+        blink = _bletriallinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+        Q_ASSERT(cfg);
+        
+        if (cfg->getBLEPeripheralIdentifier() == peripheralUUID) {
+            _removeTrialConnect(blink);
+            found = true;
+            //break;
+        }
+    }
+
+}
+
 
 void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
     //set blelink status;
-    if ((blelink->getLinkConfiguration())->getBLELinkConnectStage()==BLE_LINK_CONNECTED_CHARACTERISTIC) {
+    if ((blelink->getLinkConfiguration())->getBLELinkConnectStage()==BLE_LINK_CONNECT_CHARACTERISTIC) {
         blelink->setLinkConnectedStatus(BLE_LINK_ENDPOINT_CONNECTED);
     }
     else {
         blelink->setLinkConnectedStatus(BLE_LINK_HARDWARE_CONNECTED);
         
     }
+    //remove trial link;
+    _removeTrialConnect(blelink);
+    _addLink(blelink);
+    
     emit linkConnected(blelink);
+    
+    
+    BTSerialConfiguration* cfg_curlink = blelink->getLinkConfiguration();
+
+    //find next, and connect all pending links on same peripheral one by one;
+    bool found=false;
+    BTSerialLink* nextblink;
+    int i;
+    for (i=0; i<_bletriallinks.count(); i++) {
+        nextblink = _bletriallinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* cfg = nextblink->getLinkConfiguration();
+        Q_ASSERT(cfg);
+        
+        if (cfg->getBLEPeripheralIdentifier() == cfg_curlink->getBLEPeripheralIdentifier()) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        //connect to endpoint;
+        nextblink->_connect();
+    }
+    else {
+        return;
+    }
+
 
 }
+
+void LinkManager::failedConnectBLELink(BTSerialLink* blelink) {
+    //set blelink status;
+    if ((blelink->getLinkConfiguration())->getBLELinkConnectStage()==BLE_LINK_CONNECT_CHARACTERISTIC) {
+        blelink->setLinkConnectedStatus(BLE_LINK_ENDPOINT_CONNECTED);
+    }
+    else {
+        blelink->setLinkConnectedStatus(BLE_LINK_HARDWARE_CONNECTED);
+        
+    }
+    
+    emit linkFailedToConnect(blelink);
+    
+}
+
 
 void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
     blelink->setLinkConnectedStatus(BLE_LINK_NOT_CONNECTED);
@@ -192,11 +464,92 @@ void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
     emit linkDisconnected(blelink);
 }
 
-void LinkManager::didUpdateConnectedBLELinkRSSI(void* peripheral_link_list) {
-    emit bleLinkRSSIUpdated (peripheral_link_list);
+void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_list) {
+    Q_ASSERT(peripheral_link_list);
+    
+    //check all links for active / inactive according to RSSI;
+    for (int i=0; i<peripheral_link_list->count(); i++) {
+        QString pname = peripheral_link_list->at(i);
+        int rssi = blehelper->currentFilteredPeripheralRSSI(pname);
+        BLE_LINK_QUALITY newlq;
+        if (rssi >= DRONETAG_DISCONNECT_WARNING_RANGE) {
+            newlq = BLE_LINK_QUALITY_INRANGE;
+        }
+        else if (rssi >= DRONETAG_DISCONNECT_RANGE && rssi < DRONETAG_DISCONNECT_WARNING_RANGE) {
+            newlq = BLE_LINK_QUALITY_ALERT;
+        }
+        else {
+            newlq = BLE_LINK_QUALITY_OUTOFRANGE;
+        }
+
+        
+        BLE_LINK_QUALITY lq = blehelper->currentPeripheralLinkQuality(pname);
+        
+        switch (newlq) {
+            case BLE_LINK_QUALITY_INRANGE:
+                
+                if (lq == BLE_LINK_QUALITY_OUTOFRANGE) {
+                    //signal all links belong to this peripheral going active;
+                    for (int j=0; j<_blelinks.count(); j++) {
+                        BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(j);
+                        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+                        Q_ASSERT(cfg);
+                        
+                        if (cfg->getBLEPeripheralIdentifier() == peripheral_link_list->at(j)) {
+                            //emit get into range signal;
+                            emit radioLinkGetIntoRange(blink);
+                        }
+                    }
+
+                }
+                break;
+            case BLE_LINK_QUALITY_ALERT:
+                if (lq == BLE_LINK_QUALITY_OUTOFRANGE) {
+                    
+                    //signal all links belong to this peripheral going active;
+                    for (int j=0; j<_blelinks.count(); j++) {
+                        BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(j);
+                        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+                        Q_ASSERT(cfg);
+                        
+                        if (cfg->getBLEPeripheralIdentifier() == peripheral_link_list->at(j)) {
+                            //emit get into range signal;
+                            emit radioLinkGetIntoRange(blink);
+                        }
+                    }
+
+                }
+                break;
+            case BLE_LINK_QUALITY_OUTOFRANGE:
+                if (lq == BLE_LINK_QUALITY_ALERT || lq == BLE_LINK_QUALITY_INRANGE) {
+                    //signal all links belong to this peripheral going inactive;
+                    for (int j=0; j<_blelinks.count(); j++) {
+                        BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(j);
+                        BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+                        Q_ASSERT(cfg);
+                        
+                        if (cfg->getBLEPeripheralIdentifier() == peripheral_link_list->at(j)) {
+                            ////emit out of range signal;
+                            emit radioLinkOutOfRange(blink);
+                        }
+                    }
+                    
+                }
+                break;
+            default:
+                break;
+        }
+        
+        //set new link quality;
+        blehelper->setPeripheralLinkQuality(pname, newlq);
+    }
+    
+    //done, clear peripheral list;
+    peripheral_link_list->clear();
+    delete peripheral_link_list;
+    
+    //emit bleLinkRSSIUpdated (peripheral_link_list);
 }
-
-
 
 #endif
 

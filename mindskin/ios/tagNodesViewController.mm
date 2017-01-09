@@ -188,7 +188,7 @@
         label = [[UILabel alloc] initWithFrame:btnrect];
         label.tag = 200 + idx;
         label.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:16];
-        label.textColor=[UIColor colorWithRed:1.0f green:1.0f blue:1.0 alpha:1.0f];
+        label.textColor=[UIColor colorWithRed:0.5f green:0.5f blue:0.5 alpha:1.0f];
         
         [cell.contentView addSubview:label];
         
@@ -207,28 +207,28 @@
     BLE_Discovered_Peripheral* cbp = [btlinksarray objectAtIndex:idx];
     
     //get the best display name of this device;
-    NSString* ident = [cbp.peripheral.identifier UUIDString];
+    NSString* ident = [cbp.cbperipheral.identifier UUIDString];
     //QString name;
     
     NSString* blename;
     if (cbp.advertisementdata==nil) {
         
-        if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+        if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
             blename = ident;
         }
         else {
-            blename = cbp.peripheral.name;
+            blename = cbp.cbperipheral.name;
         }
         
     }
     else {
         blename = [(NSDictionary*)(cbp.advertisementdata) valueForKey:CBAdvertisementDataLocalNameKey];
         if (blename == nil || [blename compare:@""]==NSOrderedSame) {
-            if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+            if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
                 blename = ident;
             }
             else {
-                blename = cbp.peripheral.name;
+                blename = cbp.cbperipheral.name;
             }
             
         }
@@ -330,6 +330,7 @@
     }
     
     
+    
 }
 
 
@@ -360,7 +361,7 @@
         int idx=0;
         for (BLE_Discovered_Peripheral* pt in btlinksarray) {
             
-            if (pt.peripheral.identifier == p.peripheral.identifier) {
+            if (pt.cbperipheral.identifier == p.cbperipheral.identifier) {
                 found = YES;
                 break;
             }
@@ -385,7 +386,7 @@
         //BOOL found = NO;
         int idx = 0;
         for (BLE_Discovered_Peripheral* pt in btlinksarray) {
-            if (pt.peripheral.identifier == p.peripheral.identifier) {
+            if (pt.cbperipheral.identifier == p.cbperipheral.identifier) {
                 [btlinksarray removeObjectAtIndex:idx];
                 [tagnodeslistview beginUpdates];
                 
@@ -404,11 +405,42 @@
     [p_in release];
     [p_out release];
     
-    
     //check if the only one found; if did, auto connect it and beep.
     if ([btlinksarray count] == 1) {
+    
+        //already connected?
         BLE_Discovered_Peripheral* cbp = (BLE_Discovered_Peripheral*)[btlinksarray objectAtIndex:0];
         
+        if ([cbp isConnected]) {
+#ifdef __mindskin_DEBUG__
+            NSLog(@"already connected\n");
+#endif
+            return;
+        }
+        
+        //no;
+        if ([cbp hardwareConnectStatus]!= BLE_Peripheral_HARDWARE_NOTCONNECTED) {
+            //connecting or connected;
+#ifdef __mindskin_DEBUG__
+            NSLog(@"already Connecting...\n");
+#endif
+            return;
+        }
+        else {
+#ifdef __mindskin_DEBUG__
+            NSLog(@"Try connect to peripheral hardware...\n");
+#endif
+            [cbp setHardwareConnectStatus:BLE_Peripheral_HARDWARE_CONNECTING];
+            [self performSelector:@selector(connectSingleBLEPeripheral:) withObject:nil afterDelay:0.5];
+        }
+    }
+}
+
+-(void)connectSingleBLEPeripheral:(id)peripheral {
+    BLE_Discovered_Peripheral* cbp = (BLE_Discovered_Peripheral*)[btlinksarray objectAtIndex:0];
+    
+    [[BLEHelper_objc sharedInstance] createBTSerialLinkFromPeripheral:cbp];
+    /*
         //get the best display name of this device;
         QString ident = QString::fromNSString([cbp.peripheral.identifier UUIDString]);
         QString name;
@@ -444,50 +476,12 @@
         QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
         QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
         
-        btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+        btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECT_CHARACTERISTIC);
         
         //create a physical link and connect;
         BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
         //[blelink _connect];
-
-    }
-    
-    /*
-     
-     if (act==0) {
-     //remove linkname;
-     NSUInteger idx = [btlinksarray indexOfObject:peripheral];
-     if (idx != NSNotFound) {
-     [btlinksarray removeObjectAtIndex:idx];
-     
-     [self.tableView beginUpdates];
-     //considering table headers;
-     NSLog(@"removing row --->\n %d", idx);
-     NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:idx inSection:0]];
-     
-     [self.tableView deleteRowsAtIndexPaths:paths
-     withRowAnimation:UITableViewRowAnimationFade];
-     
-     [self.tableView endUpdates];
-     }
-     
-     }
-     else {
-     //add linkname;
-     [btlinksarray addObject:peripheral];
-     NSLog(@"adding row --->\n %d", 1);
-     
-     [self.tableView beginUpdates];
-     NSArray *paths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
-     
-     [self.tableView insertRowsAtIndexPaths:paths
-     withRowAnimation:UITableViewRowAnimationFade];
-     
-     [self.tableView endUpdates];
-     /*
-     UITableViewCell* cell = [self.view cellForRowAtIndexPath:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
-     [self configureDiscoveredBTLinksCell:cell atIndexPath:[NSIndexPath indexPathForRow:[btlinksarray count]-1 inSection:0]];
-     */
+*/
     
     
     
@@ -527,9 +521,10 @@
  
  */
 
--(void)didConnectedBTLink:(CBPeripheral*)cbp result:(BOOL)yor {
+-(void)didConnectBTLink:(CBPeripheral*)cbp result:(BOOL)yor {
     if (yor) {
         //connected, make the beep sound;
+        NSLog(@"Beep One...\n");
         int idx = [btlinksarray indexOfObject:cbp];
         
         NSString *soundPath = [[NSBundle mainBundle] pathForResource:@"BEEP1C" ofType:@"WAV"];
@@ -566,7 +561,7 @@
     QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
     QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
     
-    btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+    btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECT_CHARACTERISTIC);
     
     BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
     
@@ -580,14 +575,14 @@
     else {
         if (!inrange) {
             //not in range, disconnect;
-            qgcApp()->toolbox()->linkManager()->disconnectBLELink(blelink);
+            qgcApp()->toolbox()->linkManager()->disconnectLink(blelink);
             
             //update UI by disable connection icon;
             [self disableMindStickStatusIcon];
             
             
             //reconnect to wait back in range;
-            qgcApp()->toolbox()->linkManager()->connectBLELink(blelink);
+            qgcApp()->toolbox()->linkManager()->connectLink(blelink);
             
         }
         else {
@@ -705,17 +700,17 @@
         BLE_Discovered_Peripheral* cbp = (BLE_Discovered_Peripheral*)[btlinksarray objectAtIndex:idx];
         
         //get the best display name of this device;
-        QString ident = QString::fromNSString([cbp.peripheral.identifier UUIDString]);
+        QString ident = QString::fromNSString([cbp.cbperipheral.identifier UUIDString]);
         QString name;
         
         NSString* blename;
         if (cbp.advertisementdata==nil) {
             
-            if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+            if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
                 name = ident;
             }
             else {
-                name = QString::fromNSString(cbp.peripheral.name);
+                name = QString::fromNSString(cbp.cbperipheral.name);
             }
             
         }
@@ -725,11 +720,11 @@
                 name = QString::fromNSString(blename);
             }
             else {
-                if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+                if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
                     name = ident;
                 }
                 else {
-                    name = QString::fromNSString(cbp.peripheral.name);
+                    name = QString::fromNSString(cbp.cbperipheral.name);
                 }
                 
             }
@@ -739,11 +734,11 @@
         QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
         QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
         
-        btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+        btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECT_CHARACTERISTIC);
         
         //create a physical link and connect;
         BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);
-        //[blelink _connect];
+        
         
     }
     

@@ -18,12 +18,20 @@
 //#include <LinkInterface.h>
 #include "QGCConfig.h"
 #include <LinkConfiguration.h>
+#include "QmlObjectListModel.h"
+
 //#include "LinkManager.h"
 //#include "QGBTSerialManager.h"
 
 //#include "MAVLinkProtocol.h"
 
 #define _BLE_DEBUG_ 1 //for the moment;
+
+
+#define DRONETAG_TRIG_RANGE -35   //in dB of RSSI;
+#define DRONETAG_DISCONNECT_WARNING_RANGE -50
+#define DRONETAG_DISCONNECT_RANGE -55
+
 
 typedef enum  {
     BLE_LINK_NOT_CONNECTED,
@@ -33,10 +41,19 @@ typedef enum  {
 }BLE_LINK_STATUS;
 
 
+typedef enum  {
+    BLE_LINK_QUALITY_INRANGE,
+    BLE_LINK_QUALITY_ALERT,
+    BLE_LINK_QUALITY_OUTOFRANGE   //fully connected to service and characteristic;
+    
+}BLE_LINK_QUALITY;
+
+
+// To which stage should the connection goes
 typedef enum {
-    BLE_LINK_CONNECTED_PERIPHERAL,
-    BLE_LINK_CONNECTED_SERVICE,
-    BLE_LINK_CONNECTED_CHARACTERISTIC
+    BLE_LINK_CONNECT_PERIPHERAL,
+    BLE_LINK_CONNECT_SERVICE,
+    BLE_LINK_CONNECT_CHARACTERISTIC
     
 }BLE_LINK_CONNECT_STAGE ;
 
@@ -48,12 +65,14 @@ typedef enum {
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
+class BTSerialLink;
 #endif
 
 #ifdef __android__
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
+class BTSerialLink;
 #endif
 
 class MAVLinkProtocol;
@@ -67,6 +86,7 @@ class MAVLinkProtocol;
 class BLEHelper {
 private:
     BLEHelperWrapper* ble_wrapper;
+    
 public:
     BLEHelper();
     ~BLEHelper();
@@ -75,6 +95,10 @@ public:
     void discoverServices(void*);
     void discoverCharacteristics(void*);
     void stopScanning();
+    
+    void setPeripheralLinkQuality(QString& pname, BLE_LINK_QUALITY q);
+    int currentFilteredPeripheralRSSI(QString& pname);
+    BLE_LINK_QUALITY currentPeripheralLinkQuality(QString& pname);
     
 };
 
@@ -125,14 +149,17 @@ public:
     void setBLEPeripheralIdentifier(QString*);
     QString getBLEPeripheralIdentifier();
     QString getBLEPeripheralName();
-    QString getBLEPeripheralServiceID();
-    QString getBLEPeripheralCharacteristicID();
+    QString getBLELinkServiceID();
+    QString getBLELinkCharacteristicID();
     
     BLE_LINK_CONNECT_STAGE getBLELinkConnectStage();
     QString settingsURL();
 
 
-
+    // operator;
+    bool operator == (BTSerialConfiguration* cfg);
+    
+    
 };
 
 /**
@@ -208,6 +235,12 @@ public:
     /// set into the link when it is added to LinkManager
     uint8_t getMavlinkChannel(void) const { Q_ASSERT(_mavlinkChannelSet); return _mavlinkChannel; }
 
+    //for ble;
+    BLE_LINK_STATUS linkConnectedStatus();
+    void setLinkConnectedStatus(BLE_LINK_STATUS status);
+
+    BLE_LINK_QUALITY linkQuality();
+
     
 public slots:
     
@@ -257,7 +290,6 @@ signals:
 protected:
     // From LinkInterface->QThread
     virtual void run(void);
-    void setLinkConnectedStatus(BLE_LINK_STATUS status);
     
 private:
     // Links are only created/destroyed by LinkManager so constructor/destructor is not public
@@ -277,6 +309,8 @@ private:
     
     bool _hardwareConnect();
     void _restartConnection();
+    bool _hardwareDisconnect();
+
     
 #ifdef BTSerialLINK_READWRITE_DEBUG
     void _writeDebugBytes(const char *data, qint16 size);
@@ -286,6 +320,7 @@ private:
     //QTcpSocket*       _socket;
     //bool              _socketIsConnected;
     BLE_LINK_STATUS _linkstatus;
+    BLE_LINK_QUALITY _linkquality;
     
     quint64 _bitsSentTotal;
     quint64 _bitsSentCurrent;

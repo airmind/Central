@@ -677,7 +677,12 @@ void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t mess
         return;
     }
     
-    if (!_containsLink(link)) {
+    // link out of range;
+    if (link->linkQuality() != BLE_LINK_QUALITY_OUTOFRANGE ) {
+        return;
+    }
+    
+    if (!_containsLink(link) ) {
         _addLink(link);
     }
     
@@ -1122,7 +1127,36 @@ void Vehicle::_addLink(BTSerialLink* link)
         qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkInactive), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_linkInactiveOrDeleted));
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkDeleted), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_linkInactiveOrDeleted));
+        
+        //connect radio link quality signals;
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::radioLinkOutOfRange), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_radioLinkOutOfRange));
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::radioLinkGetIntoRange), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_radioLinkGetIntoRange));
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::radioLinkLowAlert), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_radioLinkLowAlert));
+        
+        
     }
+}
+
+
+void Vehicle::_radioLinkOutOfRange(BTSerialLink* blink) {
+    _blelinks.removeOne(blink);
+    if (_links.count() == 0 && _blelinks.count()==0 && !_allLinksInactiveSent) {
+        qCDebug(VehicleLog) << "All links inactive";
+        // Make sure to not send this more than one time
+        _allLinksInactiveSent = true;
+        emit allLinksInactive(this);
+    }
+
+}
+
+
+void Vehicle::_radioLinkGetIntoRange(BTSerialLink* blink) {
+    _blelinks.append(blink);
+    
+}
+
+void Vehicle::_radioLinkLowAlert(BTSerialLink* blink) {
+
 }
 
 #endif
@@ -1135,8 +1169,11 @@ void Vehicle::_linkInactiveOrDeleted(LinkInterface* link)
     qCDebug(VehicleLog) << "_linkInactiveOrDeleted linkCount" << _links.count();
 
     _links.removeOne(link);
-
-    if (_links.count() == 0 && !_allLinksInactiveSent) {
+#ifdef __mindskin__
+        if (_links.count() == 0 && _blelinks.count()==0 && !_allLinksInactiveSent) {
+#else
+        if (_links.count() == 0 && !_allLinksInactiveSent) {
+#endif
         qCDebug(VehicleLog) << "All links inactive";
         // Make sure to not send this more than one time
         _allLinksInactiveSent = true;
@@ -1152,7 +1189,7 @@ void Vehicle::_linkInactiveOrDeleted(BTSerialLink* link)
     
     _blelinks.removeOne(link);
     
-    if (_links.count() == 0 && !_allLinksInactiveSent) {
+    if (_links.count() == 0 && _blelinks.count()==0 && !_allLinksInactiveSent) {
         qCDebug(VehicleLog) << "All links inactive";
         // Make sure to not send this more than one time
         _allLinksInactiveSent = true;
