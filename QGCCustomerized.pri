@@ -12,6 +12,7 @@ __mindskin__ {
         INCLUDEPATH += BLE/ios
         HEADERS += \
             BLE/ios/BTSerialLink_objc.h \
+            BLE/ios/BLELinkConnectionDelegate.h \
             BLE/BTSerialLink.h \
             mindskin/tagNodesManager.h \
             mindskin/ios/qt2ioshelper.h \
@@ -35,12 +36,11 @@ __mindskin__ {
             mindskin/ios/ConnectPopoverViewController.mm \
             mindskin/ios/MindStickButtonViewController.mm \
             mindskin/ios/MindSkinRootView_impl_objc.mm \
-            mindskin/ios/tagNodesViewController.m \
+            mindskin/ios/tagNodesViewController.mm \
             mindskin/ios/mindskinMessageViewController.mm \
-            mindskin/ios/RacerMainMenuView.m \
-            mindskin/ios/RacerMainMenuViewController.m \
             mindskin/ios/mindskinlog.mm \
-
+            mindskin/ios/RacerMainMenuView.mm \
+            mindskin/ios/RacerMainMenuViewController.mm \
 
         DebugBuild {
             HEADERS += \

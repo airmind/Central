@@ -56,7 +56,7 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
     QString sid = QString::fromUtf8(service);
     QString cid = QString::fromUtf8(characteristic);
     QString deviceAddress = QString::fromUtf8(device);
-    btconfig->configBLESerialLink(deviceAddress, deviceAddress, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+    btconfig->configBLESerialLink(deviceAddress, deviceAddress, sid, cid, BLE_LINK_CONNECT_CHARACTERISTIC);
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect->configBLESerialLink is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
 
     //create a physical link and connect;
@@ -106,7 +106,7 @@ static void jniDataArrived(JNIEnv *env, jobject thizA, jstring jdevice, jstring 
     QString sid = QString::fromUtf8(service);
     QString cid = QString::fromUtf8(characteristic);
     BTSerialConfiguration* btconfig = new BTSerialConfiguration(did);
-    btconfig->configBLESerialLink(did, did, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+    btconfig->configBLESerialLink(did, did, sid, cid, BLE_LINK_CONNECT_CHARACTERISTIC);
     BTSerialLink* bleLink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
     if(bleLink != NULL) {
         __android_log_print(ANDROID_LOG_INFO, kJTag, "jniDataArrived is called, device:%s, service:%s, characteristic:%s, found the link", device, service, characteristic);

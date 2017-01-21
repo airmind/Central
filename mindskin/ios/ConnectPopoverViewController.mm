@@ -347,28 +347,28 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     BLE_Discovered_Peripheral* cbp = [btlinksarray objectAtIndex:idx];
 
     //get the best display name of this device;
-    NSString* ident = [cbp.peripheral.identifier UUIDString];
+    NSString* ident = [cbp.cbperipheral.identifier UUIDString];
     //QString name;
     
     NSString* blename;
     if (cbp.advertisementdata==nil) {
         
-        if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+        if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
             blename = ident;
         }
         else {
-            blename = cbp.peripheral.name;
+            blename = cbp.cbperipheral.name;
         }
         
     }
     else {
         blename = [(NSDictionary*)(cbp.advertisementdata) valueForKey:CBAdvertisementDataLocalNameKey];
         if (blename == nil || [blename compare:@""]==NSOrderedSame) {
-            if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+            if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
                 blename = ident;
             }
             else {
-                blename = cbp.peripheral.name;
+                blename = cbp.cbperipheral.name;
             }
             
         }
@@ -500,7 +500,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         int idx=0;
         for (BLE_Discovered_Peripheral* pt in btlinksarray) {
             
-            if (pt.peripheral.identifier == p.peripheral.identifier) {
+            if (pt.cbperipheral.identifier == p.cbperipheral.identifier) {
                 found = YES;
                 break;
             }
@@ -525,7 +525,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         //BOOL found = NO;
         int idx = 0;
         for (BLE_Discovered_Peripheral* pt in btlinksarray) {
-            if (pt.peripheral.identifier == p.peripheral.identifier) {
+            if (pt.cbperipheral.identifier == p.cbperipheral.identifier) {
                 [btlinksarray removeObjectAtIndex:idx];
                 [self.tableView beginUpdates];
                 
@@ -652,7 +652,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
     QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
     
-    btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+    btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECT_CHARACTERISTIC);
 
     BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->getBLELinkByConfiguration(btconfig);
 
@@ -666,14 +666,14 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
     else {
         if (!inrange) {
             //not in range, disconnect;
-            qgcApp()->toolbox()->linkManager()->disconnectBLELink(blelink);
+            qgcApp()->toolbox()->linkManager()->disconnectLink(blelink);
             
             //update UI by disable connection icon;
             [self disableMindStickStatusIcon];
             
             
             //reconnect to wait back in range;
-            qgcApp()->toolbox()->linkManager()->connectBLELink(blelink);
+            qgcApp()->toolbox()->linkManager()->connectLink(blelink);
             
         }
         else {
@@ -810,17 +810,17 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         BLE_Discovered_Peripheral* cbp = (BLE_Discovered_Peripheral*)[btlinksarray objectAtIndex:idx];
         
         //get the best display name of this device;
-        QString ident = QString::fromNSString([cbp.peripheral.identifier UUIDString]);
+        QString ident = QString::fromNSString([cbp.cbperipheral.identifier UUIDString]);
         QString name;
         
         NSString* blename;
         if (cbp.advertisementdata==nil) {
 
-            if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+            if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
                 name = ident;
             }
             else {
-                name = QString::fromNSString(cbp.peripheral.name);
+                name = QString::fromNSString(cbp.cbperipheral.name);
             }
 
         }
@@ -830,11 +830,11 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
                 name = QString::fromNSString(blename);
             }
             else {
-                if (cbp.peripheral.name == nil || [cbp.peripheral.name compare:@""]==NSOrderedSame) {
+                if (cbp.cbperipheral.name == nil || [cbp.cbperipheral.name compare:@""]==NSOrderedSame) {
                     name = ident;
                 }
                 else {
-                    name = QString::fromNSString(cbp.peripheral.name);
+                    name = QString::fromNSString(cbp.cbperipheral.name);
                 }
 
             }
@@ -844,7 +844,7 @@ void ConnectPopover::peripheralsDiscovered(void* inrangelist, void* outrangelist
         QString sid = QString::fromNSString(MAV_TRANSFER_SERVICE_UUID);
         QString cid = QString::fromNSString(MAV_TRANSFER_CHARACTERISTIC_UUID);
 
-        btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECTED_CHARACTERISTIC);
+        btconfig->configBLESerialLink(ident, name, sid, cid, BLE_LINK_CONNECT_CHARACTERISTIC);
 
         //create a physical link and connect;
         BTSerialLink* blelink = qgcApp()->toolbox()->linkManager()->createConnectedBLELink(btconfig);

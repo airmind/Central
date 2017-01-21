@@ -489,6 +489,8 @@ bool QGCApplication::_initForNormalAppBoot(void)
                     "Your saved settings have been reset to defaults.");
 
     }
+    
+    
 
     if (getQGCMapEngine()->wasCacheReset()) {
 
@@ -496,6 +498,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
                     "Your old map cache sets have been reset.");
     }
 
+    
     settings.sync();
 #endif
     
@@ -511,7 +514,7 @@ void QGCApplication::_initSetting(void){
     QSettings settings;
     
     showMessage("1 The format for QGroundControl saved settings has been modified. ");
-    showMessage("2 The format for QGroundControl saved settings has been modified. ");
+    //showMessage("2 The format for QGroundControl saved settings has been modified. ");
 
     if (_settingsUpgraded) {
         settings.clear();

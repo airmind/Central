@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "BLELinkConnectionDelegate.h"
 
 typedef enum {
     CONN_ALLLINKS,
@@ -15,8 +16,8 @@ typedef enum {
     
 } CONN_STAGE;
 
-
-@interface tagNodesViewController : UIViewController <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate> {
+//Have to conform to BLELinkConnectionDelegate protocol;
+@interface tagNodesViewController : UIViewController <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, BLELinkConnectionDelegate> {
     
     //ConnectPopoverViewController* tagnodelistviewcontroller;
     

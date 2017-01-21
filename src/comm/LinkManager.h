@@ -156,7 +156,6 @@ public:
     bool discoverServices(void*);
     bool discoverCharacteristics(void*);
     bool stopScanning();
- #endif
 
     BTSerialLink* createConnectedBLELink(BTSerialConfiguration* config);
     BTSerialLink* createConnectedBLELink(const QString& identifier);
@@ -165,30 +164,30 @@ public:
     //void disDiscoverPeripherals(QStringList* pids);
     
     /// Connect the specified link
-    bool connectBLELink(BTSerialLink* link);
-    bool disconnectBLELink(BTSerialLink* link);
+    bool connectLink(BTSerialLink* link);
+    bool disconnectLink(BTSerialLink* link);
     
     //return matching ble link give specific ble configuration;
     BTSerialLink* getBLELinkByConfiguration(BTSerialConfiguration* cfg);
 
     /// BLE link use these call backs to notify other receivers about link status;
+    void didConnectBLEHardware(QString peripheralUUID);
+    void failedConnectBLEHardware(QString peripheralUUID);
     void didConnectBLELink(BTSerialLink* blelink);
+    void failedConnectBLELink(BTSerialLink* blelink);;
     void didDisconnectBLELink(BTSerialLink* blelink);
     
     //have a try;
- #if defined(__ios__)||defined(__android__)
     void didDiscoverBLELinks(void* inrangelist, void* outrangelist);
     
     /// use Qt signal instead ?
-    void didUpdateConnectedBLELinkRSSI(void* peripheral_link_list);
+    void didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_list);
  #endif
-    
-#endif
 
 #if defined(_BLE_DEBUG_) && defined(__ios__)
     BLEDebugTextView* openDebugView();
 #endif
-    
+#endif
 //=======
 //>>>>>>> upstream/master
     /// Sets the flag to suspend the all new connections
@@ -282,19 +281,27 @@ signals:
     void newLink(BTSerialLink* link);
     void linkDeleted(BTSerialLink* link);
     void linkConnected(BTSerialLink* link);
+    void linkFailedToConnect(BTSerialLink* link);
+    
     void linkDisconnected(BTSerialLink* link);
     //new signal for discovering;
  #if defined(__ios__) || defined(__android__)
     void peripheralsDiscovered(void* inrangelist, void* outrangelist);
-    void bleLinkRSSIUpdated (void* peripheral_link_list);
- #endif
+    void bleLinkRSSIUpdated (BTSerialLink* link, int rssi);
     // New vehicle has been seen on the link.
     void linkActive(BTSerialLink* link, int vehicleId, int vehicleFirmwareType, int vehicleType);
     // No longer hearing from any vehicles on this link.
     void linkInactive(BTSerialLink* link);
-
-#endif
     
+    
+    //Link Radio goes out of range;
+    void radioLinkOutOfRange(BTSerialLink* link);
+    //Link Radio approaching out range zone;
+    void radioLinkLowAlert(BTSerialLink* link);
+    //Link Radio approaching out range zone;
+    void radioLinkGetIntoRange(BTSerialLink* link);
+#endif
+#endif
 //=======
 
     // New vehicle has been seen on the link.
@@ -329,6 +336,13 @@ private:
     void _updateSerialPorts();
     void _fixUnnamed(LinkConfiguration* config);
     bool _setAutoconnectWorker(bool& currentAutoconnect, bool newAutoconnect, const char* autoconnectKey);
+    
+#ifdef __mindskin__
+    int _registerTrialConnect(BTSerialLink* blelink);
+    bool _removeTrialConnect(BTSerialLink* blelink);
+
+#endif
+    
 
 #ifndef __ios__
     SerialConfiguration* _autoconnectConfigurationsContainsPort(const QString& portName);
@@ -373,6 +387,9 @@ private:
     
     //change blelinks type according to master update;
     QmlObjectListModel  _blelinks;
+    
+    //for 2-steps safe radio link creation;
+    QmlObjectListModel  _bletriallinks;
     
     
 #endif

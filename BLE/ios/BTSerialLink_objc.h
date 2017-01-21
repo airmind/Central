@@ -11,12 +11,19 @@
 
 #include "BTSerialLink.h"
 #import <CoreBluetooth/CoreBluetooth.h>
+#import "BLELinkConnectionDelegate.h"
 
 //class BTSerialConfigurationWrapper;
 //class BTSerialLinkWrapper;
 
 #define LP_RSSI_WINDOW_LENGTH 10
 
+typedef enum {
+    BLE_Peripheral_HARDWARE_NOTCONNECTED,
+    BLE_Peripheral_HARDWARE_CONNECTING,
+    BLE_Peripheral_HARDWARE_CONNECTED
+    
+}BLE_Peripheral_HARDWARECONNECT_STATUS;
 
 @interface BLE_LowPassFilter_objc : NSObject {
     int lp_win[LP_RSSI_WINDOW_LENGTH]; //ring buffer
@@ -31,15 +38,52 @@
 @end
 
 
+/*
+ BLEHelper_objc use this hashtable to route central delegate call to matching link delegate of peripheral objects.
+ 
+ p_links table use peripheral as key to index dispatch table; dispatch table use sid + cid to index matching link object;
+ 
+ */
+
+@class BTSerialLink_objc;
+
+@interface BLE_LinkRouting_Hashtable : NSObject {
+    /*
+     Do NOT subclass NSMutableDictionary, extend it.
+     */
+    NSMutableDictionary* hashtable;
+    
+   
+}
+
+-(instancetype)initWithCapacity:(NSUInteger)numItems;
+-(void)addMetaCharacteristic:(CBCharacteristic*)character forService:(CBService*)service;
+-(void)routingCharacteristic:(CBCharacteristic*)chara inService: (CBService*)service toLink:(BTSerialLink_objc*)link;
+-(BTSerialLink_objc*)linkForCharacteristic:(CBCharacteristic*)character inService:(CBService*)service;
+-(void)removeRoutingEntryofLink:(BTSerialLink_objc*)link;
+
+@end
+
+
 //Discovered peripheral until disconnected/scan stopped;
-@interface BLE_Discovered_Peripheral : NSObject {
+@interface BLE_Discovered_Peripheral : NSObject <CBPeripheralDelegate>{
     //CBPeripheral* p;
     BLE_LowPassFilter_objc* lp_filter;
     //BOOL inrange;
     //BOOL connected;
+    BLE_Peripheral_HARDWARECONNECT_STATUS connectStatus;
+    BLE_LINK_QUALITY linkquality;
+    NSMutableArray* servicetryconnectionlist;  //link vs. CBService;
+    NSMutableArray* characteristictryconnectionlist;  //link vs. CBService;
+    
+    NSTimer* t_connected; //connected rssi timer, every 100ms;
+
+    //link routing table;
+    BLE_LinkRouting_Hashtable* rtable;
+    
 }
 
-@property (assign, nonatomic) CBPeripheral*  peripheral;
+@property (assign, nonatomic) CBPeripheral*  cbperipheral;
 
 //for the moment; define platform independent advertisement data object for discovering stage in BTSerialLink class;
 @property (assign, nonatomic) NSDictionary*  advertisementdata;
@@ -55,11 +99,19 @@
 
 -(void)isInRange;
 -(void)outOfRange;
--(void)isConnected;
+-(BOOL)isConnected;
 -(void)isDisconnected;
 -(int)getFilteredRssi:(int)rssi;
-
-
+-(int)currentFilteredRssi;
+-(BLE_Peripheral_HARDWARECONNECT_STATUS)hardwareConnectStatus;
+-(void)setHardwareConnectStatus:(BLE_Peripheral_HARDWARECONNECT_STATUS)status;
+-(BLE_LINK_QUALITY)linkQuality;
+-(void)setLinkQuality : (BLE_LINK_QUALITY) quality;
+-(BOOL)buildMetaRoutingTable; //on connected;
+-(BOOL)buildConnectionForLink:(BTSerialLink_objc*)link;
+-(void)failedBuildLinkConnection:(BTSerialLink_objc*)link;
+-(void)removeLink:(BTSerialLink_objc*)link;
+-(BTSerialLink_objc*)linkForCharacteristic:(CBCharacteristic*)characteristic inService: (CBService*)service ;
 @end
 
 @interface BLE_Discovered_Peripheral_List : NSObject {
@@ -75,7 +127,7 @@
 -(NSArray*)getInRangePeripheralList;
 -(NSArray*)getOutOfRangePeripheralList;
 -(void)emptyList;
--(NSArray*)getDiscoveredPeripheralList;
+-(NSArray*)getPeripheralList;
 -(NSUInteger)counts;
 
 @end
@@ -86,7 +138,12 @@
     int rp;
     NSTimer* t1; //scan rssi timer, every 1s;
     NSTimer* t_connected; //connected rssi timer, every 100ms;
-    BOOL sync;
+    
+    BOOL sync; // flag for not connected peripherals;
+    BOOL tt_update; // flag for connected peripherals;
+    
+    id <BLELinkConnectionDelegate> delegatecontroller;
+
 }
 
 @end
@@ -114,6 +171,8 @@
     CBPeripheralManager* cbpmgr;
     
     CBPeripheral* cbp;
+    BLE_Discovered_Peripheral* bdp;
+    
     //CBService* targetService;
     //CBCharacteristic* targetCharacteristic;
     
@@ -125,6 +184,9 @@
     //BLE_LINK_CONNECT_STAGE connectstage;
     
     BLE_LowPassFilter_objc* lp_filter;
+    
+    //link connection timer for time out monitoring;
+    NSTimer* connectTimer;
 
 
 }
@@ -136,7 +198,16 @@
 -(BTSerialLink_objc*)initWith:(BTSerialConfiguration_objc*)config;
 
 -(void)setCallerLinkPointer:(id)delegate;
--(BOOL)connect:(NSString*) identifier;
+-(BOOL)connect;
+-(BOOL)hardwareConnect;
+-(BOOL)hardwareDisconnect;
+
+-(void)didConnect;
+-(void)failedConnect;
+
+//link status;
+-(BLE_LINK_STATUS)linkStatus;
+-(void)setLinkStatus:(BLE_LINK_STATUS)linkStatus;
 
 //read/write;
 
@@ -156,6 +227,8 @@
 
 //link rssi;
 -(void)startUpdateLinkRSSI:(int)currentRssi;
+-(void)endUpdateLinkRSSI;
+
 -(int)getFilteredRssi:(int)rssi;
 
 -(id)getCallerLinkPointer;
@@ -163,8 +236,12 @@
 @end
 
 
+
+
+
 @interface BLE_Peripheral_Links : NSObject {
     NSMutableArray* p_links;
+    //NSMutableDictionary* p_links;
 }
 
 -(BLE_Peripheral_Links*)init;

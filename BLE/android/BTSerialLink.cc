@@ -38,19 +38,31 @@ void BLEHelper::discoverCharacteristics(void*){
 void BLEHelper::stopScanning(){
 }
 
+void BLEHelper::setPeripheralLinkQuality(QString& pname, BLE_LINK_QUALITY q) {
+
+}
+
+int BLEHelper::currentFilteredPeripheralRSSI(QString& pname) {
+
+}
+
+BLE_LINK_QUALITY BLEHelper::currentPeripheralLinkQuality(QString& pname) {
+
+}
+
 //====BTSerialConfig
 BTSerialConfiguration::BTSerialConfiguration(const QString& name) :
-    LinkConfiguration(name), connstage(BLE_LINK_CONNECTED_CHARACTERISTIC)
+    LinkConfiguration(name), connstage(BLE_LINK_CONNECT_CHARACTERISTIC)
 {
 }
 
 BTSerialConfiguration::BTSerialConfiguration(BTSerialConfiguration* source) :
-    LinkConfiguration(source), connstage(BLE_LINK_CONNECTED_CHARACTERISTIC)
+    LinkConfiguration(source), connstage(BLE_LINK_CONNECT_CHARACTERISTIC)
 {
    identifier = source->getBLEPeripheralIdentifier();
    pname = source->getBLEPeripheralName();
-   serviceID = source->getBLEPeripheralServiceID();
-   characteristicID = source->getBLEPeripheralCharacteristicID();
+   serviceID = source->getBLELinkServiceID();
+   characteristicID = source->getBLELinkCharacteristicID();
 }
 
 BTSerialConfiguration:: ~BTSerialConfiguration() {
@@ -74,8 +86,8 @@ void BTSerialConfiguration::copyFrom(LinkConfiguration *source)
     Q_ASSERT(ssource != NULL);
     identifier = ssource->getBLEPeripheralIdentifier();
     pname = ssource->getBLEPeripheralName();
-    serviceID = ssource->getBLEPeripheralServiceID();
-    characteristicID = ssource->getBLEPeripheralCharacteristicID();
+    serviceID = ssource->getBLELinkServiceID();
+    characteristicID = ssource->getBLELinkCharacteristicID();
 }
 
 
@@ -122,11 +134,11 @@ QString BTSerialConfiguration::getBLEPeripheralName() {
     return pname;
 }
 
-QString BTSerialConfiguration::getBLEPeripheralServiceID() {
+QString BTSerialConfiguration::getBLELinkServiceID() {
     return serviceID;
 }
 
-QString BTSerialConfiguration::getBLEPeripheralCharacteristicID() {
+QString BTSerialConfiguration::getBLELinkCharacteristicID() {
     return characteristicID;
 }
 
@@ -173,6 +185,13 @@ void BTSerialLink::setLinkConnectedStatus(BLE_LINK_STATUS status) {
     _linkstatus = status;
 }
 
+BLE_LINK_STATUS BTSerialLink::linkConnectedStatus() {
+    return _linkstatus;
+}
+
+BLE_LINK_QUALITY BTSerialLink::linkQuality() {
+    return _linkquality;
+}
 
 void BTSerialLink::setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler) {
     mavhandler = protocolhandler;
@@ -227,14 +246,14 @@ void BTSerialLink::writeBytes(const char* data, qint64 size)
     if( data == NULL ||
         size <= 0 ||
         _config->getBLEPeripheralIdentifier().isEmpty() ||
-        _config->getBLEPeripheralServiceID().isEmpty() ||
-        _config->getBLEPeripheralCharacteristicID().isEmpty()) {
+        _config->getBLELinkServiceID().isEmpty() ||
+        _config->getBLELinkCharacteristicID().isEmpty()) {
         return;
     }
 
     QAndroidJniObject deviceAddress = QAndroidJniObject::fromString(_config->getBLEPeripheralIdentifier());
-    QAndroidJniObject serviceUUI = QAndroidJniObject::fromString(_config->getBLEPeripheralServiceID());
-    QAndroidJniObject characteristicUUID = QAndroidJniObject::fromString(_config->getBLEPeripheralCharacteristicID());
+    QAndroidJniObject serviceUUI = QAndroidJniObject::fromString(_config->getBLELinkServiceID());
+    QAndroidJniObject characteristicUUID = QAndroidJniObject::fromString(_config->getBLELinkCharacteristicID());
 
     QAndroidJniEnvironment env;
     jbyteArray ba = env->NewByteArray(size);
@@ -310,8 +329,8 @@ bool BTSerialLink::_connect()
     if(_config->getBLEPeripheralIdentifier().isEmpty()) return false;
 
     QAndroidJniObject deviceAddress = QAndroidJniObject::fromString(_config->getBLEPeripheralIdentifier());
-    QAndroidJniObject serviceUUI = QAndroidJniObject::fromString(_config->getBLEPeripheralServiceID());
-    QAndroidJniObject characteristicUUID = QAndroidJniObject::fromString(_config->getBLEPeripheralCharacteristicID());
+    QAndroidJniObject serviceUUI = QAndroidJniObject::fromString(_config->getBLELinkServiceID());
+    QAndroidJniObject characteristicUUID = QAndroidJniObject::fromString(_config->getBLELinkCharacteristicID());
 
     QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager",
                                                "connect",
@@ -328,6 +347,12 @@ bool BTSerialLink::_hardwareConnect()
 {
     //QString* identifier = _config->getBLEPeripheralIdentifier();
 //    return btlwrapper->_hardwareConnect();
+}
+
+bool BTSerialLink::_hardwareDisconnect()
+{
+    //QString* identifier = _config->getBLEPeripheralIdentifier();
+//    return btlwrapper->_hardwareDisconnect();
 }
 
 void BTSerialLink::setCallbackDelegate(void* delegate) {
