@@ -161,19 +161,20 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
     if(blelink) {
-//#if __android__
-//        __android_log_print(ANDROID_LOG_INFO, kJTag, "createConnectedBLELink to add ble-link");
-//#endif
-//        _addLink(blelink);
-//        blelink->_connect();
-        //_addLink(blelink);
+#ifdef __android__
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "createConnectedBLELink to add ble-link");
+        _addLink(blelink);
+        blelink->_connect();
+#endif
+
+#ifdef __ios__
         //check if existing link;
         if (_blelinks.contains(blelink)) {
             return blelink;
         }
         
         //check if same config exists; currently only one link to a same characteristic is allowed to prevent interfere with each other.
-        bool found = false;
+        bool found = false; //This seems impossible in that same qgc can not connect to same BLE device's character twice
         for (int i=0; i<_blelinks.count(); i++) {
             BTSerialLink* blink = _blelinks.value<BTSerialLink*>(i);
             BTSerialConfiguration* cfg = blink->getLinkConfiguration();
@@ -236,6 +237,7 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
             return blelink;
             
         }
+#endif
     }
     return blelink;
 }

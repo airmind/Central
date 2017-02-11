@@ -69,6 +69,16 @@ BTSerialConfiguration:: ~BTSerialConfiguration() {
 
 }
 
+bool BTSerialConfiguration::operator== (BTSerialConfiguration* cfg) {
+    if (identifier == cfg->getBLEPeripheralIdentifier() &&
+        pname == cfg->getBLEPeripheralName() &&
+        serviceID == cfg->getBLELinkServiceID() &&
+        characteristicID == cfg->getBLELinkCharacteristicID() ) {
+        return true;
+    }
+    return false;
+}
+
 void BTSerialConfiguration::configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid, BLE_LINK_CONNECT_STAGE stage) {
 
     identifier = linkid;

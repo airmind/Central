@@ -103,12 +103,12 @@ public class DeviceScanFragment extends Activity implements IParametersControlle
         scan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                if (mBluetoothAdapter.isEnabled()) {
-//                    scanLeDevice(true);
-//                } else {
-//                    scanLeDevice(false);
-//                }
-                LinkManagerNative.tcpConnect("192.168.0.99", 6789);
+                if (mBluetoothAdapter.isEnabled()) {
+                    scanLeDevice(true);
+                } else {
+                    scanLeDevice(false);
+                }
+//                LinkManagerNative.tcpConnect("192.168.0.99", 6789);
             }
         });
 
