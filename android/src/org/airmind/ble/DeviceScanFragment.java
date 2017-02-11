@@ -17,17 +17,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.airmind.controller.IParametersController;
+import org.airmind.view.MainActivity;
 import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 /**
  * Created by caprin on 16-10-15.
@@ -109,6 +108,7 @@ public class DeviceScanFragment extends Activity implements IParametersControlle
 //                    scanLeDevice(false);
 //                }
                 LinkManagerNative.tcpConnect("192.168.0.99", 6789);
+//                startActivity(new Intent(DeviceScanFragment.this, MainActivity.class));
             }
         });
 

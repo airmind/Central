@@ -18,9 +18,11 @@ apply plugin: 'com.android.application'
 
 dependencies {
     compile project(':mavlink')
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:23.0.0'
     compile 'com.android.support:support-v4:23.0.0'
+    compile 'com.android.support:design:23.0.0'
+    compile project(':mind_library')
 }
 
 android {
@@ -37,9 +39,9 @@ android {
      * Changing them manually might break the compilation!
      *******************************************************/
 
-    compileSdkVersion androidCompileSdkVersion.toInteger()
+    compileSdkVersion 23
 
-    buildToolsVersion androidBuildToolsVersion
+    buildToolsVersion '23.0.0'
 
     sourceSets {
         main {

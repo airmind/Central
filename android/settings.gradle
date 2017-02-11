@@ -1,1 +1,1 @@
-include ':mavlink'
+include ':mavlink', ':mind_library'
