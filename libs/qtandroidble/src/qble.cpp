@@ -296,6 +296,25 @@ static void jniRead(JNIEnv *env, jobject thizA, jstring jdevice, jstring jservic
     if(characteristic) env->ReleaseStringUTFChars(jcharateristic, characteristic);
 }
 */
+
+static void jniSetAirframeType(JNIEnv *env, jobject thizA, jint airFrameType)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniSetAirframeType is called");
+    Vehicle*  _vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
+    if (_vehicle) {
+         if(_vehicle->px4Firmware()) {
+             __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniSetAirframeType] to set PX4's AirFrameType(Auto-Start script) to %d", airFrameType);
+         } else {
+             if(_vehicle->apmFirmware()) {
+                 __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniSetAirframeType] do not support APM currently");
+             }
+         }
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniSetAirframeType] no active-vehicle");
+    }
+}
 /*!
     Constructs a new serial port object with the given \a parent.
 */
@@ -366,6 +385,11 @@ void QBLE::setNativeMethods(void)
         {"refreshAllParameters", "()V",reinterpret_cast<void *>(jniRefreshAllParameters)}
     };
     setNativeMethods("org/airmind/ble/ParameterManager",parametersNativeMethods, sizeof(parametersNativeMethods)/sizeof(parametersNativeMethods[0]));
+
+    JNINativeMethod vehicleManagerNativeMethods[] {
+        {"setAirFrameType", "(I)V",reinterpret_cast<void *>(jniSetAirframeType)}
+    };
+    setNativeMethods("org/airmind/ble/VehicleManager",vehicleManagerNativeMethods, sizeof(vehicleManagerNativeMethods)/sizeof(vehicleManagerNativeMethods[0]));
 }
 
 QT_END_NAMESPACE
