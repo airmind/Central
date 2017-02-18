@@ -333,6 +333,8 @@ static jint jniGetAirframeType(JNIEnv *env, jobject thizA)
              bool ret = QMetaObject::invokeMethod(_vehicle,"getAirFrameType",Qt::AutoConnection, Q_RETURN_ARG(int, airFrameType));
              if(!ret) {
                  __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniGetAirframeType] failed to call Vehicle.getAirFrameType()");
+             } else {
+                 __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniGetAirframeType] Vehicle.getAirFrameType() returned %d", airFrameType);
              }
              return airFrameType;
          } else {
