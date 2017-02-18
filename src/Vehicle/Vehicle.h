@@ -591,6 +591,10 @@ public:
     /// @return true: X confiuration, false: Plus configuration
     bool xConfigMotors(void);
 
+#ifdef __mindskin__
+    void setAirFrameType(int airFrameType);
+#endif
+
 public slots:
     void setLatitude(double latitude);
     void setLongitude(double longitude);

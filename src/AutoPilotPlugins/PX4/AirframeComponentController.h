@@ -45,6 +45,9 @@ public:
     
     int currentAirframeIndex(void);
     void setCurrentAirframeIndex(int newIndex);
+#ifdef __mindskin__
+    void changeAutostart(int autoStartId);
+#endif
     
 signals:
     void autostartIdChanged(int newAutostartId);

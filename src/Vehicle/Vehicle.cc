@@ -26,6 +26,10 @@
 #include "MissionCommandTree.h"
 #include "QGroundControlQmlGlobal.h"
 
+#ifdef __mindskin__
+#include "AirframeComponentController.h"
+#endif
+
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
 
 #define UPDATE_TIMER 50
@@ -258,6 +262,13 @@ Vehicle::Vehicle(LinkInterface*             link,
     _windFactGroup.setVehicle(this);
     _vibrationFactGroup.setVehicle(this);
 }
+
+#ifdef __mindskin__
+void Vehicle::setAirFrameType(int airFrameType) {
+    AirframeComponentController controller;
+    controller.changeAutostart(airFrameType);
+}
+#endif
 
 // Disconnected Vehicle
 Vehicle::Vehicle(MAV_AUTOPILOT firmwareType, MAV_TYPE vehicleType, QObject* parent)

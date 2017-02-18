@@ -306,6 +306,10 @@ static void jniSetAirframeType(JNIEnv *env, jobject thizA, jint airFrameType)
     if (_vehicle) {
          if(_vehicle->px4Firmware()) {
              __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniSetAirframeType] to set PX4's AirFrameType(Auto-Start script) to %d", airFrameType);
+             bool ret = QMetaObject::invokeMethod(_vehicle,"setAirFrameType",Qt::AutoConnection, Q_ARG(int, airFrameType));
+             if(!ret) {
+                 __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniSetAirframeType] failed to call Vehicle.setAirFrameType()");
+             }
          } else {
              if(_vehicle->apmFirmware()) {
                  __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniSetAirframeType] do not support APM currently");
