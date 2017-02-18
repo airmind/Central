@@ -15,4 +15,11 @@ public class VehicleManager {
      * @param airFrameType to indicate auto-start script.
      */
     public static native void setAirFrameType(int airFrameType);
+
+
+    /**
+     * Currently only support PX4, to return SYS_AUTOSTART parameter value
+     * @return SYS_AUTOSTART parameter value, -1 returned means invalid AirFrameType due to non-PX4 or no-active-vehicle
+     */
+    public static native int getAirFrameType();
 }

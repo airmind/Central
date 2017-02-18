@@ -319,6 +319,31 @@ static void jniSetAirframeType(JNIEnv *env, jobject thizA, jint airFrameType)
         __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniSetAirframeType] no active-vehicle");
     }
 }
+
+static jint jniGetAirframeType(JNIEnv *env, jobject thizA)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thizA);
+    int airFrameType = -1;
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniGetAirframeType is called");
+    Vehicle*  _vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
+    if (_vehicle) {
+         if(_vehicle->px4Firmware()) {
+             __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniGetAirframeType] to set PX4's AirFrameType(Auto-Start script) to %d", airFrameType);
+             bool ret = QMetaObject::invokeMethod(_vehicle,"getAirFrameType",Qt::AutoConnection, Q_RETURN_ARG(int, airFrameType));
+             if(!ret) {
+                 __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniGetAirframeType] failed to call Vehicle.getAirFrameType()");
+             }
+             return airFrameType;
+         } else {
+             if(_vehicle->apmFirmware()) {
+                 __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniGetAirframeType] do not support APM currently");
+             }
+         }
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniGetAirframeType] no active-vehicle");
+    }
+}
 /*!
     Constructs a new serial port object with the given \a parent.
 */
@@ -391,7 +416,8 @@ void QBLE::setNativeMethods(void)
     setNativeMethods("org/airmind/ble/ParameterManager",parametersNativeMethods, sizeof(parametersNativeMethods)/sizeof(parametersNativeMethods[0]));
 
     JNINativeMethod vehicleManagerNativeMethods[] {
-        {"setAirFrameType", "(I)V",reinterpret_cast<void *>(jniSetAirframeType)}
+        {"setAirFrameType", "(I)V",reinterpret_cast<void *>(jniSetAirframeType)},
+        {"getAirFrameType", "()I",reinterpret_cast<void *>(jniGetAirframeType)}
     };
     setNativeMethods("org/airmind/ble/VehicleManager",vehicleManagerNativeMethods, sizeof(vehicleManagerNativeMethods)/sizeof(vehicleManagerNativeMethods[0]));
 }

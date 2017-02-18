@@ -593,6 +593,7 @@ public:
 
 #ifdef __mindskin__
     void setAirFrameType(int airFrameType);
+    int getAirFrameType();
 #endif
 
 public slots:

@@ -109,6 +109,11 @@ void AirframeComponentController::changeAutostart(int autoStartId)
     _autostartId = autoStartId;
     changeAutostart();
 }
+
+int AirframeComponentController::getAutostart()
+{
+    return _autostartId;
+}
 #endif
 
 void AirframeComponentController::_waitParamWriteSignal(QVariant value)

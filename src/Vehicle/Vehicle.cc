@@ -268,6 +268,11 @@ void Vehicle::setAirFrameType(int airFrameType) {
     AirframeComponentController controller;
     controller.changeAutostart(airFrameType);
 }
+
+int Vehicle::getAirFrameType() {
+    AirframeComponentController controller;
+    return controller.getAutostart();
+}
 #endif
 
 // Disconnected Vehicle
