@@ -94,7 +94,7 @@ public class LinkManager {
                     System.out.println(v);
                 }
 
-                ParameterManager.refreshAllParameters1();
+                ParameterManager.refreshAllFlightParameters();
             }
         }.start();
     }

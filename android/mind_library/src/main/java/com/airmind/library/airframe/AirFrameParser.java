@@ -1,6 +1,7 @@
 package com.airmind.library.airframe;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.util.Xml;
 import android.widget.Toast;
 
@@ -18,6 +19,27 @@ import java.util.List;
 
 public class AirFrameParser {
 
+    /**
+     * Find the air frame's name through its id.
+     * @param id air frame id
+     * @return air frame name
+     */
+    public static String getAirFrameNameById(@NonNull AirframesMetaData metaData, int id){
+        for (AirframesMetaData.AirframeGroup airframeGroup : metaData.getAirframeGroupList()) {
+            for (AirframesMetaData.AirFrame airFrame : airframeGroup.getAirFrameList()) {
+                if(Integer.valueOf(airFrame.getId()) == id){
+                    return airFrame.getName();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parse the AirframeFactMetaData.xml in <b>assets</b> directory, make sure that the .xml file exists.
+     * @param context the application context
+     * @return the object that the .xml file was converted to.
+     */
     public static AirframesMetaData parseAirFrameMetaData(Context context){
         XmlPullParser parser = Xml.newPullParser();
         try {

@@ -63,10 +63,35 @@ public class MainActivity extends MindSkinActivity {
 
     private void init(){
 
+        if(airframesMetaData == null){
+            airframesMetaData = AirFrameParser.parseAirFrameMetaData(getApplicationContext());
+        }
+
         flightTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showFrameTypeWarningDialog();
+                int currentAirFrameTypeId = VehicleManager.getAirFrameType();
+                if(currentAirFrameTypeId != -1){
+                    String name = AirFrameParser.getAirFrameNameById(airframesMetaData, currentAirFrameTypeId);
+                    if(name != null){
+                        CommonAlertDialog dialog = new CommonAlertDialog(
+                                MainActivity.this, "Current air frame type:\n    " + name + "\nWould you like to change it?");
+                        dialog.setPositiveListener(new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                showFrameSelectDialog();
+                            }
+                        });
+                        dialog.show();
+                    }else{
+                        Toast.makeText(MainActivity.this,
+                                "Cannot find any matched type. Please reset the air frame type.",
+                                Toast.LENGTH_LONG).show();
+                        showFrameSelectDialog();
+                    }
+                }else{
+                    showFrameTypeWarningDialog();
+                }
             }
         });
     }
@@ -89,7 +114,7 @@ public class MainActivity extends MindSkinActivity {
         }
 
         if(airframesMetaData != null){
-            Dialog dialog = new Dialog(this, R.style.MindSkinDialog);
+            final Dialog dialog = new Dialog(this, R.style.MindSkinDialog);
             View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.dialog_select_frame_type, null);
             ImageView leftArrow = (ImageView) view.findViewById(R.id.dialog_select_frame_type_left_imageView);
             ImageView rightArrow = (ImageView) view.findViewById(R.id.dialog_select_frame_type_right_imageView);
@@ -116,7 +141,9 @@ public class MainActivity extends MindSkinActivity {
                             Toast.makeText(MainActivity.this, "Please select a frame type.", Toast.LENGTH_SHORT).show();
                             return;
                         }
+                        VehicleManager.setAirFrameType(Integer.valueOf(airFrameId));
                         Toast.makeText(MainActivity.this, airFrameId + "", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
                     }
                 });
                 // set spinner
@@ -134,10 +161,7 @@ public class MainActivity extends MindSkinActivity {
                     @Override
                     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                         airFrameId = airframeIdList.get(position);
-                        if(airFrameId != null){
-                            VehicleManager.setAirFrameType(Integer.valueOf(airFrameId));
-                            // TODO: 2017/2/18
-                        }else{
+                        if(airFrameId == null){
                             Toast.makeText(getApplicationContext(), "No frame id detected.", Toast.LENGTH_SHORT).show();
                         }
                     }

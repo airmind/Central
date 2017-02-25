@@ -14,7 +14,7 @@
         <ProgressBar
             android:id="@+id/activity_device_scan_progressbar"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="56dp"
             style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
             android:progressDrawable="@drawable/connect_parameters_progressbar"
             />

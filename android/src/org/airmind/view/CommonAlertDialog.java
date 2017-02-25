@@ -33,7 +33,9 @@ public class CommonAlertDialog{
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                positiveListener.onClick(dialogInterface, i);
+                if(positiveListener != null){
+                    positiveListener.onClick(dialogInterface, i);
+                }
             }
         });
         builder.setNegativeButton("Cancel", negativeListener);

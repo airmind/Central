@@ -36,11 +36,12 @@ public class ParameterManager{
      */
     public static native void refreshAllParameters();
 
-    public static void refreshAllParameters1(){
+    public static void refreshAllFlightParameters(){
         if(controller != null){
             refreshAllParameters();
         }else{
-            throw new NullPointerException("ParametersController is NULL in ParameterManager.");
+            throw new NullPointerException("ParametersController is NULL in ParameterManager. " +
+                    "Must implement 'IParametersController' interface and call setController() before refreshing parameters.");
         }
     }
 
@@ -57,7 +58,8 @@ public class ParameterManager{
         if(controller != null){
             controller.onParametersProgressChanged(progress);
         }else{
-            throw new NullPointerException("ParametersController is NULL in ParameterManager.");
+            throw new NullPointerException("ParametersController is NULL in ParameterManager. " +
+                    "Must implement 'IParametersController' interface and call setController() before refreshing parameters.");
         }
     }
 
@@ -89,7 +91,8 @@ public class ParameterManager{
         if(controller != null){
             controller.onParametersUpdated(vehicleId, componentId, mavType, parameterName, parameterValue, parameterIndex, parameterCount);
         }else{
-            throw new NullPointerException("ParametersController is NULL in ParameterManager.");
+            throw new NullPointerException("ParametersController is NULL in ParameterManager. " +
+                    "Must implement 'IParametersController' interface and call setController() before refreshing parameters.");
         }
     }
 }
