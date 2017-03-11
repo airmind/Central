@@ -111,6 +111,15 @@ void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavTyp
     cleanJavaException();
 #endif //__android__
 }
+
+void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, QVariant value) {
+#ifdef __android__
+    QAndroidJniObject jParameterName = QAndroidJniObject::fromString(parameterName);
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterUpdate", "(IIILjava/lang/String;F)V", vehicleId, componentId, mavType, jParameterName.object<jstring>(),value.toFloat());
+    cleanJavaException();
+#endif
+}
+
 #endif
 
 /// Called whenever a parameter is updated or first seen.
@@ -378,6 +387,11 @@ void ParameterLoader::_valueUpdated(const QVariant& value)
     int componentId = fact->componentId();
     QString name = fact->name();
 
+#ifdef __mindskin__
+    if(!fact->rebootRequired()) {
+        parameterUpdate(_mavlink->getSystemId(),componentId,fact->type(),name,value);
+    }
+#endif
     _dataMutex.lock();
 
     Q_ASSERT(_waitingWriteParamNameMap.contains(componentId));
