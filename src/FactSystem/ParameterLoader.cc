@@ -101,10 +101,13 @@ void ParameterLoader::notifyParameterProgress(float progress) {
 #endif //__android__
 }
 
-void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value) {
+void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit) {
 #ifdef __android__
     QAndroidJniObject jParameterName = QAndroidJniObject::fromString(parameterName);
-    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterUpdate", "(IIILjava/lang/String;FII)V", vehicleId, componentId, mavType, jParameterName.object<jstring>(),value.toFloat(),parameterIndex,parameterCount);
+    QAndroidJniObject jShortDesc = QAndroidJniObject::fromString(shortDesc);
+    QAndroidJniObject jLongDesc = QAndroidJniObject::fromString(longDesc);
+    QAndroidJniObject jUnit = QAndroidJniObject::fromString(unit);
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterUpdate", "(IIILjava/lang/String;FLjava/lang/String;Ljava/lang/String;II)V", vehicleId, componentId, mavType, jParameterName.object<jstring>(),value.toFloat(), jShortDesc.object<jstring>(), jLongDesc.object<jstring>(), jUnit.object<jstring>(), parameterIndex,parameterCount);
     cleanJavaException();
 #endif //__android__
 }
@@ -326,7 +329,7 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
     Q_ASSERT(fact);
     fact->_containerSetRawValue(value);
 #ifdef __mindskin__
-    parameterUpdate(uasId,componentId,mavType,parameterName,parameterCount,parameterId,value);
+    parameterUpdate(uasId,componentId,mavType,parameterName,parameterCount,parameterId,value, fact->shortDescription(), fact->longDescription(), fact->rawUnits());
 #endif
     if (componentParamsComplete) {
         if (componentId == _defaultComponentId) {
