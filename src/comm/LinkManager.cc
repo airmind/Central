@@ -956,7 +956,7 @@ void LinkManager::_linkConnected(void)
     emit linkConnected((LinkInterface*)sender());
     #ifdef __mindskin__
           #ifdef __android__
-            LinkInterface* link = (LinkInterface*)sender();
+            /*LinkInterface* link = (LinkInterface*)sender();
             LinkConfiguration* linkCfg = link->getLinkConfiguration();
             if(linkCfg->type() == LinkConfiguration::TypeTcp) {
                 TCPConfiguration* tcpLinkCfg = qobject_cast<TCPConfiguration*>(linkCfg);
@@ -965,7 +965,10 @@ void LinkManager::_linkConnected(void)
                 QAndroidJniObject jHost = QAndroidJniObject::fromString(host);
                 QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "tcpConnected", "(Ljava/lang/String;I)V", jHost.object<jstring>(), port);
                 cleanJavaException();
-            }
+            } else {*/
+                QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "()V");
+                cleanJavaException();
+//            }
           #endif //__android__
     #endif
 }
@@ -973,6 +976,12 @@ void LinkManager::_linkConnected(void)
 void LinkManager::_linkDisconnected(void)
 {
     emit linkDisconnected((LinkInterface*)sender());
+#ifdef __mindskin__
+      #ifdef __android__
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "()V");
+        cleanJavaException();
+      #endif //__android__
+#endif
 }
 
 void LinkManager::_linkConnectionRemoved(LinkInterface* link)

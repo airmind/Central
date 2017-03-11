@@ -84,8 +84,27 @@ public class LinkManager {
      * @param host
      * @param port
      */
-    public static void tcpConnected(String host, int port) {
-        Log.d(TAG, "[tcpConnected] host:" + host + ", port:" + port);
+//    @Deprecated
+//    public static void tcpConnected(String host, int port) {
+//        Log.d(TAG, "[tcpConnected] host:" + host + ", port:" + port);
+//        new Thread() {
+//            public void run() {
+//                try{
+//                    Thread.sleep(2000);
+//                } catch(InterruptedException v){
+//                    System.out.println(v);
+//                }
+//
+//                ParameterManager.refreshAllParameters1();
+//            }
+//        }.start();
+//    }
+
+    /**
+     * Called from QT to notify vechile has been connected
+     */
+    public static void connected() {
+        Log.d(TAG, "[disConnected]");
         new Thread() {
             public void run() {
                 try{
@@ -97,5 +116,12 @@ public class LinkManager {
                 ParameterManager.refreshAllParameters1();
             }
         }.start();
+    }
+
+    /**
+     * Called from QT to notify vechile has been connected
+     */
+    public static void disConnected() {
+        Log.d(TAG, "[disConnected]");
     }
 }
