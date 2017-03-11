@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Base.Theme.AppCompat.Light">
+
+    </style>
+
+    <style name="MindSkinDialog" parent="Base.V7.Theme.AppCompat.Light.Dialog">
+        <!--background color-->
+        <!--<item name="android:windowBackground">@android:color/transparent</item>-->
+        <!--has title -->
+        <item name="android:windowNoTitle">false</item>
+        <item name="android:gravity">center</item>
+        <!--float above activity-->
+        <item name="android:windowIsFloating">false</item>
+        <!--background dim-->
+        <!--<item name="android:backgroundDimEnabled">true</item>-->
+    </style>
+</resources>

@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_margin="5dp"
-        android:background="#CDC9C9">
+        android:background="#CDC9C9"
+        app:elevation="16dp">
 
         <TextView
             android:id="@+id/activity_qt_flight"
@@ -28,7 +31,8 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_margin="5dp"
-        android:background="#63B8FF">
+        android:background="#63B8FF"
+        app:elevation="16dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -44,7 +48,8 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_margin="5dp"
-        android:background="#FFE1FF">
+        android:background="#FFE1FF"
+        app:elevation="16dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -60,7 +65,8 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_margin="5dp"
-        android:background="#FFA07A">
+        android:background="#FFA07A"
+        app:elevation="16dp">
 
         <TextView
             android:layout_width="wrap_content"

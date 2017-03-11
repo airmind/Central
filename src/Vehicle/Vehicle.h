@@ -591,14 +591,14 @@ public:
     /// @return true: X confiuration, false: Plus configuration
     bool xConfigMotors(void);
 
+public slots:
+    void setLatitude(double latitude);
+    void setLongitude(double longitude);
+
 #ifdef __mindskin__
     void setAirFrameType(int airFrameType);
     int getAirFrameType();
 #endif
-
-public slots:
-    void setLatitude(double latitude);
-    void setLongitude(double longitude);
 
 signals:
     void allLinksInactive(Vehicle* vehicle);
