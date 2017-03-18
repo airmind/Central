@@ -13,7 +13,7 @@
 #define QGC_SETTINGS_VERSION 7
 
 #ifdef __mindskin__
-    #define QGC_APPLICATION_NAME "MindSkin"
+    #define QGC_APPLICATION_NAME "MindCentral"
     #define QGC_ORG_NAME "airmind"
     #define QGC_ORG_DOMAIN "airmind.co"
 #else
