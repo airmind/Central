@@ -92,6 +92,9 @@ public:
     static void cacheMetaDataFile(const QString& metaDataFile, MAV_AUTOPILOT firmwareType);
 
     int defaultComponenentId(void) { return _defaultComponentId; }
+#ifdef __mindskin__
+    void writeLocalParamCache();
+#endif
     
 signals:
     /// Signalled when the full set of facts are ready

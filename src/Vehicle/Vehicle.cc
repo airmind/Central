@@ -1680,6 +1680,14 @@ void Vehicle::setActive(bool active)
     _active = active;
 
     _startJoystick(_active);
+
+#ifdef __mindskin__
+    //try to flush fact into cache after the vehicle is disconnected
+    if(_active == false && getParameterLoader() != NULL) {
+        qCDebug(VehicleLog) << "[setActive(false)] to flush fact/parameters into cache file in order to speed-up initial-load of parameters";
+        getParameterLoader()->writeLocalParamCache();
+    }
+#endif
 }
 
 bool Vehicle::homePositionAvailable(void)

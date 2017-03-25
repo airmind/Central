@@ -743,6 +743,15 @@ void ParameterLoader::_writeLocalParamCache(int uasId, int componentId)
     ds << cache_map;
 }
 
+#ifdef __mindskin__
+void ParameterLoader::writeLocalParamCache() {
+    Q_ASSERT(_vehicle);
+    int uasId = _vehicle->id();
+    foreach(int compId, _mapParameterId2Name.keys()) {
+        _writeLocalParamCache(uasId, compId);
+    }
+}
+#endif
 QDir ParameterLoader::parameterCacheDir()
 {
     const QString spath(QFileInfo(QSettings().fileName()).dir().absolutePath());
