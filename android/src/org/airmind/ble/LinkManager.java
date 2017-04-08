@@ -104,7 +104,7 @@ public class LinkManager {
      * Called from QT to notify vechile has been connected
      */
     public static void connected() {
-        Log.d(TAG, "[disConnected]");
+        Log.d(TAG, "[connected]");
         new Thread() {
             public void run() {
                 try{

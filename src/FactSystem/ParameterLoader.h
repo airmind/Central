@@ -115,7 +115,7 @@ protected:
     void _parameterUpdate(int uasId, int componentId, QString parameterName, int parameterCount, int parameterId, int mavType, QVariant value);
 #ifdef __mindskin__
     void notifyParameterProgress(float progress);
-    void parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit);
+    void parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue);
     void parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, QVariant value);
 #endif
     void _valueUpdated(const QVariant& value);

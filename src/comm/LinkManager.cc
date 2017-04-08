@@ -33,6 +33,10 @@
 #include "BluetoothLink.h"
 #endif
 
+#ifdef __mindskin__
+#include <mindskinlog.h>
+#endif
+
 #ifndef __mobile__
     #include "GPSManager.h"
 #endif
@@ -966,11 +970,17 @@ void LinkManager::_linkConnected(void)
                 QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "tcpConnected", "(Ljava/lang/String;I)V", jHost.object<jstring>(), port);
                 cleanJavaException();
             } else {*/
-                QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "()V");
-                cleanJavaException();
+                LinkInterface* link = (LinkInterface*)sender();
+                LinkConfiguration* linkCfg = link->getLinkConfiguration();
+                MSLog("[_linkConnected] linkType:%d",linkCfg->type());
+                if(linkCfg->type() != LinkConfiguration::TypeUdp) {
+                    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "()V");
+                    cleanJavaException();
+                }
 //            }
           #endif //__android__
     #endif
+    qCDebug(LinkManagerLog) << "_linkConnected exit";
 }
 
 void LinkManager::_linkDisconnected(void)

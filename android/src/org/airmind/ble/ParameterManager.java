@@ -40,8 +40,8 @@ public class ParameterManager{
         if(controller != null){
             refreshAllParameters();
         }else{
-            throw new NullPointerException("ParametersController is NULL in ParameterManager. " +
-                    "Must implement 'IParametersController' interface and call setController() before refreshing parameters.");
+            //throw new NullPointerException("ParametersController is NULL in ParameterManager. " +
+            //        "Must implement 'IParametersController' interface and call setController() before refreshing parameters.");
         }
     }
 

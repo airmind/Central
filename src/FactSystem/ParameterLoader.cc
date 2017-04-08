@@ -26,6 +26,10 @@
 #include <QVariantAnimation>
 
 #ifdef __mindskin__
+#include <mindskinlog.h>
+#endif
+
+#ifdef __mindskin__
 #ifdef __android__
 #include <android/log.h>
 static const char kJTag[] {"ParameterManager"};
@@ -101,13 +105,13 @@ void ParameterLoader::notifyParameterProgress(float progress) {
 #endif //__android__
 }
 
-void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit) {
+void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue) {
 #ifdef __android__
     QAndroidJniObject jParameterName = QAndroidJniObject::fromString(parameterName);
     QAndroidJniObject jShortDesc = QAndroidJniObject::fromString(shortDesc);
     QAndroidJniObject jLongDesc = QAndroidJniObject::fromString(longDesc);
     QAndroidJniObject jUnit = QAndroidJniObject::fromString(unit);
-    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterUpdate", "(IIILjava/lang/String;FLjava/lang/String;Ljava/lang/String;II)V", vehicleId, componentId, mavType, jParameterName.object<jstring>(),value.toFloat(), jShortDesc.object<jstring>(), jLongDesc.object<jstring>(), jUnit.object<jstring>(), parameterIndex,parameterCount);
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterUpdate", "(IIILjava/lang/String;FFLjava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V", vehicleId, componentId, mavType, jParameterName.object<jstring>(),value.toFloat(), defaultValue.toFloat(), jShortDesc.object<jstring>(), jLongDesc.object<jstring>(), jUnit.object<jstring>(), parameterIndex,parameterCount);
     cleanJavaException();
 #endif //__android__
 }
@@ -171,6 +175,7 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
 
     if (_vehicle->px4Firmware() && parameterName == "_HASH_CHECK") {
         /* we received a cache hash, potentially load from cache */
+        qCDebug(ParameterLoaderLog) << "try to load parameters from cache";
         _tryCacheHashLoad(uasId, componentId, value);
         return;
     }
@@ -338,7 +343,7 @@ void ParameterLoader::_parameterUpdate(int uasId, int componentId, QString param
     Q_ASSERT(fact);
     fact->_containerSetRawValue(value);
 #ifdef __mindskin__
-    parameterUpdate(uasId,componentId,mavType,parameterName,parameterCount,parameterId,value, fact->shortDescription(), fact->longDescription(), fact->rawUnits());
+    parameterUpdate(uasId,componentId,mavType,parameterName,parameterCount,parameterId,value, fact->shortDescription(), fact->longDescription(), fact->rawUnits(), fact->rawDefaultValue());
 #endif
     if (componentParamsComplete) {
         if (componentId == _defaultComponentId) {

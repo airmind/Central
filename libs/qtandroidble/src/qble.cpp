@@ -239,8 +239,13 @@ static void jniRefreshAllParameters(JNIEnv *env, jobject thizA)
     Vehicle*  _vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
     if (_vehicle) {
          AutoPilotPlugin* _autopilot = _vehicle->autopilotPlugin();
-        _autopilot->refreshAllParameters();
+//        _autopilot->refreshAllParameters();
+        bool ret = QMetaObject::invokeMethod(_autopilot,"refreshAllParameters",Qt::AutoConnection);
+        if(!ret) {
+            __android_log_print(ANDROID_LOG_INFO, kJTag, "[jniRefreshAllParameters] failed to call _vehicle->autopilotPlugin().refreshAllParameters()");
+        }
     }
+
 }
 
 /*
