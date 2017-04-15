@@ -988,8 +988,16 @@ void LinkManager::_linkDisconnected(void)
     emit linkDisconnected((LinkInterface*)sender());
 #ifdef __mindskin__
       #ifdef __android__
-        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "()V");
-        cleanJavaException();
+        LinkInterface *link = (LinkInterface*)sender();
+        if(link != NULL) {
+            LinkConfiguration *linkConfig = link->getLinkConfiguration();
+            if(linkConfig != NULL) {
+                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
+                    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "()V");
+                    cleanJavaException();
+                }
+            }
+        }
       #endif //__android__
 #endif
 }

@@ -28,6 +28,7 @@
 
 #ifdef __mindskin__
 #include "AirframeComponentController.h"
+#include <mindskinlog.h>
 #endif
 
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
@@ -135,6 +136,8 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _windFactGroup(this)
     , _vibrationFactGroup(this)
 {
+
+    MSLog("create vehicle");
     _addLink(link);
 
     _mavlink = qgcApp()->toolbox()->mavlinkProtocol();
@@ -587,11 +590,13 @@ Vehicle::resetCounters()
 
 void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message)
 {
+    MSLog("[Vehicle::_mavlinkMessageReceived] enter");
     if (message.sysid != _id && message.sysid != 0) {
         return;
     }
 
     if (!_containsLink(link)) {
+        MSLog("[Vehicle::_mavlinkMessageReceived] to add link");
         _addLink(link);
     }
 
@@ -1108,6 +1113,7 @@ bool Vehicle::_containsLink(LinkInterface* link)
 
 void Vehicle::_addLink(LinkInterface* link)
 {
+    MSLog("_addLink");
     if (!_containsLink(link)) {
         _links += link;
         qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
@@ -1120,7 +1126,8 @@ void Vehicle::_addLink(LinkInterface* link)
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDeleted), this, static_cast<void (Vehicle::*)(LinkInterface*)>(&Vehicle::_linkInactiveOrDeleted));
         connect(link, &LinkInterface::disconnected, this, &Vehicle::disconnected);
 #endif
-
+    } else {
+        MSLog("[_addLink] link already be there");
     }
 }
 
@@ -1677,15 +1684,22 @@ bool Vehicle::active(void)
 
 #ifdef __mindskin__
 void Vehicle::disconnected() {
+    MSLog("[Vehicle::disconnected()] enter");
     if(getParameterLoader() != NULL) {
         LinkInterface *link = (LinkInterface*)sender();
         if(link != NULL) {
             LinkConfiguration *linkConfig = link->getLinkConfiguration();
-            if(linkConfig != NULL && linkConfig->type() != LinkConfiguration::TypeUdp) {
-                qCDebug(VehicleLog) << "[disconnected] to flush fact/parameters into cache file in order to speed-up initial-load of parameters, linkType:" << linkConfig->type();
-                getParameterLoader()->writeLocalParamCache();
+            if(linkConfig != NULL) {
+                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
+                    MSLog("[disconnected] to flush fact/parameters into cache file in order to speed-up initial-load of parameters, linkType:%d",linkConfig->type());
+                    getParameterLoader()->writeLocalParamCache();
+                }
             }
+        } else {
+            MSLog("[Vehicle::disconnected()] link is null");
         }
+    } else {
+        MSLog("[Vehicle::disconnected()] getParameterLoader() return null");
     }
 }
 #endif

@@ -1,5 +1,6 @@
 package org.airmind.view;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.res.AssetManager;
@@ -40,7 +41,7 @@ import java.util.List;
  * Created by KiBa on 2017/1/4.
  */
 
-public class MainActivity extends MindSkinActivity {
+public class MainActivity extends Activity {
 
     private TextView flightTextView;
     private AirframesMetaData airframesMetaData;
