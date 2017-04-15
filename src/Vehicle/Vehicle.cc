@@ -1118,7 +1118,7 @@ void Vehicle::_addLink(LinkInterface* link)
 #else
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkInactive), this, static_cast<void (Vehicle::*)(LinkInterface*)>(&Vehicle::_linkInactiveOrDeleted));
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDeleted), this, static_cast<void (Vehicle::*)(LinkInterface*)>(&Vehicle::_linkInactiveOrDeleted));
-
+        connect(link, &LinkInterface::disconnected, this, &Vehicle::disconnected);
 #endif
 
     }
@@ -1674,6 +1674,21 @@ bool Vehicle::active(void)
 {
     return _active;
 }
+
+#ifdef __mindskin__
+void Vehicle::disconnected() {
+    if(getParameterLoader() != NULL) {
+        LinkInterface *link = (LinkInterface*)sender();
+        if(link != NULL) {
+            LinkConfiguration *linkConfig = link->getLinkConfiguration();
+            if(linkConfig != NULL && linkConfig->type() != LinkConfiguration::TypeUdp) {
+                qCDebug(VehicleLog) << "[disconnected] to flush fact/parameters into cache file in order to speed-up initial-load of parameters, linkType:" << linkConfig->type();
+                getParameterLoader()->writeLocalParamCache();
+            }
+        }
+    }
+}
+#endif
 
 void Vehicle::setActive(bool active)
 {

@@ -598,6 +598,7 @@ public slots:
 #ifdef __mindskin__
     void setAirFrameType(int airFrameType);
     int getAirFrameType();
+    void disconnected();
 #endif
 
 signals:
