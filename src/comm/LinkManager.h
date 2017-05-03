@@ -37,6 +37,7 @@
 
 #ifdef __mindskin__
 #include "BTSerialLink.h"
+#include <QtNetwork>
 #endif
 
 #if defined(_BLE_DEBUG_) && defined(__mindskin__) && defined(__ios__)
@@ -329,6 +330,9 @@ private slots:
     void _bleLinkConnected(void);
     void _bleLinkDisconnected(void);
 #endif
+#ifdef __mindskin__
+    void processPendingDatagrams();
+#endif
 
 private:
     bool _connectionsSuspendedMsg(void);
@@ -423,6 +427,10 @@ private:
     static const char*  _defaultUPDLinkName;
     static const int    _autoconnectUpdateTimerMSecs;
     static const int    _autoconnectConnectDelayMSecs;
+#ifdef __mindskin__
+     QUdpSocket *udpSocket; //udpSocket to listen on dhcp-lease
+     quint16 UDP_LISTEN_PORT = 8888;
+#endif
 };
 
 #endif

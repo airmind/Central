@@ -13,8 +13,8 @@ void MSLog(const char *msg, ...) {
     QString buf = QString::vasprintf(msg, ap);
     va_end(ap);
 
-    #ifdef __android__
+//    #ifdef __android__
       qDebug() << buf;
-    #endif
+//    #endif
 }
 

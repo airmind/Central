@@ -137,7 +137,9 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _vibrationFactGroup(this)
 {
 
+#ifdef __mindskin__
     MSLog("create vehicle");
+#endif
     _addLink(link);
 
     _mavlink = qgcApp()->toolbox()->mavlinkProtocol();
@@ -590,13 +592,17 @@ Vehicle::resetCounters()
 
 void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message)
 {
+    #ifdef __mindskin__
     MSLog("[Vehicle::_mavlinkMessageReceived] enter");
+    #endif
     if (message.sysid != _id && message.sysid != 0) {
         return;
     }
 
     if (!_containsLink(link)) {
+        #ifdef __mindskin__
         MSLog("[Vehicle::_mavlinkMessageReceived] to add link");
+        #endif
         _addLink(link);
     }
 
@@ -1113,7 +1119,9 @@ bool Vehicle::_containsLink(LinkInterface* link)
 
 void Vehicle::_addLink(LinkInterface* link)
 {
+    #ifdef __mindskin__
     MSLog("_addLink");
+    #endif
     if (!_containsLink(link)) {
         _links += link;
         qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
@@ -1127,7 +1135,9 @@ void Vehicle::_addLink(LinkInterface* link)
         connect(link, &LinkInterface::disconnected, this, &Vehicle::disconnected);
 #endif
     } else {
+        #ifdef __mindskin__
         MSLog("[_addLink] link already be there");
+        #endif
     }
 }
 

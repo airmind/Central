@@ -98,6 +98,13 @@ LinkManager::LinkManager(QGCApplication* app)
     _activeLinkCheckTimer.setSingleShot(false);
     connect(&_activeLinkCheckTimer, &QTimer::timeout, this, &LinkManager::_activeLinkCheck);
 #endif
+#ifdef __mindskin__
+    udpSocket = new QUdpSocket(this);
+    udpSocket->bind(UDP_LISTEN_PORT, QUdpSocket::ShareAddress);
+//    udpSocket->bind();
+    qDebug() << "[LinkManager] bind to udp-port:" << udpSocket->localPort();
+    connect(udpSocket, SIGNAL(readyRead()), this, SLOT(processPendingDatagrams()));
+#endif
 }
 
 LinkManager::~LinkManager()
@@ -106,6 +113,38 @@ LinkManager::~LinkManager()
     delete blehelper;
 #endif
 }
+
+#ifdef __mindskin__
+void LinkManager::processPendingDatagrams()
+{
+    static int tcpLinkIndex = 0;
+    while (udpSocket->hasPendingDatagrams()) {
+        QByteArray datagram;
+        datagram.resize(udpSocket->pendingDatagramSize());
+        udpSocket->readDatagram(datagram.data(), datagram.size());
+        qDebug() << "[DHCP-message]:" << datagram.data();
+
+        QString msg(datagram.data());
+        QString sHost = msg.section(',',2,2);
+        if(!sHost.isNull() && !sHost.isEmpty()) {
+            QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
+            LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
+            TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
+            tcpConfig->setHost(sHost);
+            tcpConfig->setPort(6789);
+            qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
+            LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
+            if(linkInterface == NULL) {
+                qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
+            }
+    //        bool ret = QMetaObject::invokeMethod(qgcApp()->toolbox()->linkManager(),"createConnectedLink",Qt::AutoConnection, Q_ARG(LinkConfiguration*, linkConfig));
+    //        if(!ret) {
+    //            qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
+    //        }
+        }
+    }
+}
+#endif
 
 void LinkManager::setToolbox(QGCToolbox *toolbox)
 {
