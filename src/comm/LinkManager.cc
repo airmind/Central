@@ -125,8 +125,9 @@ void LinkManager::processPendingDatagrams()
         qDebug() << "[DHCP-message]:" << datagram.data();
 
         QString msg(datagram.data());
-        QString sHost = msg.section(',',2,2);
-        if(!sHost.isNull() && !sHost.isEmpty()) {
+        QString sHost = msg.section(',',0,0);
+        QString sMsgType = msg.section(',', 2, 2);
+        if(!sHost.isNull() && !sHost.isEmpty() && (sMsgType.compare("lease4_select") == 0 ||  sMsgType.compare("lease4_renew") == 0)) {
             QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
             LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
             TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
