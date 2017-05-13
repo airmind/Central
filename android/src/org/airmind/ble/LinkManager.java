@@ -124,4 +124,23 @@ public class LinkManager {
     public static void disConnected() {
         Log.d(TAG, "[disConnected]");
     }
+
+    /**
+     * Called from QT to notify udp socket server has been bound to specified address and port
+     * @param address
+     * @param port
+     */
+    public static void udpSocketServerBound(String address, int port) {
+        Log.d(TAG, "[udpSocketServerBound] address:" + address + ", port:" + port);
+    }
+
+    /**
+     * Called from QT to notify some UAV has received reported ip address and hwAddr
+     * @param notifyType lease4_select, lease4_renew,lease4_release,lease4_decline,lease4_expire
+     * @param ip
+     * @param hwAddr
+     */
+    public static void dhcpv4LeaseNotification(String notifyType, String ip, String hwAddr) {
+        Log.d(TAG, "[dhcpv4LeaseNotification] notifyType:" + notifyType   + ", ip:" + ip + ", hw-addr:" + hwAddr);
+    }
 }

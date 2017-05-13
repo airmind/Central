@@ -101,9 +101,15 @@ LinkManager::LinkManager(QGCApplication* app)
 #ifdef __mindskin__
     udpSocket = new QUdpSocket(this);
     udpSocket->bind(UDP_LISTEN_PORT, QUdpSocket::ShareAddress);
-//    udpSocket->bind();
-    qDebug() << "[LinkManager] bind to udp-port:" << udpSocket->localPort();
+    QString host = udpSocket->localAddress().toString();
+    int port = udpSocket->localPort();
+    qDebug() << "[LinkManager] bind to udp address:" << host << ", port:" << port;
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(processPendingDatagrams()));
+    #ifdef __android__
+    QAndroidJniObject jHost = QAndroidJniObject::fromString(host);
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "udpSocketServerBound", "(Ljava/lang/String;I)V", jHost.object<jstring>(), port);
+    cleanJavaException();
+    #endif
 #endif
 }
 
@@ -126,7 +132,16 @@ void LinkManager::processPendingDatagrams()
 
         QString msg(datagram.data());
         QString sHost = msg.section(',',0,0);
+        QString hwAddr = msg.section(',', 1, 1);
         QString sMsgType = msg.section(',', 2, 2);
+        #ifdef __android__
+        QAndroidJniObject jHost = QAndroidJniObject::fromString(sHost);
+        QAndroidJniObject jHWAddr = QAndroidJniObject::fromString(hwAddr);
+        QAndroidJniObject jMsgType = QAndroidJniObject::fromString(sMsgType);
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "dhcpv4LeaseNotification", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", jMsgType.object<jstring>(), jHost.object<jstring>(),jHWAddr.object<jstring>());
+        cleanJavaException();
+        #endif
+
         if(!sHost.isNull() && !sHost.isEmpty() && (sMsgType.compare("lease4_select") == 0 ||  sMsgType.compare("lease4_renew") == 0)) {
             QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
             LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
