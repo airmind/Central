@@ -143,20 +143,25 @@ void LinkManager::processPendingDatagrams()
         #endif
 
         if(!sHost.isNull() && !sHost.isEmpty() && (sMsgType.compare("lease4_select") == 0 ||  sMsgType.compare("lease4_renew") == 0)) {
-            QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
-            LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
-            TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
-            tcpConfig->setHost(sHost);
-            tcpConfig->setPort(6789);
-            qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
-            LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
-            if(linkInterface == NULL) {
-                qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
-            }
-    //        bool ret = QMetaObject::invokeMethod(qgcApp()->toolbox()->linkManager(),"createConnectedLink",Qt::AutoConnection, Q_ARG(LinkConfiguration*, linkConfig));
-    //        if(!ret) {
-    //            qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
-    //        }
+            //tcp-link
+//            QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
+//            LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
+//            TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
+//            tcpConfig->setHost(sHost);
+//            tcpConfig->setPort(6789);
+//            qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
+//            LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
+//            if(linkInterface == NULL) {
+//                qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
+//            }
+
+            //udp-link
+            QString linkConfigName = QString::asprintf("%s-%s-%d","udp",sHost.data(), tcpLinkIndex++);
+            UDPConfiguration* udpConfig = new UDPConfiguration(linkConfigName);
+            udpConfig->setLocalPort(QGC_UDP_LOCAL_PORT);
+            udpConfig->setDynamic(true);
+            _linkConfigurations.append(udpConfig);
+            createConnectedLink(udpConfig);
         }
     }
 }
