@@ -88,6 +88,7 @@ LinkManager::LinkManager(QGCApplication* app)
 
     settings.beginGroup(_settingsGroup);
     _autoconnectUDP =       settings.value(_autoconnectUDPKey, true).toBool();
+    qDebug() << "[LinkManager] _autoconnectUDP:" << _autoconnectUDP;
     _autoconnectPixhawk =   settings.value(_autoconnectPixhawkKey, true).toBool();
     _autoconnect3DRRadio =  settings.value(_autoconnect3DRRadioKey, true).toBool();
     _autoconnectPX4Flow =   settings.value(_autoconnectPX4FlowKey, true).toBool();
@@ -124,6 +125,7 @@ LinkManager::~LinkManager()
 void LinkManager::processPendingDatagrams()
 {
     static int tcpLinkIndex = 0;
+    static bool isUDP = true;
     while (udpSocket->hasPendingDatagrams()) {
         QByteArray datagram;
         datagram.resize(udpSocket->pendingDatagramSize());
@@ -144,24 +146,28 @@ void LinkManager::processPendingDatagrams()
 
         if(!sHost.isNull() && !sHost.isEmpty() && (sMsgType.compare("lease4_select") == 0 ||  sMsgType.compare("lease4_renew") == 0)) {
             //tcp-link
-//            QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
-//            LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
-//            TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
-//            tcpConfig->setHost(sHost);
-//            tcpConfig->setPort(6789);
-//            qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
-//            LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
-//            if(linkInterface == NULL) {
-//                qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
-//            }
+            if(!isUDP) {
+                QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
+                LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
+                TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
+                tcpConfig->setHost(sHost);
+                tcpConfig->setPort(6789);
+                qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
+                LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
+                if(linkInterface == NULL) {
+                    qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
+                }
+            } else {
+                qDebug() << "[processPendingDatagrams] auto-connected UDP socket will handle connection to this host";
+            }
 
             //udp-link
-            QString linkConfigName = QString::asprintf("%s-%s-%d","udp",sHost.data(), tcpLinkIndex++);
-            UDPConfiguration* udpConfig = new UDPConfiguration(linkConfigName);
-            udpConfig->setLocalPort(QGC_UDP_LOCAL_PORT);
-            udpConfig->setDynamic(true);
-            _linkConfigurations.append(udpConfig);
-            createConnectedLink(udpConfig);
+//            QString linkConfigName = QString::asprintf("%s-%s-%d","udp",sHost.data(), tcpLinkIndex++);
+//            UDPConfiguration* udpConfig = new UDPConfiguration(linkConfigName);
+//            udpConfig->setLocalPort(QGC_UDP_LOCAL_PORT);
+//            udpConfig->setDynamic(true);
+//            _linkConfigurations.append(udpConfig);
+//            createConnectedLink(udpConfig);
         }
     }
 }
@@ -1228,8 +1234,10 @@ void LinkManager::_updateAutoConnectLinks(void)
             break;
         }
     }
+    qDebug() << "[_updateAutoConnectLinks] foundUDP:" << foundUDP << ", _autoconnectUDP:" << _autoconnectUDP;
     if (!foundUDP && _autoconnectUDP) {
-        qCDebug(LinkManagerLog) << "New auto-connect UDP port added";
+//        qCDebug(LinkManagerLog) << "New auto-connect UDP port added";
+        qDebug() << "[_updateAutoConnectLinks] New auto-connect UDP port added";
         UDPConfiguration* udpConfig = new UDPConfiguration(_defaultUPDLinkName);
         udpConfig->setLocalPort(QGC_UDP_LOCAL_PORT);
         udpConfig->setDynamic(true);
