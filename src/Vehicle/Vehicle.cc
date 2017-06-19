@@ -31,6 +31,14 @@
 #include <mindskinlog.h>
 #endif
 
+#ifdef __android__
+#include <android/log.h>
+static const char kJTag[] {"Vehicle"};
+#include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras/QAndroidJniEnvironment>
+extern void cleanJavaException(void);
+#endif
+
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
 
 #define UPDATE_TIMER 50
@@ -97,7 +105,11 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _updateCount(0)
     , _rcRSSI(255)
     , _rcRSSIstore(255)
+#ifdef __mindskin__
+    , _autoDisconnect(true)
+#else
     , _autoDisconnect(false)
+#endif
     , _flying(false)
     , _connectionLost(false)
     , _connectionLostEnabled(true)
@@ -642,7 +654,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         _handleHomePosition(message);
         break;
     case MAVLINK_MSG_ID_HEARTBEAT:
-        _handleHeartbeat(message);
+        _handleHeartbeat(link, message);
         break;
     case MAVLINK_MSG_ID_RC_CHANNELS:
         _handleRCChannels(message);
@@ -996,9 +1008,9 @@ void Vehicle::_handleHomePosition(mavlink_message_t& message)
     }
 }
 
-void Vehicle::_handleHeartbeat(mavlink_message_t& message)
+void Vehicle::_handleHeartbeat(LinkInterface *link, mavlink_message_t& message)
 {
-    _connectionActive();
+    _connectionActive(link);
 
     mavlink_heartbeat_t heartbeat;
 
@@ -1024,7 +1036,34 @@ void Vehicle::_handleHeartbeat(mavlink_message_t& message)
         emit flightModeChanged(flightMode());
     }
 }
+void Vehicle::_handleHeartbeat(mavlink_message_t& message)
+{
+    _connectionActive(NULL);
 
+    mavlink_heartbeat_t heartbeat;
+
+    mavlink_msg_heartbeat_decode(&message, &heartbeat);
+
+    bool newArmed = heartbeat.base_mode & MAV_MODE_FLAG_DECODE_POSITION_SAFETY;
+
+    if (_armed != newArmed) {
+        _armed = newArmed;
+        emit armedChanged(_armed);
+
+        // We are transitioning to the armed state, begin tracking trajectory points for the map
+        if (_armed) {
+            _mapTrajectoryStart();
+        } else {
+            _mapTrajectoryStop();
+        }
+    }
+
+    if (heartbeat.base_mode != _base_mode || heartbeat.custom_mode != _custom_mode) {
+        _base_mode = heartbeat.base_mode;
+        _custom_mode = heartbeat.custom_mode;
+        emit flightModeChanged(flightMode());
+    }
+}
 void Vehicle::_handleRCChannels(mavlink_message_t& message)
 {
     mavlink_rc_channels_t channels;
@@ -1991,7 +2030,7 @@ void Vehicle::_connectionLostTimeout(void)
     }
 }
 
-void Vehicle::_connectionActive(void)
+void Vehicle::_connectionActive(LinkInterface *link)
 {
     _connectionLostTimer.start();
     if (_connectionLost) {
@@ -1999,7 +2038,18 @@ void Vehicle::_connectionActive(void)
         emit connectionLostChanged(false);
         _say(QString("%1 communication regained").arg(_vehicleIdSpeech()));
     }
+#ifdef __mindskin__
+    if( link ) {
+        #ifdef __android__
+            LinkConfiguration* linkCfg = link->getLinkConfiguration();
+            MSLog("[_linkConnected] linkType:%d",linkCfg->type());
+            QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "()V");
+            cleanJavaException();
+        #endif //__android__
+    }
+#endif
 }
+
 
 void Vehicle::_say(const QString& text)
 {

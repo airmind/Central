@@ -728,6 +728,7 @@ private:
     void _startJoystick(bool start);
     void _handleHomePosition(mavlink_message_t& message);
     void _handleHeartbeat(mavlink_message_t& message);
+    void _handleHeartbeat(LinkInterface *link, mavlink_message_t& message);
     void _handleRCChannels(mavlink_message_t& message);
     void _handleRCChannelsRaw(mavlink_message_t& message);
     void _handleBatteryStatus(mavlink_message_t& message);
@@ -741,7 +742,7 @@ private:
     void _missionManagerError(int errorCode, const QString& errorMsg);
     void _mapTrajectoryStart(void);
     void _mapTrajectoryStop(void);
-    void _connectionActive(void);
+    void _connectionActive(LinkInterface *link);
     void _say(const QString& text);
     QString _vehicleIdSpeech(void);
 
