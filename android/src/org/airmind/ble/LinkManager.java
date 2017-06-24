@@ -108,10 +108,11 @@ public class LinkManager {
      */
     public static void connected(final String linkConfigName) {
         Log.d(TAG, "[connected]" + linkConfigName);
+
         new Thread() {
             public void run() {
                 try{
-                    Thread.sleep(2000);
+                    Thread.sleep(4000);
                 } catch(InterruptedException v){
                     System.out.println(v);
                 }
