@@ -190,7 +190,9 @@ public class DeviceScanFragment extends Activity implements IParametersControlle
     @Override
     public void onParametersUpdated(int vehicleId, int componentId, int mavType, String parameterName, float parameterValue, int parameterIndex, int parameterCount) {
         if((parameterIndex + 1) == parameterCount){
-            startActivity(new Intent(DeviceScanFragment.this, MainActivity.class));
+            Intent intent = new Intent(DeviceScanFragment.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         }
     }
 
