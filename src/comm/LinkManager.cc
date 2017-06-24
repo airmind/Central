@@ -1035,10 +1035,10 @@ void LinkManager::_linkDisconnected(void)
         if(link != NULL) {
             LinkConfiguration *linkConfig = link->getLinkConfiguration();
             if(linkConfig != NULL) {
-                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
+//                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
                     QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "()V");
                     cleanJavaException();
-                }
+//                }
             }
         }
       #endif //__android__
@@ -1211,7 +1211,7 @@ void LinkManager::_updateAutoConnectLinks(void)
             break;
         }
     }
-    qDebug() << "[_updateAutoConnectLinks] foundUDP:" << foundUDP << ", _autoconnectUDP:" << _autoconnectUDP;
+//    qDebug() << "[_updateAutoConnectLinks] foundUDP:" << foundUDP << ", _autoconnectUDP:" << _autoconnectUDP;
     if (!foundUDP && _autoconnectUDP) {
 //        qCDebug(LinkManagerLog) << "New auto-connect UDP port added";
         qDebug() << "[_updateAutoConnectLinks] New auto-connect UDP port added";

@@ -604,9 +604,6 @@ Vehicle::resetCounters()
 
 void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message)
 {
-    #ifdef __mindskin__
-    MSLog("[Vehicle::_mavlinkMessageReceived] enter");
-    #endif
     if (message.sysid != _id && message.sysid != 0) {
         return;
     }
@@ -1285,11 +1282,9 @@ bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
     //return BLE link as priority;
     
     if (_blelinks.count()) {
-        qDebug()<<"Vehicle::sendMessageOnPriorityLink for ble";
         return sendMessageOnLink(_blelinks[0], message);
     }
     else {
-        qDebug()<<"Vehicle::sendMessageOnPriorityLink for non-ble";
         return sendMessageOnLink(priorityLink(), message);
     }
 
