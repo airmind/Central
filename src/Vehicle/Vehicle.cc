@@ -2032,18 +2032,18 @@ void Vehicle::_connectionActive(LinkInterface *link)
         _connectionLost = false;
         emit connectionLostChanged(false);
         _say(QString("%1 communication regained").arg(_vehicleIdSpeech()));
-    }
 #ifdef __mindskin__
     if( link ) {
         #ifdef __android__
             LinkConfiguration* linkCfg = link->getLinkConfiguration();
             MSLog("[_linkConnected] %s",linkCfg->name().toLatin1().data());
             QAndroidJniObject jLinkConfigName = QAndroidJniObject::fromString(linkCfg->name());
-            QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "(Ljava/lang/String)V", jLinkConfigName.object<jstring>());
+            QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "(Ljava/lang/String;)V", jLinkConfigName.object<jstring>());
             cleanJavaException();
         #endif //__android__
     }
 #endif
+    }
 }
 
 #ifdef __mindskin__

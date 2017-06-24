@@ -1038,7 +1038,7 @@ void LinkManager::_linkDisconnected(void)
 //                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
                     MSLog("[_linkDisconnected] %s",linkConfig->name().toLatin1().data());
                     QAndroidJniObject jLinkConfigName = QAndroidJniObject::fromString(linkConfig->name());
-                    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "(Ljava/lang/String)V",jLinkConfigName.object<jstring>());
+                    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "(Ljava/lang/String;)V",jLinkConfigName.object<jstring>());
                     cleanJavaException();
 //                }
             }

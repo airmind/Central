@@ -421,7 +421,7 @@ void QBLE::setNativeMethods(void)
     setNativeMethods("org/airmind/ble/BTLinkIONative",btLinkIONativeMethods, sizeof(btLinkIONativeMethods)/sizeof(btLinkIONativeMethods[0]));
 
     JNINativeMethod parametersNativeMethods[] {
-        {"refreshAllParameters", "(Ljava/lang/String)V",reinterpret_cast<void *>(jniRefreshAllParameters)}
+        {"refreshAllParameters", "(Ljava/lang/String;)V",reinterpret_cast<void *>(jniRefreshAllParameters)}
     };
     setNativeMethods("org/airmind/ble/ParameterManager",parametersNativeMethods, sizeof(parametersNativeMethods)/sizeof(parametersNativeMethods[0]));
 
