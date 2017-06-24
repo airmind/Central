@@ -567,6 +567,9 @@ public:
     static const int cMaxRcChannels = 18;
 
     bool containsLink(LinkInterface* link) { return _links.contains(link); }
+#ifdef __mindskin__
+    bool containsLinkConfig(QString& linkConfigName);
+#endif
     void doCommandLong(int component, MAV_CMD command, float param1 = 0.0f, float param2 = 0.0f, float param3 = 0.0f, float param4 = 0.0f, float param5 = 0.0f, float param6 = 0.0f, float param7 = 0.0f);
 
     int firmwareMajorVersion(void) const { return _firmwareMajorVersion; }

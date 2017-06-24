@@ -34,11 +34,11 @@ public class ParameterManager{
      * To get refresh progress, see {@link #parameterListProgress(float)}.
      * To get updated parameter one by one, see {@link #parameterUpdate(int, int, int, String, float, int, int)}
      */
-    public static native void refreshAllParameters();
+    public static native void refreshAllParameters(String linkConfigName);
 
-    public static void refreshAllFlightParameters(){
+    public static void refreshAllFlightParameters(String linkConfigName){
         if(controller != null){
-            refreshAllParameters();
+            refreshAllParameters(linkConfigName);
         }else{
             //throw new NullPointerException("ParametersController is NULL in ParameterManager. " +
             //        "Must implement 'IParametersController' interface and call setController() before refreshing parameters.");

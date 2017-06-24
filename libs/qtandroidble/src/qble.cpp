@@ -230,13 +230,16 @@ static void jniStopScanning(JNIEnv *env, jobject thizA)
     qgcApp()->toolbox()->linkManager()->stopScanning();
 }
 
-static void jniRefreshAllParameters(JNIEnv *env, jobject thizA)
+static void jniRefreshAllParameters(JNIEnv *env, jobject thizA, jstring linkConfigName)
 {
     Q_UNUSED(env);
     Q_UNUSED(thizA);
     __android_log_print(ANDROID_LOG_INFO, kJTag, "jniRefreshAllParameters is called");
 
-    Vehicle*  _vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
+//    Vehicle*  _vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
+    const char* cLinkConfigName = env->GetStringUTFChars(linkConfigName, NULL);
+    QString sLinkName = QString::fromUtf8(cLinkConfigName);
+    Vehicle*  _vehicle = qgcApp()->toolbox()->multiVehicleManager()->getVehicleByLinkConfigName(sLinkName);
     if (_vehicle) {
          AutoPilotPlugin* _autopilot = _vehicle->autopilotPlugin();
 //        _autopilot->refreshAllParameters();
@@ -418,7 +421,7 @@ void QBLE::setNativeMethods(void)
     setNativeMethods("org/airmind/ble/BTLinkIONative",btLinkIONativeMethods, sizeof(btLinkIONativeMethods)/sizeof(btLinkIONativeMethods[0]));
 
     JNINativeMethod parametersNativeMethods[] {
-        {"refreshAllParameters", "()V",reinterpret_cast<void *>(jniRefreshAllParameters)}
+        {"refreshAllParameters", "(Ljava/lang/String)V",reinterpret_cast<void *>(jniRefreshAllParameters)}
     };
     setNativeMethods("org/airmind/ble/ParameterManager",parametersNativeMethods, sizeof(parametersNativeMethods)/sizeof(parametersNativeMethods[0]));
 

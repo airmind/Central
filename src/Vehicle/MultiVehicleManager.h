@@ -79,6 +79,9 @@ public:
     bool parameterReadyVehicleAvailable(void) { return _parameterReadyVehicleAvailable; }
 
     Vehicle* activeVehicle(void) { return _activeVehicle; }
+#ifdef __mindskin__
+    Vehicle* getVehicleByLinkConfigName(QString linkConfigName);
+#endif
     void setActiveVehicle(Vehicle* vehicle);
 
     QmlObjectListModel* vehicles(void) { return &_vehicles; }

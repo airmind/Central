@@ -2037,14 +2037,27 @@ void Vehicle::_connectionActive(LinkInterface *link)
     if( link ) {
         #ifdef __android__
             LinkConfiguration* linkCfg = link->getLinkConfiguration();
-            MSLog("[_linkConnected] linkType:%d",linkCfg->type());
-            QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "()V");
+            MSLog("[_linkConnected] %s",linkCfg->name().toLatin1().data());
+            QAndroidJniObject jLinkConfigName = QAndroidJniObject::fromString(linkCfg->name());
+            QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "(Ljava/lang/String)V", jLinkConfigName.object<jstring>());
             cleanJavaException();
         #endif //__android__
     }
 #endif
 }
 
+#ifdef __mindskin__
+    bool Vehicle::containsLinkConfig(QString& linkConfigName) {
+        foreach (LinkInterface* link, _links) {
+            LinkConfiguration* linkCfg = link->getLinkConfiguration();
+            QString linkName = linkCfg->name();
+            if (linkCfg != NULL && linkName != NULL && linkName.compare(linkConfigName, Qt::CaseSensitive) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+#endif
 
 void Vehicle::_say(const QString& text)
 {

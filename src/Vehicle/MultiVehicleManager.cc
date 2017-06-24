@@ -405,6 +405,19 @@ Vehicle* MultiVehicleManager::getVehicleById(int vehicleId)
     return NULL;
 }
 
+#ifdef __mindskin__
+Vehicle* MultiVehicleManager::getVehicleByLinkConfigName(QString linkConfigName) {
+    for (int i=0; i< _vehicles.count(); i++) {
+        Vehicle* vehicle = qobject_cast<Vehicle*>(_vehicles[i]);
+        if (vehicle->containsLinkConfig(linkConfigName)) {
+            return vehicle;
+        }
+    }
+
+    return NULL;
+}
+#endif
+
 void MultiVehicleManager::setGcsHeartbeatEnabled(bool gcsHeartBeatEnabled)
 {
     if (gcsHeartBeatEnabled != _gcsHeartbeatEnabled) {

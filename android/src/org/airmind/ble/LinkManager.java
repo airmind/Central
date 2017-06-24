@@ -102,9 +102,12 @@ public class LinkManager {
 
     /**
      * Called from QT to notify vechile has been connected
+     * linkConfigName:
+     *  tcp-<ip-address>-xxx for TCP
+     *  Default UDP Link for UDP
      */
-    public static void connected() {
-        Log.d(TAG, "[connected]");
+    public static void connected(final String linkConfigName) {
+        Log.d(TAG, "[connected]" + linkConfigName);
         new Thread() {
             public void run() {
                 try{
@@ -113,7 +116,7 @@ public class LinkManager {
                     System.out.println(v);
                 }
 
-                ParameterManager.refreshAllFlightParameters();
+                ParameterManager.refreshAllFlightParameters(linkConfigName);
             }
         }.start();
     }
@@ -121,8 +124,8 @@ public class LinkManager {
     /**
      * Called from QT to notify vechile has been connected
      */
-    public static void disConnected() {
-        Log.d(TAG, "[disConnected]");
+    public static void disConnected(String linkConfigName) {
+        Log.d(TAG, "[disConnected] " + linkConfigName);
     }
 
     /**
