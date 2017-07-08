@@ -2028,10 +2028,14 @@ void Vehicle::_connectionLostTimeout(void)
 void Vehicle::_connectionActive(LinkInterface *link)
 {
     _connectionLostTimer.start();
+
     if (_connectionLost) {
         _connectionLost = false;
         emit connectionLostChanged(false);
         _say(QString("%1 communication regained").arg(_vehicleIdSpeech()));
+        link->setFirstActive(false);
+    } else {
+        link->setFirstActive(true);
 #ifdef __mindskin__
     if( link ) {
         #ifdef __android__
