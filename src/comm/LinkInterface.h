@@ -354,10 +354,6 @@ private:
 
     bool _active;       ///< true: link is actively receiving mavlink messages
     bool _enableRateCollection;
-    bool _firstActive;
-public:
-    bool firstActive() {return _firstActive;}
-    void setFirstActive(bool firstActive) { _firstActive = firstActive;}
 };
 
 typedef QSharedPointer<LinkInterface> SharedLinkInterface;

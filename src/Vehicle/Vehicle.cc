@@ -2022,6 +2022,7 @@ void Vehicle::_connectionLostTimeout(void)
         if (_autoDisconnect) {
             disconnectInactiveVehicle();
         }
+        this->_hearbeatsCount = 0;
     }
 }
 
@@ -2029,13 +2030,8 @@ void Vehicle::_connectionActive(LinkInterface *link)
 {
     _connectionLostTimer.start();
 
-    if (_connectionLost) {
-        _connectionLost = false;
-        emit connectionLostChanged(false);
-        _say(QString("%1 communication regained").arg(_vehicleIdSpeech()));
-        link->setFirstActive(false);
-    } else {
-        link->setFirstActive(true);
+    this->_hearbeatsCount++;
+    if(this->_hearbeatsCount == 1) {
 #ifdef __mindskin__
     if( link ) {
         #ifdef __android__
@@ -2047,6 +2043,11 @@ void Vehicle::_connectionActive(LinkInterface *link)
         #endif //__android__
     }
 #endif
+    }
+    if (_connectionLost) {
+        _connectionLost = false;
+        emit connectionLostChanged(false);
+        _say(QString("%1 communication regained").arg(_vehicleIdSpeech()));
     }
 }
 

@@ -906,5 +906,8 @@ private:
     static const char* _joystickModeSettingsKey;
     static const char* _joystickEnabledSettingsKey;
 
+public:
+    ulong _hearbeatsCount;
+
 };
 #endif
