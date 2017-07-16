@@ -176,6 +176,7 @@ public class DeviceControlActivity extends Activity {
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        //on bind succcess, will call mServiceConnection.onServiceConnected() to auto-connect selected BLE-peripheral
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
     }
 

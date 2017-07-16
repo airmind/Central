@@ -29,8 +29,8 @@ public class SampleGattAttributes {
     public static String HEART_RATE_CONTROL_POINT = "00002a39-0000-1000-8000-00805f9b34fb"; //by myself
     //    public static String BATTERY_LEVEL = "00002A19-0000-1000-8000-00805f9b34fb"; //by myself
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
-    public static String MAV_TRANSFER_SERVICE_UUID = "E20A39F4-73F5-4BC4-A12F-17D1AD07A961";
-    public static String MAV_TRANSFER_CHARACTERISTIC_UUID = "08590F7E-DB05-467E-8757-72F6FAEB13D4";
+    public static String MAV_TRANSFER_SERVICE_UUID = "6A400001-B5A3-F393-E0A9-E50E24DCCA9E";//"E20A39F4-73F5-4BC4-A12F-17D1AD07A961";
+    public static String MAV_TRANSFER_CHARACTERISTIC_UUID = "6A400002-B5A3-F393-E0A9-E50E24DCCA9E";//"08590F7E-DB05-467E-8757-72F6FAEB13D4";
     static {
         // Sample Services.
         attributes.put("0000180d-0000-1000-8000-00805f9b34fb".toUpperCase(), "Heart Rate Service");

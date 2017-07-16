@@ -749,7 +749,8 @@ void QGCApplication::cleanJavaException(void)
 void QGCApplication::startMindSkinUI()
 {
     qDebug() << "android startMindSkinUI()";
-    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/MindSkinActivity", "startMindSkinUI", "()V");
+//    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/MindSkinActivity", "startMindSkinUI", "()V");
+    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/UsbDeviceJNI", "startMindSkinUI", "()V");
     cleanJavaException();
 }
 #endif

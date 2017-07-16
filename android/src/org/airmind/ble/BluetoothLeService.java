@@ -30,6 +30,7 @@ import java.util.UUID;
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BluetoothLeService extends Service {
+    public static int MAVLINK_ATT_MTU = 263 + 3;
     private final static String TAG = BluetoothLeService.class.getSimpleName();
 
     private BluetoothManager mBluetoothManager;
@@ -68,13 +69,17 @@ public class BluetoothLeService extends Service {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            String deviceAddress = gatt.getDevice().getAddress();
+            String deviceName = gatt.getDevice().getName();
+            Log.i(TAG, "[onConnectionStateChange] Peripheral：" + deviceAddress + "（"  + deviceName +"）,status:" + status + ", newState:" + newState);
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 intentAction = ACTION_GATT_CONNECTED;
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(intentAction);
-                Log.i(TAG, "Connected to GATT server.");
+                Log.i(TAG, "Connected to GATT server. To reqeustMTU:" + MAVLINK_ATT_MTU);
                 // Attempts to discover services after successful connection.
+                mBluetoothGatt.requestMtu(MAVLINK_ATT_MTU);
                 boolean result = mBluetoothGatt.discoverServices();
                 Log.i(TAG, "Attempting to start service discovery:" + result);
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -214,6 +219,7 @@ public class BluetoothLeService extends Service {
                 intent.putExtra(EXTRA_DATA_BYTEARRAY, data);
                 BTLinkIONative.dataArrived(mBluetoothDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase(),data);
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
+                stringBuilder.append("[" + data.length + "]");
                 for (byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
