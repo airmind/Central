@@ -53,6 +53,7 @@ import com.hoho.android.usbserial.driver.ProlificSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 
+import org.airmind.ble.DeviceScanActivity;
 import org.mavlink.qgroundcontrol.R;
 import org.qtproject.qt5.android.bindings.QtActivity;
 
@@ -651,7 +652,7 @@ public class MindSkinActivity extends QtActivity implements TextToSpeech.OnInitL
           Log.d(TAG, "startMindSkinUI");
           m_handler.postDelayed(new Runnable() {
               public void run() {
-                  final Intent intent = new Intent(m_instance, DeviceScanFragment.class);
+                  final Intent intent = new Intent(m_instance, DeviceScanActivity.class/* DeviceScanFragment.class*/);
                   m_instance.startActivity(intent);
               }
           }, 3000);

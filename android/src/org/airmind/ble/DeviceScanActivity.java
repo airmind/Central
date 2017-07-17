@@ -124,8 +124,7 @@ public class DeviceScanActivity extends ListActivity {
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
-//        scanLeDevice(true);
-
+        scanLeDevice(true); //to auto-scan
     }
 
     @Override
@@ -150,6 +149,10 @@ public class DeviceScanActivity extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
         if (device == null) return;
+        connectBLEDevice(device);
+    }
+
+    private void connectBLEDevice(BluetoothDevice device) {
         final Intent intent = new Intent(this, DeviceControlActivity.class);
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
@@ -176,7 +179,6 @@ public class DeviceScanActivity extends ListActivity {
 
             mScanning = true;
             UUID[] uuids = {UUID.fromString(SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID)};
-//            mBluetoothAdapter.startLeScan(mLeScanCallback);
             mBluetoothAdapter.startLeScan(uuids, mLeScanCallback);
         } else {
             mScanning = false;
@@ -258,6 +260,8 @@ public class DeviceScanActivity extends ListActivity {
                 @Override
                 public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
                     Log.d(TAG,"detected device:" + device.getAddress());
+                    scanLeDevice(false); //to stop scan
+                    connectBLEDevice(device);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {

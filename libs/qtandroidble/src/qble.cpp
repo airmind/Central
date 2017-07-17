@@ -48,9 +48,12 @@ static void jniConnect(JNIEnv *env, jobject thizA, jstring jdevice, jstring jser
 {
     Q_UNUSED(thizA);
     const char* device = env->GetStringUTFChars(jdevice, NULL);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s", device);
     const char* service = env->GetStringUTFChars(jservice, NULL);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, service:%s", service);
     const char* characteristic = env->GetStringUTFChars(jcharateristic, NULL);
-    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, characteristic:%s", characteristic);
+//    __android_log_print(ANDROID_LOG_INFO, kJTag, "jniConnect is called, device:%s, service:%s, characteristic:%s", device, service, characteristic);
 
     BTSerialConfiguration* btconfig = new BTSerialConfiguration(QString::fromUtf8(device));
     QString sid = QString::fromUtf8(service);

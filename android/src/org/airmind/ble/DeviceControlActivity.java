@@ -45,6 +45,7 @@ public class DeviceControlActivity extends Activity {
 
     private TextView mConnectionState;
     private TextView mDataField;
+    private TextView mTpField;
     private String mDeviceName;
     private String mDeviceAddress;
     private ExpandableListView mGattServicesList;
@@ -79,7 +80,12 @@ public class DeviceControlActivity extends Activity {
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            mBluetoothLeService = null;
+            Log.d(TAG," onServiceDisconnected");
+            if(mBluetoothLeService != null) {
+                mBluetoothLeService.disconnect();
+                LinkManagerNative.shutdown();
+                mBluetoothLeService = null;
+            }
         }
     };
 
@@ -105,8 +111,9 @@ public class DeviceControlActivity extends Activity {
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
-            } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
+            } else if (BluetoothLeService.ACTION_DATA_NOTIFIED.equals(action)) {
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                displayTP(intent.getStringExtra(BluetoothLeService.EXTRA_TP));
             }
         }
     };
@@ -125,32 +132,29 @@ public class DeviceControlActivity extends Activity {
                 @Override
                 public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
                     if (mGattCharacteristics != null) {
-                        final BluetoothGattCharacteristic characteristic = mGattCharacteristics.get(groupPosition).get(childPosition);
-                        if(characteristic.getUuid().toString().toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
-                            BTLinkIO.setPeerMavLinkWriteCharacteristic(characteristic);
-                        }
-                        final int charaProp = characteristic.getProperties();
-                        if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                            Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" is readable");
-                            // If there is an active notification on a characteristic, clear
-                            // it first so it doesn't update the data field on the user interface.
-//                            if (mNotifyCharacteristic != null) {
-//                                mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-//                                mNotifyCharacteristic = null;
-//                            }
-                            mBluetoothLeService.readCharacteristic(characteristic);
-                        }
-                        if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-//                            mNotifyCharacteristic = characteristic;
-                            Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" can be notified");
-                            mBluetoothLeService.setCharacteristicNotification( characteristic, true);
-                            mBluetoothLeService.readCharacteristic(characteristic);
-                        }
+//                        final BluetoothGattCharacteristic characteristic = mGattCharacteristics.get(groupPosition).get(childPosition);
+//                        enableNotification(characteristic, true);
                         return true;
                     }
                     return false;
                 }
             };
+
+    private void enableNotification(BluetoothGattCharacteristic characteristic, boolean preRead) {
+        if(characteristic.getUuid().toString().toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
+            BTLinkIO.setPeerMavLinkWriteCharacteristic(characteristic);
+        }
+        final int charaProp = characteristic.getProperties();
+        if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0 && preRead) {
+            Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" is readable");
+            mBluetoothLeService.readCharacteristic(characteristic);
+        }
+        if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+            Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" can be notified");
+            mBluetoothLeService.setCharacteristicNotification( characteristic, true);
+            mBluetoothLeService.readCharacteristic(characteristic);
+        }
+    }
 
     private void clearUI() {
         mGattServicesList.setAdapter((SimpleExpandableListAdapter) null);
@@ -172,6 +176,7 @@ public class DeviceControlActivity extends Activity {
         mGattServicesList.setOnChildClickListener(servicesListClickListner);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mDataField = (TextView) findViewById(R.id.data_value);
+        mTpField = (TextView) findViewById(R.id.tp_value);
 
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -220,8 +225,7 @@ public class DeviceControlActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_connect:
-//                mBluetoothLeService.connect(mDeviceAddress);
-                LinkManagerNative.connect(mDeviceAddress,null,null);
+                LinkManagerNative.connect(mDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase());
                 return true;
             case R.id.menu_disconnect:
                 mBluetoothLeService.disconnect();
@@ -245,6 +249,12 @@ public class DeviceControlActivity extends Activity {
     private void displayData(String data) {
         if (data != null) {
             mDataField.setText(data);
+        }
+    }
+
+    private void displayTP(String data) {
+        if (data != null) {
+            mTpField.setText(data);
         }
     }
 
@@ -313,6 +323,7 @@ public class DeviceControlActivity extends Activity {
 
                 if(uuid != null && uuid.toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
                     foundMavLinkChracteristic = true;
+                    enableNotification(gattCharacteristic, true);
                 }
             }
             mGattCharacteristics.add(charas);
@@ -342,7 +353,8 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_READ);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_NOTIFIED);
         return intentFilter;
     }
 }

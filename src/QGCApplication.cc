@@ -749,8 +749,7 @@ void QGCApplication::cleanJavaException(void)
 void QGCApplication::startMindSkinUI()
 {
     qDebug() << "android startMindSkinUI()";
-//    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/MindSkinActivity", "startMindSkinUI", "()V");
-    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/UsbDeviceJNI", "startMindSkinUI", "()V");
+    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/MindSkinActivity", "startMindSkinUI", "()V");
     cleanJavaException();
 }
 #endif
@@ -792,7 +791,8 @@ void QGCApplication::showMessage(const QString& message)
     QAndroidJniObject jnameL = QAndroidJniObject::fromString(message);
     cleanJavaException();
     __android_log_print(ANDROID_LOG_INFO, TAG, "To showMessage() for %s", message.toLatin1().data());
-    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/MindSkinActivity", "showMessage", "(Ljava/lang/String;)V", jnameL.object<jstring>());
+//    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/MindSkinActivity", "showMessage", "(Ljava/lang/String;)V", jnameL.object<jstring>());
+    QAndroidJniObject::callStaticMethod<void>( "org/qgroundcontrol/qgchelper/UsbDeviceJNI", "showMessage", "(Ljava/lang/String;)V", jnameL.object<jstring>());
     cleanJavaException();
 #endif //__android__
 

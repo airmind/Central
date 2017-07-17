@@ -72,9 +72,15 @@ public class BTLinkIO {
      */
      @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
      public static void write(String deviceAddress, String serviceUUID, String characteristicUUID, byte[] data) {
+
+         StringBuilder stringBuilder = new StringBuilder();
+         for (byte byteChar : data)
+             stringBuilder.append(String.format("%02X ", byteChar));
+
          Log.d(TAG, "write to deviceAddress:" + deviceAddress + ", service-UUID:" +
                  serviceUUID + ", characteristic-uuid:" + characteristicUUID +
-                 ", with value:" + (data != null ? new String(data) : "null"));
+                 ", with value:" + (stringBuilder.toString()));
+
          BluetoothGattCharacteristic characteristic = findChar(deviceAddress, serviceUUID, characteristicUUID);
          if(bluetoothLeService != null &&  data != null && characteristic != null
                  /* && deviceAddress != null && serviceUUID != null && characteristicUUID != null*/ ) {
