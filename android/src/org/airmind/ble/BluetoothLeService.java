@@ -23,6 +23,15 @@ import android.util.Log;
 
 import java.util.List;
 import java.util.UUID;
+import com.MAVLink.MAVLinkPacket;
+import com.MAVLink.Parser;
+import com.MAVLink.common.CRC;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
+import static com.MAVLink.common.msg_encapsulated_data.MAVLINK_MSG_ID_ENCAPSULATED_DATA;
+import static com.MAVLink.common.msg_encapsulated_data.MAVLINK_MSG_LENGTH;
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -30,6 +39,12 @@ import java.util.UUID;
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BluetoothLeService extends Service {
+    public boolean doThroughputTest = true;
+    public boolean isDoingTPTest = false;
+    private long longPacketSendInterval = 1000;
+    public boolean shutdownTPTest = false;
+    public void shutdownTPT() {shutdownTPTest = true;}
+
     public static int MAVLINK_ATT_MTU = 263 + 3;
     private final static String TAG = BluetoothLeService.class.getSimpleName();
 
@@ -43,6 +58,7 @@ public class BluetoothLeService extends Service {
     private String mBluetoothDeviceAddress;
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
+    private BluetoothGattCharacteristic peerMavLinkWriteCharacteristic;
 
     private static final int STATE_DISCONNECTED = 0;
     private static final int STATE_CONNECTING = 1;
@@ -68,33 +84,34 @@ public class BluetoothLeService extends Service {
     public final static UUID UUID_HEART_RATE_MEASUREMENT =
             UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
 
-    private static long startTime;
-    private static long endTime;
-    private static long sendBytes;
-    private static long receivedBytes;
-    public static void begin() {
+    private long startTime;
+    private long endTime;
+    private long sendBytes;
+    private long receivedBytes;
+    public void begin() {
         startTime = System.currentTimeMillis();
         endTime = startTime;
         sendBytes = receivedBytes = 0;
+        isDoingTPTest = false;
     }
 
-    public static long getBLERunTime() {
+    public long getBLERunTime() {
         endTime = System.currentTimeMillis();
         return endTime - startTime;
     }
 
-    public static void incTxBytes(long bytes) {
+    public void incTxBytes(long bytes) {
         sendBytes+=bytes;
     }
-    public static void incRxBytes(long bytes) {
+    public void incRxBytes(long bytes) {
         receivedBytes+=bytes;
     }
 
-    public static long getTxBytes() {
+    public long getTxBytes() {
         return sendBytes;
     }
 
-    public static long getRxBytes() {
+    public long getRxBytes() {
         return receivedBytes;
     }
     // Implements callback methods for GATT events that the app cares about.  For example,
@@ -115,7 +132,7 @@ public class BluetoothLeService extends Service {
 //                mBluetoothGatt.requestMtu(MAVLINK_ATT_MTU);
                 boolean result = mBluetoothGatt.discoverServices();
                 Log.i(TAG, "Attempting to start service discovery:" + result);
-                BluetoothLeService.begin();
+                begin();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 intentAction = ACTION_GATT_DISCONNECTED;
                 mConnectionState = STATE_DISCONNECTED;
@@ -146,7 +163,9 @@ public class BluetoothLeService extends Service {
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG,"onCharacteristicRead() for characteristic-uuid:"+characteristic.getUuid().toString());
-                broadcastUpdate(ACTION_DATA_READ, characteristic);
+                if(!doThroughputTest) {
+                    broadcastUpdate(ACTION_DATA_READ, characteristic);
+                }
             }
         }
 
@@ -163,7 +182,7 @@ public class BluetoothLeService extends Service {
             if(characteristic != null) {
                 byte[] bytes = characteristic.getValue();
                 if(bytes != null && bytes.length > 0) {
-                    BluetoothLeService.incRxBytes(bytes.length);
+                    incRxBytes(bytes.length);
                 }
             }
             broadcastUpdate(ACTION_DATA_NOTIFIED, characteristic);
@@ -191,9 +210,10 @@ public class BluetoothLeService extends Service {
                 StringBuilder stringBuilder = new StringBuilder();
                 for (byte byteChar : bytes)
                     stringBuilder.append(String.format("%02X ", byteChar));
-                Log.d(TAG,"onCharacteristicWrite() for characteristic-uuid:"+characteristic.getUuid().toString() + ",data:" + stringBuilder.toString() + ",bytes.length:" + bytes.length);
+                Log.d(TAG,"onCharacteristicWrite() for characteristic-uuid:"+characteristic.getUuid().toString() + ",data:" + stringBuilder.toString() + ",bytes.length:" + bytes.length +
+                ", status:" + (status == BluetoothGatt.GATT_SUCCESS?"Succeed":"Failed") + " (" + status + ")");
                 if(bytes != null && bytes.length > 0) {
-                    BluetoothLeService.incTxBytes(bytes.length);
+                    incTxBytes(bytes.length);
                 }
             } else {
                 Log.d(TAG,"onCharacteristicWrite() for characteristic is null");
@@ -270,10 +290,13 @@ public class BluetoothLeService extends Service {
             if (data != null && data.length > 0) {
                 intent.putExtra(EXTRA_DATA_BYTEARRAY, data);
                 BTLinkIONative.dataArrived(mBluetoothDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase(),data);
+                if(doThroughputTest) {
+                    doTPTest();
+                }
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
-                long timeElapsed = BluetoothLeService.getBLERunTime();
-                long txBits = BluetoothLeService.getTxBytes() * 8;
-                long rxBits = BluetoothLeService.getRxBytes() * 8;
+                long timeElapsed = getBLERunTime();
+                long txBits = getTxBytes() * 8;
+                long rxBits = getRxBytes() * 8;
                 long totalBits = txBits + rxBits;
                 float seconds = timeElapsed/1000;
                 float throuput = (long)((float)(txBits + rxBits)/seconds);
@@ -502,6 +525,82 @@ public class BluetoothLeService extends Service {
         if (mBluetoothGatt == null) return null;
 
         return mBluetoothGatt.getServices();
+    }
+
+    //part to do throughput test
+    public void setPeerMavLinkWriteCharacteristic(BluetoothGattCharacteristic peerMavLinkWriteCharacteristic) {
+        this.peerMavLinkWriteCharacteristic = peerMavLinkWriteCharacteristic;
+    }
+
+    public void doTPTest() {
+        Log.d(TAG, "[doTPTest] isDoingTPTest:" + isDoingTPTest + ", doThroughputTest:" + doThroughputTest);
+        if(doThroughputTest && !isDoingTPTest) {
+            isDoingTPTest = true;
+            new Thread() {
+                public void run() {
+                    while(!shutdownTPTest) {
+                        byte[] bytes = BluetoothLeService.this.generateTestPacket();
+                        final StringBuilder stringBuilder = new StringBuilder(bytes.length);
+                        for (byte byteChar : bytes)
+                            stringBuilder.append(String.format("%02X ", byteChar));
+
+                        Log.d(TAG, "[doTPTest] to write:" + stringBuilder.toString() + "[" + bytes.length + "]");
+                        BluetoothLeService.this.writeCharacteristic(BluetoothLeService.this.peerMavLinkWriteCharacteristic, bytes);
+                        try {
+                            Thread.sleep((long)(longPacketSendInterval * Math.random() + 10));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }.start();
+        }
+    }
+    public CRC generateCRC(byte[] packet) {
+        CRC crc = new CRC();
+        for (int i = 1; i < packet.length - 2; i++) {
+            crc.update_checksum(packet[i] & 0xFF);
+        }
+        crc.finish_checksum(MAVLINK_MSG_ID_ENCAPSULATED_DATA);
+        return crc;
+    }
+
+
+    public byte[] generateTestPacket() {
+        // 使用的是 msg id = 131 的MavLink message，找了一下，可能是payload最大的msg了
+        ByteBuffer payload = ByteBuffer.allocate(6 + MAVLINK_MSG_LENGTH + 2);
+
+        payload.put((byte) MAVLinkPacket.MAVLINK_STX); //stx
+        payload.put((byte) MAVLINK_MSG_LENGTH); //len
+        payload.put((byte) 0); //seq
+        payload.put((byte) 1); //sysid
+        payload.put((byte) 0); //comp id
+        payload.put((byte) MAVLINK_MSG_ID_ENCAPSULATED_DATA); //msg id
+
+        payload.put((byte) 0);
+        payload.put((byte) 0);
+
+        for (int i = 0; i < 253; i++) {
+            payload.put((byte) (Math.random() * 256));
+        }
+
+        CRC crc = generateCRC(payload.array());
+        payload.put((byte) crc.getLSB());
+        payload.put((byte) crc.getMSB());
+        return payload.array();
+    }
+
+    public static boolean isValidPacket(byte[] packet){
+
+        Parser parser = new Parser(); // 1位解析类
+
+        for(int i = 0; i < packet.length - 1; i++){
+            parser.mavlink_parse_char(packet[i] & 0xFF); // 每次解析1位
+        }
+        MAVLinkPacket m = parser.mavlink_parse_char(packet[packet.length - 1] & 0xFF); // 最后1位即可返回
+        byte[] processedPacket = m.encodePacket(); // 解析
+
+        return Arrays.equals(processedPacket, packet);
     }
 }
 

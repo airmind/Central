@@ -143,6 +143,7 @@ public class DeviceControlActivity extends Activity {
     private void enableNotification(BluetoothGattCharacteristic characteristic, boolean preRead) {
         if(characteristic.getUuid().toString().toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
             BTLinkIO.setPeerMavLinkWriteCharacteristic(characteristic);
+            mBluetoothLeService.setPeerMavLinkWriteCharacteristic(characteristic);
         }
         final int charaProp = characteristic.getProperties();
         if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0 && preRead) {
@@ -205,7 +206,10 @@ public class DeviceControlActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         unbindService(mServiceConnection);
-        mBluetoothLeService = null;
+        if(mBluetoothLeService != null)  {
+            mBluetoothLeService.shutdownTPT();
+            mBluetoothLeService = null;
+        }
     }
 
     @Override
