@@ -150,11 +150,13 @@ public class DeviceControlActivity extends Activity {
             Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" is readable");
             mBluetoothLeService.readCharacteristic(characteristic);
         }
+
         if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
             Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" can be notified");
             mBluetoothLeService.setCharacteristicNotification( characteristic, true);
             mBluetoothLeService.readCharacteristic(characteristic);
         }
+
     }
 
     private void clearUI() {
@@ -207,7 +209,6 @@ public class DeviceControlActivity extends Activity {
         super.onDestroy();
         unbindService(mServiceConnection);
         if(mBluetoothLeService != null)  {
-            mBluetoothLeService.shutdownTPT();
             mBluetoothLeService = null;
         }
     }
