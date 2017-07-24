@@ -133,10 +133,10 @@ public class BluetoothLeService extends Service {
                 broadcastUpdate(intentAction);
 //                Log.i(TAG, "Connected to GATT server. To reqeustMTU:" + MAVLINK_ATT_MTU);
                 // Attempts to discover services after successful connection.
-//                mBluetoothGatt.requestMtu(MAVLINK_ATT_MTU);
-                boolean result = mBluetoothGatt.discoverServices();
-                Log.i(TAG, "Attempting to start service discovery:" + result);
-                begin();
+                mBluetoothGatt.requestMtu(MAVLINK_ATT_MTU);
+//                boolean result = mBluetoothGatt.discoverServices();
+//                Log.i(TAG, "Attempting to start service discovery:" + result);
+//                begin();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 intentAction = ACTION_GATT_DISCONNECTED;
                 mConnectionState = STATE_DISCONNECTED;
@@ -324,6 +324,9 @@ public class BluetoothLeService extends Service {
         @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
             Log.d(TAG,"onMtuChanged()=> device:" + gatt.getDevice().getAddress() + ", mtu:" + mtu + ", status:" + status);
+            boolean result = mBluetoothGatt.discoverServices();
+            Log.i(TAG, "Attempting to start service discovery:" + result);
+            begin();
         }
     };
 
@@ -559,6 +562,7 @@ public class BluetoothLeService extends Service {
                     Log.w(TAG, "[writeCharacteristic] value is long length:" + characteristic.getValue().length);
                     writeLongAttribute(characteristic.getValue(), characteristic);
                 } else */{
+//                    characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
                     mBluetoothGatt.writeCharacteristic(characteristic);
                 }
             }
