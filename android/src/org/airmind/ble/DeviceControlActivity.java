@@ -327,6 +327,7 @@ public class DeviceControlActivity extends Activity {
                 gattCharacteristicGroupData.add(currentCharaData);
 
                 if(uuid != null && uuid.toLowerCase().equals(SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase())) {
+                    logGATTAttribute(gattCharacteristic);
                     foundMavLinkChracteristic = true;
                     enableNotification(gattCharacteristic, true);
                 }
@@ -353,6 +354,28 @@ public class DeviceControlActivity extends Activity {
         mGattServicesList.setAdapter(gattServiceAdapter);
     }
 
+    private void logGATTAttribute(BluetoothGattCharacteristic gatt) {
+        if(gatt == null) return;
+        int props = gatt.getProperties();
+        StringBuffer propsStr = new StringBuffer();
+
+        int attPermissions = gatt.getPermissions();
+        int attWriteType = gatt.getWriteType();
+        if((props & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+            propsStr.append("readable");
+        }
+        if((props & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
+            propsStr.append(" writable");
+        }
+        if((props & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
+            propsStr.append(" writable-no-response");
+        }
+        if((props & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+            propsStr.append(" notify");
+        }
+
+        Log.d(TAG,"[logGATTAttribute] gatt " + gatt.getUuid().toString() + " has properties:0x" + Integer.toHexString(props) + "(" + propsStr.toString() + "), writetype:" + attWriteType + ", permissions:0x" + Integer.toHexString(attPermissions));
+    }
     private static IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);

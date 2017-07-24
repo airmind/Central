@@ -159,25 +159,6 @@ public class BluetoothLeService extends Service {
                     }
                     connect(gatt.getDevice().getAddress());
                 }
-//                mBluetoothAdapter.disable();
-//
-//                Timer single_timer = new Timer();
-//                single_timer.schedule(new TimerTask() {
-//                    @Override
-//                    public void run() {
-//                        mBluetoothAdapter.enable();
-//                    }
-//                }, 1000);
-//
-//                Log.w(TAG, "onServicesDiscovered failed with status: " + status);
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                boolean result = mBluetoothGatt.discoverServices();
-//                Log.i(TAG, "re-Attempting to start service discovery:" + result);
-//                begin();
             }
         }
 
@@ -246,12 +227,9 @@ public class BluetoothLeService extends Service {
                     if (bytes != null && bytes.length > 0) {
                         incTxBytes(bytes.length);
                     }
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
+
                     doTPTest();
+
                     if(longAttributeWrite) {
 //                        Log.d(TAG,"onCharacteristicWrite() for long characteristic to execute reliable write");
                         if(packetInteration < packetSize) {
@@ -525,12 +503,6 @@ public class BluetoothLeService extends Service {
         mBluetoothGatt.readCharacteristic(characteristic);
     }
 
-//        if (mNotifyCharacteristic != null) {
-//            mBluetoothLeService.setCharacteristicNotification(
-//                    mNotifyCharacteristic, false);
-//            mNotifyCharacteristic = null;
-//        }
-//        mBluetoothLeService.writeCharacteristic(characteristic,value);
     /**
      * Request a write on a given {@code BluetoothGattCharacteristic}. The write result is reported
      * asynchronously through the {@code BluetoothGattCallback#onCharacteristicRead(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
@@ -557,14 +529,7 @@ public class BluetoothLeService extends Service {
         new Thread() {
             public void run() {
                 characteristic.setValue(value);
-//                characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-                /*if(characteristic.getValue().length>20) {
-                    Log.w(TAG, "[writeCharacteristic] value is long length:" + characteristic.getValue().length);
-                    writeLongAttribute(characteristic.getValue(), characteristic);
-                } else */{
-//                    characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-                    mBluetoothGatt.writeCharacteristic(characteristic);
-                }
+                mBluetoothGatt.writeCharacteristic(characteristic);
             }
         }.start();
 
