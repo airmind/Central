@@ -46,6 +46,7 @@ public class DeviceControlActivity extends Activity {
     private TextView mConnectionState;
     private TextView mDataField;
     private TextView mTpField;
+    private TextView mLatencyField;
     private String mDeviceName;
     private String mDeviceAddress;
     private ExpandableListView mGattServicesList;
@@ -114,6 +115,12 @@ public class DeviceControlActivity extends Activity {
             } else if (BluetoothLeService.ACTION_DATA_NOTIFIED.equals(action)) {
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 displayTP(intent.getStringExtra(BluetoothLeService.EXTRA_TP));
+                displayLatency("" + mBluetoothLeService.getTPTestTime() + " (in ms)");
+                if(mBluetoothLeService.loopTPTest) {
+                    long currentTime = System.currentTimeMillis();
+                    mBluetoothLeService.startTPTestTime = currentTime;
+                    mBluetoothLeService.endTPTestTime = currentTime;
+                }
             }
         }
     };
@@ -180,6 +187,7 @@ public class DeviceControlActivity extends Activity {
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mDataField = (TextView) findViewById(R.id.data_value);
         mTpField = (TextView) findViewById(R.id.tp_value);
+        mLatencyField = (TextView) findViewById(R.id.latency_value);
 
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -263,6 +271,11 @@ public class DeviceControlActivity extends Activity {
         }
     }
 
+    private void displayLatency(String data) {
+        if(data != null) {
+            mLatencyField.setText(data);
+        }
+    }
     // Demonstrates how to iterate through the supported GATT Services/Characteristics.
     // In this sample, we populate the data structure that is bound to the ExpandableListView
     // on the UI.
@@ -330,6 +343,10 @@ public class DeviceControlActivity extends Activity {
                     logGATTAttribute(gattCharacteristic);
                     foundMavLinkChracteristic = true;
                     enableNotification(gattCharacteristic, true);
+                    long currentTime = System.currentTimeMillis();
+                    mBluetoothLeService.startTPTestTime = currentTime;
+                    mBluetoothLeService.endTPTestTime = currentTime;
+                    mBluetoothLeService.doTPTest();
                 }
             }
             mGattCharacteristics.add(charas);
