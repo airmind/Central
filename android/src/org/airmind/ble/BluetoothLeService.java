@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import java.util.Arrays;
 
+import com.MAVLink.MAVLinkPacket;
 import com.MAVLink.common.msg_encapsulated_data;
 
 import com.MAVLink.common.msg_ping;
@@ -34,6 +35,7 @@ import com.MAVLink.enums.MAV_AUTOPILOT;
 import com.MAVLink.enums.MAV_MODE;
 import com.MAVLink.enums.MAV_STATE;
 import com.MAVLink.enums.MAV_TYPE;
+import com.MAVLink.Parser;
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -42,6 +44,7 @@ import com.MAVLink.enums.MAV_TYPE;
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BluetoothLeService extends Service {
 
+    Parser mavParser;
     //For reliable write
     private static boolean longAttributeWrite = false;
     private static int packetSize = 0;
@@ -136,6 +139,10 @@ public class BluetoothLeService extends Service {
     public long getRxBytes() {
         return receivedBytes;
     }
+    public BluetoothLeService() {
+        super();
+        mavParser = new Parser();
+    }
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -198,7 +205,19 @@ public class BluetoothLeService extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG,"onCharacteristicRead() for characteristic-uuid:"+characteristic.getUuid().toString());
                 if(!doThroughputTest) {
-                    dataReceived(ACTION_DATA_READ, characteristic);
+                    if(characteristic != null) {
+                        byte[] bytes = characteristic.getValue();
+                        if(bytes != null && bytes.length > 0) {
+                            MAVLinkPacket mavLinkPacket = null;
+                            for (byte oct : bytes) {
+                                mavLinkPacket = mavParser.mavlink_parse_char((int) oct);
+                            }
+                            if (mavLinkPacket != null) {
+                                Log.d(TAG, "onCharacteristicRead() encounter one mavLink msg, msgId:" + mavLinkPacket.msgid);
+                                dataReceived(ACTION_DATA_READ, characteristic, mavLinkPacket.encodePacket());
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -217,9 +236,16 @@ public class BluetoothLeService extends Service {
                 byte[] bytes = characteristic.getValue();
                 if(bytes != null && bytes.length > 0) {
                     incRxBytes(bytes.length);
+                    MAVLinkPacket mavLinkPacket = null;
+                    for(byte oct : bytes) {
+                        mavLinkPacket = mavParser.mavlink_parse_char((int)oct);
+                    }
+                    if(mavLinkPacket != null) {
+                        Log.d(TAG,"onCharacteristicChanged() encounter one mavLink msg, msgId:" + mavLinkPacket.msgid);
+                        dataReceived(ACTION_DATA_NOTIFIED, characteristic, mavLinkPacket.encodePacket());
+                    }
                 }
             }
-            dataReceived(ACTION_DATA_NOTIFIED, characteristic);
         }
 
         /**
@@ -337,7 +363,7 @@ public class BluetoothLeService extends Service {
         sendBroadcast(intent);
     }
 
-    private void dataReceived(final String action, final BluetoothGattCharacteristic characteristic) {
+    private void dataReceived(final String action, final BluetoothGattCharacteristic characteristic, byte[] data) {
 
         final Intent intent = new Intent(action);
 
@@ -364,7 +390,7 @@ public class BluetoothLeService extends Service {
                     notificationReceived = true;
                 }
             }
-            final byte[] data = characteristic.getValue();
+//            final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
                 intent.putExtra(EXTRA_DATA_BYTEARRAY, data);
                 BTLinkIONative.dataArrived(mBluetoothDeviceAddress,SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID.toLowerCase(),SampleGattAttributes.MAV_TRANSFER_CHARACTERISTIC_UUID.toLowerCase(),data);
@@ -394,7 +420,7 @@ public class BluetoothLeService extends Service {
             }
         } else {
             // For all other profiles, writes the data formatted in HEX.
-            final byte[] data = characteristic.getValue();
+//            final byte[] data = characteristic.getValue();
             intent.putExtra(EXTRA_DATA_BYTEARRAY, data);
             if (data != null && data.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
