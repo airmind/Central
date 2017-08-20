@@ -56,7 +56,7 @@ public class BluetoothLeService extends Service {
     public boolean loopTPTest = true;
     public boolean notificationReceived = false;
 
-    public static int MAVLINK_ATT_MTU = 30;
+    public static int MAVLINK_ATT_MTU = 23;
     private final static String TAG = BluetoothLeService.class.getSimpleName();
 
     private BluetoothManager mBluetoothManager;
