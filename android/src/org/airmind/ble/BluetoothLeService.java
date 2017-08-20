@@ -52,7 +52,7 @@ public class BluetoothLeService extends Service {
     private static byte[][] packets;
     private int seq = 0;
     //
-    public boolean doThroughputTest = true;
+    public boolean doThroughputTest = false;
     public boolean loopTPTest = true;
     public boolean notificationReceived = false;
 
@@ -210,7 +210,7 @@ public class BluetoothLeService extends Service {
                         if(bytes != null && bytes.length > 0) {
                             MAVLinkPacket mavLinkPacket = null;
                             for (byte oct : bytes) {
-                                mavLinkPacket = mavParser.mavlink_parse_char((int) oct);
+                                mavLinkPacket = mavParser.mavlink_parse_char(0xFF &  oct);
                             }
                             if (mavLinkPacket != null) {
                                 Log.d(TAG, "onCharacteristicRead() encounter one mavLink msg, msgId:" + mavLinkPacket.msgid);
@@ -236,9 +236,10 @@ public class BluetoothLeService extends Service {
                 byte[] bytes = characteristic.getValue();
                 if(bytes != null && bytes.length > 0) {
                     incRxBytes(bytes.length);
+
                     MAVLinkPacket mavLinkPacket = null;
                     for(byte oct : bytes) {
-                        mavLinkPacket = mavParser.mavlink_parse_char((int)oct);
+                        mavLinkPacket = mavParser.mavlink_parse_char(0xFF & oct);
                     }
                     if(mavLinkPacket != null) {
                         Log.d(TAG,"onCharacteristicChanged() encounter one mavLink msg, msgId:" + mavLinkPacket.msgid);
