@@ -161,7 +161,7 @@ public class DeviceControlActivity extends Activity {
         if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
             Log.d(TAG,"characteristic-uuid:\""+characteristic.getUuid().toString().toLowerCase() + "\" can be notified");
             mBluetoothLeService.setCharacteristicNotification( characteristic, true);
-            mBluetoothLeService.readCharacteristic(characteristic);
+//            mBluetoothLeService.readCharacteristic(characteristic);
         }
 
     }
@@ -343,10 +343,6 @@ public class DeviceControlActivity extends Activity {
                     logGATTAttribute(gattCharacteristic);
                     foundMavLinkChracteristic = true;
                     enableNotification(gattCharacteristic, true);
-                    long currentTime = System.currentTimeMillis();
-                    mBluetoothLeService.startTPTestTime = currentTime;
-                    mBluetoothLeService.endTPTestTime = currentTime;
-                    mBluetoothLeService.doTPTest();
                 }
             }
             mGattCharacteristics.add(charas);

@@ -87,6 +87,7 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
             $$PWD/android/src/org/airmind/ble/VehicleManager.java \
             $$PWD/android/src/org/airmind/ble/ParameterManager.java \
+            $$PWD/android/src/org/airmind/ble/ReliableWriter.java \
             $$PWD/android/src/org/airmind/ble/DeviceScanFragment.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtActivity.java \
             $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java \
