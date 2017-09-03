@@ -19,11 +19,8 @@
 package org.airmind.ble;
 
 import android.annotation.TargetApi;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.os.Build;
-import java.util.UUID;
 import android.util.Log;
 import android.bluetooth.BluetoothGattService;
 
@@ -76,16 +73,14 @@ public class BTLinkIO {
          if(bluetoothLeService != null &&  data != null && characteristic != null
                  /* && deviceAddress != null && serviceUUID != null && characteristicUUID != null*/ ) {
              if(!bluetoothLeService.doThroughputTest) {
-                 StringBuilder stringBuilder = new StringBuilder();
-                 for (byte byteChar : data)
-                     stringBuilder.append(String.format("%02X ", byteChar));
-
                  Log.d(TAG, "write to deviceAddress:" + deviceAddress + ", service-UUID:" +
                          serviceUUID + ", characteristic-uuid:" + characteristicUUID +
-                         ", with value:" + (stringBuilder.toString()));
-                 bluetoothLeService.writeCharacteristic(peerMavLinkWriteCharacteristic, data);
+                         ", with value:" + (BLEUtil.getString(data)));
+
+                 BLEUtil.sendData(bluetoothLeService, peerMavLinkWriteCharacteristic, data);
              }
          }
      }
- }
+
+}
 

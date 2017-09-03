@@ -33,6 +33,7 @@ public class SampleGattAttributes {
 //    public static String MAV_TRANSFER_CHARACTERISTIC_UUID = "08590F7E-DB05-467E-8757-72F6FAEB13D4";
     public static String MAV_TRANSFER_SERVICE_UUID = "6A400001-B5A3-F393-E0A9-E50E24DCCA9E";
     public static String MAV_TRANSFER_CHARACTERISTIC_UUID = "6A400002-B5A3-F393-E0A9-E50E24DCCA9E";
+    public static String MAV_TRANSFER_CHARACTERISTIC_EXTENDED_PROPERTIES_DESCRIPTOR_UUID = "0x2900";//TBD
     static {
         // Sample Services.
         attributes.put("0000180d-0000-1000-8000-00805f9b34fb".toUpperCase(), "Heart Rate Service");

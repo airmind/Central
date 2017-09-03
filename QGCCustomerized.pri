@@ -81,6 +81,7 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/DeviceScanActivity.java \
             $$PWD/android/src/org/airmind/ble/BluetoothLeService.java \
             $$PWD/android/src/org/airmind/ble/SampleGattAttributes.java \
+            $$PWD/android/src/org/airmind/ble/BLEUtil.java \
             $$PWD/android/src/org/airmind/ble/BTLinkIO.java \
             $$PWD/android/src/org/airmind/ble/BTLinkIONative.java \
             $$PWD/android/src/org/airmind/ble/LinkManager.java \
