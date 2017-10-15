@@ -23,7 +23,7 @@
 //#include "LinkManager.h"
 //#include "QGBTSerialManager.h"
 
-//#include "MAVLinkProtocol.h"
+#include "MAVLinkProtocol.h"
 
 #define _BLE_DEBUG_ 1 //for the moment;
 
@@ -69,13 +69,18 @@ class BTSerialLink;
 #endif
 
 #ifdef __android__
+#define MAV_TRANSFER_SERVICE_UUID           "E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
+#define MAV_TRANSFER_CHARACTERISTIC_UUID    "08590F7E-DB05-467E-8757-72F6FAEB13D4"
+#endif
+
+#ifdef __ios__
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
 class BTSerialLink;
 #endif
 
-class MAVLinkProtocol;
+//class MAVLinkProtocol;
 
 /**
  1. the class will continously monitoring rssi to tell if device in range during scanning.
@@ -85,8 +90,10 @@ class MAVLinkProtocol;
 
 class BLEHelper {
 private:
+#ifdef __ios__
     BLEHelperWrapper* ble_wrapper;
-    
+#endif
+
 public:
     BLEHelper();
     ~BLEHelper();
@@ -104,17 +111,15 @@ public:
 
 class BTSerialConfiguration : public LinkConfiguration
 {
-    
-    //CBCentralManager *manager;
-    //QGBTSerialManager* qbtmanager;
 private:
-    
+#ifdef __ios__
     BTSerialConfigurationWrapper* btcwrapper;
+#endif
     //for peripheral on the link;
-    QString identifier; //NSUUID
-    QString pname;
-    QString serviceID;
-    QString characteristicID;
+    QString identifier; //NSUUID, device-address for android or device-uuid for ios
+    QString pname; //devicename
+    QString serviceID; //service-uuid
+    QString characteristicID;//characteristic-uuid
     BLE_LINK_CONNECT_STAGE connstage;
     
 public:
@@ -145,10 +150,21 @@ public:
     void saveSettings(QSettings& settings, const QString& root);
     void updateSettings();
     
-    void configBLESerialLink(QString&, QString&, QString&, QString&, BLE_LINK_CONNECT_STAGE);
+    void configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid, BLE_LINK_CONNECT_STAGE);
     void setBLEPeripheralIdentifier(QString*);
     QString getBLEPeripheralIdentifier();
     QString getBLEPeripheralName();
+    inline bool equals(BTSerialConfiguration* other) {
+        if( this == other ||
+            (this->identifier.compare(other->identifier,Qt::CaseSensitive) == 0 &&
+            this->serviceID.compare(other->serviceID,Qt::CaseSensitive) == 0 &&
+            this->characteristicID.compare(other->characteristicID,Qt::CaseSensitive) == 0 ) )
+        {
+            return true;
+        }
+
+        return false;
+    }
     QString getBLELinkServiceID();
     QString getBLELinkCharacteristicID();
     
@@ -158,8 +174,6 @@ public:
 
     // operator;
     bool operator == (BTSerialConfiguration* cfg);
-    
-    
 };
 
 /**
@@ -179,9 +193,9 @@ class BTSerialLink : public QObject//: public LinkInterface
     friend class LinkInterface;
     
 private:
-    
+#ifdef __ios__
     BTSerialLinkWrapper* btlwrapper;
-    
+#endif
     MAVLinkProtocol* mavhandler;
    
     //for connected link;
@@ -195,7 +209,6 @@ private:
 
 
 public:
-    
     //set link operation call backs;
     void setLinkCallbackDelegte(void*);
     void setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler);

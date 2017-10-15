@@ -27,7 +27,6 @@
 #include <QSharedPointer>
 
 #include "QGCMAVLink.h"
-
 class LinkManager;
 class LinkConfiguration;
 

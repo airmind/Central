@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,7 +30,10 @@ import android.widget.Toast;
 import org.mavlink.qgroundcontrol.R;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
+import android.util.Log;
+import android.view.KeyEvent;
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
@@ -41,7 +45,9 @@ public class DeviceScanActivity extends ListActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 5000;//10000;
+    public static final String TAG = "DeviceScanActivity";
+    Button connect = null;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
@@ -59,9 +65,10 @@ public class DeviceScanActivity extends ListActivity {
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
-        final BluetoothManager bluetoothManager =
-                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
+
+        LinkManager.setAdapter(mBluetoothAdapter);
 
         // Checks if Bluetooth is supported on the device.
         if (mBluetoothAdapter == null) {
@@ -117,7 +124,7 @@ public class DeviceScanActivity extends ListActivity {
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
-//        scanLeDevice(true);
+        scanLeDevice(true); //to auto-scan
     }
 
     @Override
@@ -142,6 +149,10 @@ public class DeviceScanActivity extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
         if (device == null) return;
+        connectBLEDevice(device);
+    }
+
+    private void connectBLEDevice(BluetoothDevice device) {
         final Intent intent = new Intent(this, DeviceControlActivity.class);
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
@@ -167,7 +178,8 @@ public class DeviceScanActivity extends ListActivity {
             }, SCAN_PERIOD);
 
             mScanning = true;
-            mBluetoothAdapter.startLeScan(mLeScanCallback);
+            UUID[] uuids = {UUID.fromString(SampleGattAttributes.MAV_TRANSFER_SERVICE_UUID)};
+            mBluetoothAdapter.startLeScan(uuids, mLeScanCallback);
         } else {
             mScanning = false;
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
@@ -176,7 +188,7 @@ public class DeviceScanActivity extends ListActivity {
     }
 
     // Adapter for holding devices found through scanning.
-    private class LeDeviceListAdapter extends BaseAdapter {
+    class LeDeviceListAdapter extends BaseAdapter {
         private ArrayList<BluetoothDevice> mLeDevices;
         private LayoutInflater mInflator;
 
@@ -247,6 +259,9 @@ public class DeviceScanActivity extends ListActivity {
 
                 @Override
                 public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+                    Log.d(TAG,"detected device:" + device.getAddress());
+                    scanLeDevice(false); //to stop scan
+                    connectBLEDevice(device);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {

@@ -100,6 +100,12 @@ public:
     /// Show a non-modal message to the user
     void showMessage(const QString& message);
 
+#ifdef __mindskin__
+#ifdef __android__
+    void startMindSkinUI(void);
+#endif
+#endif
+
     /// @return true: Fake ui into showing mobile interface
     bool fakeMobile(void) { return _fakeMobile; }
 

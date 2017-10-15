@@ -26,6 +26,19 @@
 #include "MissionCommandTree.h"
 #include "QGroundControlQmlGlobal.h"
 
+#ifdef __mindskin__
+#include "AirframeComponentController.h"
+#include <mindskinlog.h>
+#endif
+
+#ifdef __android__
+#include <android/log.h>
+static const char kJTag[] {"Vehicle"};
+#include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras/QAndroidJniEnvironment>
+extern void cleanJavaException(void);
+#endif
+
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
 
 #define UPDATE_TIMER 50
@@ -92,7 +105,11 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _updateCount(0)
     , _rcRSSI(255)
     , _rcRSSIstore(255)
+#ifdef __mindskin__
+    , _autoDisconnect(true)
+#else
     , _autoDisconnect(false)
+#endif
     , _flying(false)
     , _connectionLost(false)
     , _connectionLostEnabled(true)
@@ -131,6 +148,10 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _windFactGroup(this)
     , _vibrationFactGroup(this)
 {
+
+#ifdef __mindskin__
+    MSLog("create vehicle");
+#endif
     _addLink(link);
 
     _mavlink = qgcApp()->toolbox()->mavlinkProtocol();
@@ -258,6 +279,18 @@ Vehicle::Vehicle(LinkInterface*             link,
     _windFactGroup.setVehicle(this);
     _vibrationFactGroup.setVehicle(this);
 }
+
+#ifdef __mindskin__
+void Vehicle::setAirFrameType(int airFrameType) {
+    AirframeComponentController controller;
+    controller.changeAutostart(airFrameType);
+}
+
+int Vehicle::getAirFrameType() {
+    AirframeComponentController controller;
+    return controller.getAutostart();
+}
+#endif
 
 // Disconnected Vehicle
 Vehicle::Vehicle(MAV_AUTOPILOT firmwareType, MAV_TYPE vehicleType, QObject* parent)
@@ -574,6 +607,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     }
 
     if (!_containsLink(link)) {
+        #ifdef __mindskin__
+        MSLog("[Vehicle::_mavlinkMessageReceived] to add link");
+        #endif
         _addLink(link);
     }
 
@@ -613,7 +649,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         _handleHomePosition(message);
         break;
     case MAVLINK_MSG_ID_HEARTBEAT:
-        _handleHeartbeat(message);
+        _handleHeartbeat(link, message);
         break;
     case MAVLINK_MSG_ID_RC_CHANNELS:
         _handleRCChannels(message);
@@ -669,7 +705,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 
 //<<<<<<< HEAD
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message) {
     
     if (message.sysid != _id && message.sysid != 0) {
@@ -978,9 +1014,9 @@ void Vehicle::_handleHomePosition(mavlink_message_t& message)
     }
 }
 
-void Vehicle::_handleHeartbeat(mavlink_message_t& message)
+void Vehicle::_handleHeartbeat(LinkInterface *link, mavlink_message_t& message)
 {
-    _connectionActive();
+    _connectionActive(link);
 
     mavlink_heartbeat_t heartbeat;
 
@@ -1006,7 +1042,34 @@ void Vehicle::_handleHeartbeat(mavlink_message_t& message)
         emit flightModeChanged(flightMode());
     }
 }
+void Vehicle::_handleHeartbeat(mavlink_message_t& message)
+{
+    _connectionActive(NULL);
 
+    mavlink_heartbeat_t heartbeat;
+
+    mavlink_msg_heartbeat_decode(&message, &heartbeat);
+
+    bool newArmed = heartbeat.base_mode & MAV_MODE_FLAG_DECODE_POSITION_SAFETY;
+
+    if (_armed != newArmed) {
+        _armed = newArmed;
+        emit armedChanged(_armed);
+
+        // We are transitioning to the armed state, begin tracking trajectory points for the map
+        if (_armed) {
+            _mapTrajectoryStart();
+        } else {
+            _mapTrajectoryStop();
+        }
+    }
+
+    if (heartbeat.base_mode != _base_mode || heartbeat.custom_mode != _custom_mode) {
+        _base_mode = heartbeat.base_mode;
+        _custom_mode = heartbeat.custom_mode;
+        emit flightModeChanged(flightMode());
+    }
+}
 void Vehicle::_handleRCChannels(mavlink_message_t& message)
 {
     mavlink_rc_channels_t channels;
@@ -1101,6 +1164,9 @@ bool Vehicle::_containsLink(LinkInterface* link)
 
 void Vehicle::_addLink(LinkInterface* link)
 {
+    #ifdef __mindskin__
+    MSLog("_addLink");
+    #endif
     if (!_containsLink(link)) {
         _links += link;
         qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
@@ -1111,22 +1177,26 @@ void Vehicle::_addLink(LinkInterface* link)
 #else
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkInactive), this, static_cast<void (Vehicle::*)(LinkInterface*)>(&Vehicle::_linkInactiveOrDeleted));
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(LinkInterface*)>(&LinkManager::linkDeleted), this, static_cast<void (Vehicle::*)(LinkInterface*)>(&Vehicle::_linkInactiveOrDeleted));
-
+        connect(link, &LinkInterface::disconnected, this, &Vehicle::disconnected);
 #endif
-
+    } else {
+        #ifdef __mindskin__
+        MSLog("[_addLink] link already be there");
+        #endif
     }
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 bool Vehicle::_containsLink(BTSerialLink* link)
 {
-    foreach (BTSerialLink* alink, _blelinks) {
-        if (alink == link) {
-            return true;
-        }
-    }
+    return _blelinks.contains(link);
+//    foreach (BTSerialLink* alink, _blelinks) {
+//        if (alink == link) {
+//            return true;
+//        }
+//    }
     
-    return false;
+//    return false;
 }
 
 void Vehicle::_addLink(BTSerialLink* link)
@@ -1197,7 +1267,7 @@ void Vehicle::_linkInactiveOrDeleted(LinkInterface* link)
 }
 
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 void Vehicle::_linkInactiveOrDeleted(BTSerialLink* link)
 {
     qCDebug(VehicleLog) << "_linkInactiveOrDeleted linkCount" << _links.count();
@@ -1223,8 +1293,6 @@ void Vehicle::sendMessage(mavlink_message_t message)
 //>>>>>>> master
 
 #ifdef __mindskin__
-#ifdef __ios__
-
 bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
     //return BLE link as priority;
     
@@ -1239,10 +1307,21 @@ bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
 
 bool Vehicle::sendMessageOnLink(BTSerialLink* link, mavlink_message_t message)
 {
-    if (!link || !_blelinks.contains(link) || !link->isConnected()) {
+    if (!link) {
+        qDebug()<<"Vehicle::sendMessageOnLink => link is null";
         return false;
     }
-    
+
+    if (!_blelinks.contains(link)) {
+        qDebug()<<"Vehicle::sendMessageOnLink => not contains the link";
+        return false;
+    }
+
+    if (!link->isConnected()) {
+        qDebug()<<"Vehicle::sendMessageOnLink => the link is not connected";
+        return false;
+    }
+    qDebug()<<"Vehicle::sendMessageOnLink => to send mavlink msg on ble link";
     //emit _sendMessageOnLinkOnThread(link, message);
     _sendMessageOnLink(link, message);
     
@@ -1273,10 +1352,6 @@ void Vehicle::_sendMessageOnLink(BTSerialLink* link, mavlink_message_t message)
     _messagesSent++;
     emit messagesSentChanged();
 }
-
-
-
-#endif
 #endif  //__mindskin__
 
 bool Vehicle::sendMessageOnLink(LinkInterface* link, mavlink_message_t message)
@@ -1666,11 +1741,41 @@ bool Vehicle::active(void)
     return _active;
 }
 
+#ifdef __mindskin__
+void Vehicle::disconnected() {
+    MSLog("[Vehicle::disconnected()] enter");
+    if(getParameterLoader() != NULL) {
+        LinkInterface *link = (LinkInterface*)sender();
+        if(link != NULL) {
+            LinkConfiguration *linkConfig = link->getLinkConfiguration();
+            if(linkConfig != NULL) {
+                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
+                    MSLog("[disconnected] to flush fact/parameters into cache file in order to speed-up initial-load of parameters, linkType:%d",linkConfig->type());
+                    getParameterLoader()->writeLocalParamCache();
+                }
+            }
+        } else {
+            MSLog("[Vehicle::disconnected()] link is null");
+        }
+    } else {
+        MSLog("[Vehicle::disconnected()] getParameterLoader() return null");
+    }
+}
+#endif
+
 void Vehicle::setActive(bool active)
 {
     _active = active;
 
     _startJoystick(_active);
+
+#ifdef __mindskin__
+    //try to flush fact into cache after the vehicle is disconnected
+    if(_active == false && getParameterLoader() != NULL) {
+        qCDebug(VehicleLog) << "[setActive(false)] to flush fact/parameters into cache file in order to speed-up initial-load of parameters";
+        getParameterLoader()->writeLocalParamCache();
+    }
+#endif
 }
 
 bool Vehicle::homePositionAvailable(void)
@@ -1932,18 +2037,47 @@ void Vehicle::_connectionLostTimeout(void)
         if (_autoDisconnect) {
             disconnectInactiveVehicle();
         }
+        this->_hearbeatsCount = 0;
     }
 }
 
-void Vehicle::_connectionActive(void)
+void Vehicle::_connectionActive(LinkInterface *link)
 {
     _connectionLostTimer.start();
+
+    this->_hearbeatsCount++;
+    if(this->_hearbeatsCount == 1) {
+#ifdef __mindskin__
+    if( link ) {
+        #ifdef __android__
+            LinkConfiguration* linkCfg = link->getLinkConfiguration();
+            MSLog("[_linkConnected] %s",linkCfg->name().toLatin1().data());
+            QAndroidJniObject jLinkConfigName = QAndroidJniObject::fromString(linkCfg->name());
+            QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "connected", "(Ljava/lang/String;)V", jLinkConfigName.object<jstring>());
+            cleanJavaException();
+        #endif //__android__
+    }
+#endif
+    }
     if (_connectionLost) {
         _connectionLost = false;
         emit connectionLostChanged(false);
         _say(QString("%1 communication regained").arg(_vehicleIdSpeech()));
     }
 }
+
+#ifdef __mindskin__
+    bool Vehicle::containsLinkConfig(QString& linkConfigName) {
+        foreach (LinkInterface* link, _links) {
+            LinkConfiguration* linkCfg = link->getLinkConfiguration();
+            QString linkName = linkCfg->name();
+            if (linkCfg != NULL && linkName != NULL && linkName.compare(linkConfigName, Qt::CaseSensitive) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+#endif
 
 void Vehicle::_say(const QString& text)
 {

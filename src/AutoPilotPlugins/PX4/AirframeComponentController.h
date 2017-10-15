@@ -45,6 +45,10 @@ public:
     
     int currentAirframeIndex(void);
     void setCurrentAirframeIndex(int newIndex);
+#ifdef __mindskin__
+    Q_INVOKABLE void changeAutostart(int autoStartId);
+    Q_INVOKABLE int getAutostart();
+#endif
     
 signals:
     void autostartIdChanged(int newAutostartId);

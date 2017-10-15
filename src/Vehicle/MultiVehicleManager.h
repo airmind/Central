@@ -79,6 +79,9 @@ public:
     bool parameterReadyVehicleAvailable(void) { return _parameterReadyVehicleAvailable; }
 
     Vehicle* activeVehicle(void) { return _activeVehicle; }
+#ifdef __mindskin__
+    Vehicle* getVehicleByLinkConfigName(QString linkConfigName);
+#endif
     void setActiveVehicle(Vehicle* vehicle);
 
     QmlObjectListModel* vehicles(void) { return &_vehicles; }
@@ -112,7 +115,7 @@ private slots:
     void _autopilotParametersReadyChanged(bool parametersReady);
     void _sendGCSHeartbeat(void);
     void _vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void _vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     
@@ -138,7 +141,7 @@ private:
 
     QTimer              _gcsHeartbeatTimer;             ///< Timer to emit heartbeats
     bool                _gcsHeartbeatEnabled;           ///< Enabled/disable heartbeat emission
-    static const int    _gcsHeartbeatRateMSecs = 1000;  ///< Heartbeat rate
+    static const int    _gcsHeartbeatRateMSecs = 2000;  ///< Heartbeat rate
     static const char*  _gcsHeartbeatEnabledKey;
 };
 

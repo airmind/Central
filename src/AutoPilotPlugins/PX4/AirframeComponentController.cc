@@ -103,6 +103,19 @@ void AirframeComponentController::changeAutostart(void)
     sysAutoConfigFact->forceSetRawValue(1);
 }
 
+#ifdef __mindskin__
+void AirframeComponentController::changeAutostart(int autoStartId)
+{
+    _autostartId = autoStartId;
+    changeAutostart();
+}
+
+int AirframeComponentController::getAutostart()
+{
+    return _autostartId;
+}
+#endif
+
 void AirframeComponentController::_waitParamWriteSignal(QVariant value)
 {
     Q_UNUSED(value);

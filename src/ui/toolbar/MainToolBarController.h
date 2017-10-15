@@ -61,7 +61,7 @@ public:
 =======
 >>>>>>> upstream/master
     */
-#if defined(__mindskin__) && defined(__ios__)
+#if defined(__mindskin__)
     Q_INVOKABLE void    onConnectTapped(QString conf);
     Q_INVOKABLE void    onConnectTappedDismiss(QString conf);
     
@@ -107,7 +107,7 @@ private slots:
     void _linkConnected                 (LinkInterface* link);
     void _linkDisconnected              (LinkInterface* link);
     */
-#if defined(__mindskin__) && defined(__ios__)
+#if defined(__mindskin__)
     void _linkConnected                 (BTSerialLink* link);
     void _linkDisconnected              (BTSerialLink* link);
 
@@ -121,7 +121,7 @@ private slots:
     void _setProgressBarValue           (float value);
     void _telemetryChanged              (LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise);
     
-#if defined(__mindskin__) && defined(__ios__)
+#if defined(__mindskin__)
     void _telemetryChanged              (BTSerialLink* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi, unsigned txbuf, unsigned noise, unsigned remnoise);
 
 #endif

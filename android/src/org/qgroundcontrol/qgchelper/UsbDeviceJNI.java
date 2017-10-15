@@ -62,6 +62,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.airmind.ble.DeviceScanActivity;
+//import org.airmind.ble.MindSkinActivity;
+//import org.airmind.ble.MindSkinQtActivity;
 //-- Text To Speech
 
 public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListener {
@@ -123,15 +125,6 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_activity);
-        final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
-        Button scanDevice = (Button) findViewById(R.id.ble_scan);
-        scanDevice.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                m_instance.startActivity(intent);
-            }
-        });
         m_tts = new TextToSpeech(this, this);
         PowerManager pm = (PowerManager) m_instance.getSystemService(Context.POWER_SERVICE);
         m_wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "QGroundControl");
@@ -139,6 +132,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
 
     @Override
     protected void onDestroy() {
+         Log.d(TAG,"onDestroy()");
         super.onDestroy();
         m_tts.shutdown();
     }
@@ -628,6 +622,7 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
     }
 
     public static final int MSG_TYPE_TOAST = 1;
+    public static final int MSG_TYPE_START_MINDSKIN_UI = 2;
     private static Handler m_handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -635,6 +630,10 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
                 case MSG_TYPE_TOAST:
                     Toast toast = Toast.makeText(m_instance, (String) msg.obj, Toast.LENGTH_SHORT);
                     toast.show();
+                    break;
+                case MSG_TYPE_START_MINDSKIN_UI:
+                    final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
+                    m_instance.startActivity(intent);
                     break;
             }
         }
@@ -645,4 +644,15 @@ public class UsbDeviceJNI extends QtActivity implements TextToSpeech.OnInitListe
         Log.e(UsbDeviceJNI.class.getName(), "to show message for " + msg);
         m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_TOAST, msg));
     }
+
+      public static void startMindSkinUI() {
+          Log.d(TAG, "startMindSkinUI");
+          m_handler.postDelayed(new Runnable() {
+              public void run() {
+                  final Intent intent = new Intent(m_instance, DeviceScanActivity.class);
+                  m_instance.startActivity(intent);
+              }
+          }, 3000);
+//          m_handler.sendMessage(m_handler.obtainMessage(MSG_TYPE_START_MINDSKIN_UI));
+      }
 }

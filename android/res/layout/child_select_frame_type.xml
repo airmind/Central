@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/child_select_frame_imageView"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:src="@drawable/icon"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"/>
+
+        <TextView
+            android:id="@+id/child_select_frame_name_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="@color/colorAccent"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="32dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TYPE"
+            android:textSize="24sp"
+            android:textColor="@color/colorAccent"
+            android:layout_marginTop="24dp"/>
+
+        <android.support.v7.widget.AppCompatSpinner
+            android:id="@+id/child_select_frame_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="24dp"
+            android:spinnerMode="dropdown"
+            app:theme="@style/Widget.AppCompat.DropDownItem.Spinner" />
+
+        <Button
+            android:id="@+id/child_select_frame_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:textColor="@color/colorAccent"
+            style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"
+            android:textSize="18sp"
+            android:text="Apply"
+            android:layout_gravity="center"/>
+
+    </LinearLayout>
+
+</LinearLayout>

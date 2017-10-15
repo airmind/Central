@@ -1,43 +1,3 @@
-CONFIG += __mindskin__
-# CONFIG += __remotehead__
-# CONFIG += __dronetag__
-
-# Airmind - mind skin
-__mindskin__ {
-    message ("Use mind skin")
-
-    DebugBuild {
-        DEFINES += _BLE_DEBUG_
-    }
-
-    __dronetag__ {
-        DEFINES += __dronetag__
-    }
-
-    DEFINES += __mindskin__
-#exclusive macro
-    DEFINES -= __remotehead__
-}
-
-# Airmind - BLE
-contains (DEFINES, __mindble__) {
-    message ("Enable BLE")
-}
-
-# Airmind - Remote Head
-__remotehead__ {
-    message ("Use remote head")
-
-    DebugBuild {
-    DEFINES += _REMOTEHEAD_DEBUG_
-    }
-
-    DEFINES += __remotehead__
-#exclusive macro
-    DEFINES -= __mindskin__
-
-}
-
 iOSBuild:__mindskin__ {
     BUNDLE.files       += $$PWD/mindskin/ios/TagNodesViewController.xib
     BUNDLE.files       += $$PWD/mindskin/ios/RacerMainMenuViewController.xib
@@ -46,7 +6,10 @@ iOSBuild:__mindskin__ {
 }
 
 __mindskin__ {
+    INCLUDEPATH += BLE mindskin
+    HEADERS += $$PWD/mindskin/mindskinlog.h
     iOSBuild {
+        INCLUDEPATH += BLE/ios
         HEADERS += \
             BLE/ios/BTSerialLink_objc.h \
             BLE/ios/BLELinkConnectionDelegate.h \
@@ -75,9 +38,9 @@ __mindskin__ {
             mindskin/ios/MindSkinRootView_impl_objc.mm \
             mindskin/ios/tagNodesViewController.mm \
             mindskin/ios/mindskinMessageViewController.mm \
+            mindskin/ios/mindskinlog.mm \
             mindskin/ios/RacerMainMenuView.mm \
             mindskin/ios/RacerMainMenuViewController.mm \
-
 
         DebugBuild {
             HEADERS += \
@@ -88,19 +51,19 @@ __mindskin__ {
                 mindskin/ios/BLEDebugTextViewController.mm \
 
         }
-
-
     }
 
     AndroidBuild {
-        message("Adding mindskin Java Classes")
+        INCLUDEPATH += BLE/android
+        INCLUDEPATH += libs/qtandroidble/src
         HEADERS += \
-#            BLE/android/BTSerialLink_java.h \
-#            BLE/BTSerialLink.h \
+             $$PWD/libs/qtandroidble/src/qble.h \
+             $$PWD/BLE/BTSerialLink.h \
 
         SOURCES += \
-#            BLE/android/BTSerialLink.cc \
-#            BLE/android/BTSerialLink.java \
+            BLE/android/BTSerialLink.cc \
+            $$PWD/libs/qtandroidble/src/qble.cpp \
+            mindskin/android/mindskinlog.cc \
 
         ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
         OTHER_FILES += \
@@ -108,6 +71,8 @@ __mindskin__ {
             $$PWD/android/res/layout/gatt_services_characteristics.xml \
             $$PWD/android/res/layout/listitem_device.xml \
             $$PWD/android/res/layout/main_activity.xml \
+            $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml \
+            $$PWD/android/res/layout/fragment_comm_selection.xml \
             $$PWD/android/res/menu/gatt_services.xml \
             $$PWD/android/res/menu/main.xml \
             $$PWD/android/res/values/color.xml \
@@ -116,8 +81,26 @@ __mindskin__ {
             $$PWD/android/src/org/airmind/ble/DeviceScanActivity.java \
             $$PWD/android/src/org/airmind/ble/BluetoothLeService.java \
             $$PWD/android/src/org/airmind/ble/SampleGattAttributes.java \
-            $$PWD/android/src/org/airmind/ble/BLECommNative.java \
-            $$PWD/android/src/org/airmind/ble/BLEComm.java \
-            $$PWD/android/src/org/airmind/ble/BLECommInterface.java \
+            $$PWD/android/src/org/airmind/ble/BLEUtil.java \
+            $$PWD/android/src/org/airmind/ble/BTLinkIO.java \
+            $$PWD/android/src/org/airmind/ble/BTLinkIONative.java \
+            $$PWD/android/src/org/airmind/ble/LinkManager.java \
+            $$PWD/android/src/org/airmind/ble/LinkManagerNative.java \
+            $$PWD/android/src/org/airmind/ble/VehicleManager.java \
+            $$PWD/android/src/org/airmind/ble/ParameterManager.java \
+            $$PWD/android/src/org/airmind/ble/ReliableWriter.java \
+            $$PWD/android/src/org/airmind/ble/DeviceScanFragment.java \
+            $$PWD/android/src/org/qtproject/qt5/android/bindings/QtActivity.java \
+            $$PWD/android/src/org/qtproject/qt5/android/bindings/QtApplication.java \
+            $$PWD/android/src/org/airmind/view/BaseFragment.java \
+            $$PWD/android/src/org/airmind/view/FlightFragment.java \
+            $$PWD/android/src/org/airmind/view/MindSkinBaseLayout.java \
+            $$PWD/android/src/org/airmind/view/MindSkinContainer.java \
+            $$PWD/android/src/org/airmind/view/MindSkinLayout.java \
+            $$PWD/android/res/layout/activity_qt.xml \
+            $$PWD/android/res/layout/fragment_flight.xml \
+            $$PWD/android/res/layout/include_qt_content.xml \
+            $$PWD/android/res/drawable \
+      DISTFILES += $$PWD/android/res/layout/mindskin_expandable_list_item_2.xml
     }
 }

@@ -92,6 +92,9 @@ public:
     static void cacheMetaDataFile(const QString& metaDataFile, MAV_AUTOPILOT firmwareType);
 
     int defaultComponenentId(void) { return _defaultComponentId; }
+#ifdef __mindskin__
+    void writeLocalParamCache();
+#endif
     
 signals:
     /// Signalled when the full set of facts are ready
@@ -107,7 +110,14 @@ protected:
     Vehicle*            _vehicle;
     MAVLinkProtocol*    _mavlink;
     
+    //parameterId:param_index in PARAM_VALUE(#22) MAVLink_MSG
+    //parameterName:param_id in PARAM_VALUE(#22) MAVLink_MSG
     void _parameterUpdate(int uasId, int componentId, QString parameterName, int parameterCount, int parameterId, int mavType, QVariant value);
+#ifdef __mindskin__
+    void notifyParameterProgress(float progress);
+    void parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue);
+    void parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, QVariant value);
+#endif
     void _valueUpdated(const QVariant& value);
     void _restartWaitingParamTimer(void);
     void _waitingParamTimeout(void);

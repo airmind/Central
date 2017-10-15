@@ -216,7 +216,7 @@ public:
             JoystickManager*        joystickManager);
 //<<<<<<< HEAD
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     Vehicle(BTSerialLink*          link,
             int                     vehicleId,
             MAV_AUTOPILOT           firmwareType,
@@ -567,6 +567,9 @@ public:
     static const int cMaxRcChannels = 18;
 
     bool containsLink(LinkInterface* link) { return _links.contains(link); }
+#ifdef __mindskin__
+    bool containsLinkConfig(QString& linkConfigName);
+#endif
     void doCommandLong(int component, MAV_CMD command, float param1 = 0.0f, float param2 = 0.0f, float param3 = 0.0f, float param4 = 0.0f, float param5 = 0.0f, float param6 = 0.0f, float param7 = 0.0f);
 
     int firmwareMajorVersion(void) const { return _firmwareMajorVersion; }
@@ -594,6 +597,12 @@ public:
 public slots:
     void setLatitude(double latitude);
     void setLongitude(double longitude);
+
+#ifdef __mindskin__
+    void setAirFrameType(int airFrameType);
+    int getAirFrameType();
+    void disconnected();
+#endif
 
 signals:
     void allLinksInactive(Vehicle* vehicle);
@@ -658,7 +667,7 @@ signals:
 private slots:
     void _mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message);
 //<<<<<<< HEAD
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void _mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message);
     void _linkInactiveOrDeleted(BTSerialLink* link);
 
@@ -711,7 +720,7 @@ private:
     bool _containsLink(LinkInterface* link);
     void _addLink(LinkInterface* link);
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     bool _containsLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
     
@@ -722,6 +731,7 @@ private:
     void _startJoystick(bool start);
     void _handleHomePosition(mavlink_message_t& message);
     void _handleHeartbeat(mavlink_message_t& message);
+    void _handleHeartbeat(LinkInterface *link, mavlink_message_t& message);
     void _handleRCChannels(mavlink_message_t& message);
     void _handleRCChannelsRaw(mavlink_message_t& message);
     void _handleBatteryStatus(mavlink_message_t& message);
@@ -735,7 +745,7 @@ private:
     void _missionManagerError(int errorCode, const QString& errorMsg);
     void _mapTrajectoryStart(void);
     void _mapTrajectoryStop(void);
-    void _connectionActive(void);
+    void _connectionActive(LinkInterface *link);
     void _say(const QString& text);
     QString _vehicleIdSpeech(void);
 
@@ -757,9 +767,8 @@ private:
     /// This way Link deletion works correctly.
     //QList<SharedLinkInterface> _links;
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     QList<BTSerialLink*> _blelinks;
-    
 #endif
 //=======
     QList<LinkInterface*> _links;
@@ -896,6 +905,9 @@ private:
     static const char* _settingsGroup;
     static const char* _joystickModeSettingsKey;
     static const char* _joystickEnabledSettingsKey;
+
+public:
+    ulong _hearbeatsCount;
 
 };
 #endif

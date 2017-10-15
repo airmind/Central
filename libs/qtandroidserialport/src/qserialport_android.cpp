@@ -54,7 +54,7 @@ QT_BEGIN_NAMESPACE
 
 #define BAD_PORT 0
 
-static const char kJniClassName[] {"org/qgroundcontrol/qgchelper/UsbDeviceJNI"};
+static const char kJniClassName[] {"org/qgroundcontrol/qgchelper/MindSkinActivity"};
 static const char kJTag[] {"QGC_QSerialPort"};
 
 static void jniDeviceHasDisconnected(JNIEnv *envA, jobject thizA, jint userDataA)
@@ -136,6 +136,7 @@ void QSerialPortPrivate::setNativeMethods(void)
         __android_log_print(ANDROID_LOG_ERROR, kJTag, "Couldn't find class: %s", kJniClassName);
         return;
     }
+    __android_log_print(ANDROID_LOG_INFO, kJTag, "Native Functions Registered for class:%s, total-size:%d, item-size:%d,item-count:%d", kJniClassName, sizeof(javaMethods),sizeof(javaMethods[0]),sizeof(javaMethods) / sizeof(javaMethods[0]));
 
     jint val = jniEnv->RegisterNatives(objectClass, javaMethods, sizeof(javaMethods) / sizeof(javaMethods[0]));
 

@@ -12,8 +12,14 @@
 // up by 1. This will caused store settings to be cleared on next boot.
 #define QGC_SETTINGS_VERSION 7
 
-#define QGC_APPLICATION_NAME "QGroundControl"
-#define QGC_ORG_NAME "QGroundControl.org"
-#define QGC_ORG_DOMAIN "org.qgroundcontrol"
+#ifdef __mindskin__
+    #define QGC_APPLICATION_NAME "MindCentral"
+    #define QGC_ORG_NAME "airmind"
+    #define QGC_ORG_DOMAIN "airmind.co"
+#else
+    #define QGC_APPLICATION_NAME "QGroundControl"
+    #define QGC_ORG_NAME "QGroundControl.org"
+    #define QGC_ORG_DOMAIN "org.qgroundcontrol"
+#endif
 
 #endif // QGC_CONFIGURATION_H

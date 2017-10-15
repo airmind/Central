@@ -33,10 +33,21 @@
 #include "BluetoothLink.h"
 #endif
 
+#ifdef __mindskin__
+#include <mindskinlog.h>
+#endif
+
 #ifndef __mobile__
     #include "GPSManager.h"
 #endif
 
+#ifdef __android__
+#include <android/log.h>
+static const char kJTag[] {"LinkManager"};
+#include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras/QAndroidJniEnvironment>
+extern void cleanJavaException(void);
+#endif
 QGC_LOGGING_CATEGORY(LinkManagerLog, "LinkManagerLog")
 QGC_LOGGING_CATEGORY(LinkManagerVerboseLog, "LinkManagerVerboseLog")
 
@@ -77,6 +88,7 @@ LinkManager::LinkManager(QGCApplication* app)
 
     settings.beginGroup(_settingsGroup);
     _autoconnectUDP =       settings.value(_autoconnectUDPKey, true).toBool();
+    qDebug() << "[LinkManager] _autoconnectUDP:" << _autoconnectUDP;
     _autoconnectPixhawk =   settings.value(_autoconnectPixhawkKey, true).toBool();
     _autoconnect3DRRadio =  settings.value(_autoconnect3DRRadioKey, true).toBool();
     _autoconnectPX4Flow =   settings.value(_autoconnectPX4FlowKey, true).toBool();
@@ -87,6 +99,19 @@ LinkManager::LinkManager(QGCApplication* app)
     _activeLinkCheckTimer.setSingleShot(false);
     connect(&_activeLinkCheckTimer, &QTimer::timeout, this, &LinkManager::_activeLinkCheck);
 #endif
+#ifdef __mindskin__
+    udpSocket = new QUdpSocket(this);
+    udpSocket->bind(UDP_LISTEN_PORT, QUdpSocket::ShareAddress);
+    QString host = udpSocket->localAddress().toString();
+    int port = udpSocket->localPort();
+    qDebug() << "[LinkManager] bind to udp address:" << host << ", port:" << port;
+    connect(udpSocket, SIGNAL(readyRead()), this, SLOT(processPendingDatagrams()));
+    #ifdef __android__
+    QAndroidJniObject jHost = QAndroidJniObject::fromString(host);
+    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "udpSocketServerBound", "(Ljava/lang/String;I)V", jHost.object<jstring>(), port);
+    cleanJavaException();
+    #endif
+#endif
 }
 
 LinkManager::~LinkManager()
@@ -94,10 +119,59 @@ LinkManager::~LinkManager()
 #if defined(__mindskin__) && defined(__ios__)
     delete blehelper;
 #endif
-
-
-
 }
+
+#ifdef __mindskin__
+void LinkManager::processPendingDatagrams()
+{
+    static int tcpLinkIndex = 0;
+    static bool isUDP = true;
+    while (udpSocket->hasPendingDatagrams()) {
+        QByteArray datagram;
+        datagram.resize(udpSocket->pendingDatagramSize());
+        udpSocket->readDatagram(datagram.data(), datagram.size());
+        qDebug() << "[DHCP-message]:" << datagram.data();
+
+        QString msg(datagram.data());
+        QString sHost = msg.section(',',0,0);
+        QString hwAddr = msg.section(',', 1, 1);
+        QString sMsgType = msg.section(',', 2, 2);
+        #ifdef __android__
+        QAndroidJniObject jHost = QAndroidJniObject::fromString(sHost);
+        QAndroidJniObject jHWAddr = QAndroidJniObject::fromString(hwAddr);
+        QAndroidJniObject jMsgType = QAndroidJniObject::fromString(sMsgType);
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "dhcpv4LeaseNotification", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", jMsgType.object<jstring>(), jHost.object<jstring>(),jHWAddr.object<jstring>());
+        cleanJavaException();
+        #endif
+
+        if(!sHost.isNull() && !sHost.isEmpty() && (sMsgType.compare("lease4_select") == 0 ||  sMsgType.compare("lease4_renew") == 0)) {
+            //tcp-link
+            if(!isUDP) {
+                QString linkConfigName = QString::asprintf("%s-%s-%d","tcp",sHost.data(), tcpLinkIndex++);
+                LinkConfiguration* linkConfig = qgcApp()->toolbox()->linkManager()->createConfiguration(LinkConfiguration::TypeTcp,linkConfigName);
+                TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
+                tcpConfig->setHost(sHost);
+                tcpConfig->setPort(6789);
+                qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
+                LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
+                if(linkInterface == NULL) {
+                    qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
+                }
+            } else {
+                qDebug() << "[processPendingDatagrams] auto-connected UDP socket will handle connection to this host";
+            }
+
+            //udp-link
+//            QString linkConfigName = QString::asprintf("%s-%s-%d","udp",sHost.data(), tcpLinkIndex++);
+//            UDPConfiguration* udpConfig = new UDPConfiguration(linkConfigName);
+//            udpConfig->setLocalPort(QGC_UDP_LOCAL_PORT);
+//            udpConfig->setDynamic(true);
+//            _linkConfigurations.append(udpConfig);
+//            createConnectedLink(udpConfig);
+        }
+    }
+}
+#endif
 
 void LinkManager::setToolbox(QGCToolbox *toolbox)
 {
@@ -110,25 +184,45 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 //for BT LE;
 bool LinkManager::discoverBTLinks(void* delegate) {
-    if (blehelper == NULL) {
-        //create blehelper object;
-        blehelper = new BLEHelper();
-    }
-    blehelper->discover(delegate);
+    #ifdef __ios__
+        if (blehelper == NULL) {
+            //create blehelper object;
+            blehelper = new BLEHelper();
+        }
+        blehelper->discover(delegate);
+    #endif
+    #ifdef __android__
+        Q_UNUSED(delegate);
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "discover", "(V)V" );
+        cleanJavaException();
+    #endif
+    return true;
 }
 
 bool LinkManager::stopScanning() {
-    blehelper->stopScanning();
+    #ifdef __ios__
+        blehelper->stopScanning();
+    #endif
+    #ifdef __android__
+        QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "stopScanning", "(V)V" );
+        cleanJavaException();
+    #endif
+    return true;
 }
 
 void LinkManager::setCallbackDelegate(void* delegate) {
-    if(blehelper==NULL) {
-        blehelper = new BLEHelper();
-    }
-    blehelper->setCallbackDelegate(delegate);
+    #ifdef __ios__
+        if(blehelper==NULL) {
+            blehelper = new BLEHelper();
+        }
+        blehelper->setCallbackDelegate(delegate);
+    #endif
+    #ifdef __android__
+            Q_UNUSED(delegate);
+    #endif
 }
 
 BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config){
@@ -137,14 +231,20 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
     if(blelink) {
-        //_addLink(blelink);
+#ifdef __android__
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "createConnectedBLELink to add ble-link");
+        _addLink(blelink);
+        blelink->_connect();
+#endif
+
+#ifdef __ios__
         //check if existing link;
         if (_blelinks.contains(blelink)) {
             return blelink;
         }
         
         //check if same config exists; currently only one link to a same characteristic is allowed to prevent interfere with each other.
-        bool found = false;
+        bool found = false; //This seems impossible in that same qgc can not connect to same BLE device's character twice
         for (int i=0; i<_blelinks.count(); i++) {
             BTSerialLink* blink = _blelinks.value<BTSerialLink*>(i);
             BTSerialConfiguration* cfg = blink->getLinkConfiguration();
@@ -207,20 +307,16 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
             return blelink;
             
         }
-    
-    
+#endif
     }
-    
     return blelink;
-
 }
 
-
-
 BTSerialLink* LinkManager::createConnectedBLELink(const QString& identifier){
-    
+    Q_UNUSED(identifier);
     //BTSerialLink* blelink = new BTSerialLink(identifier);
     //blelink->_connect();
+    return NULL;
 }
 
 int LinkManager::_registerTrialConnect(BTSerialLink* blelink) {
@@ -293,7 +389,19 @@ bool LinkManager::_removeTrialConnect(BTSerialLink* blelink) {
 
 
 BTSerialLink* LinkManager::getBLELinkByConfiguration(BTSerialConfiguration* cfg) {
-    
+    if(_blelinks.count() == 0 || cfg == NULL) {
+        return NULL;
+    }
+
+    for(int i=0;i<_blelinks.count();i++) {
+        BTSerialLink* btLink = _blelinks.value<BTSerialLink*>(i);
+        BTSerialConfiguration* btLinkConfig = btLink->getLinkConfiguration();
+        if(btLinkConfig->equals(cfg)) {
+            return btLink;
+        }
+    }
+
+    return NULL;
 }
 
 bool LinkManager::connectLink(BTSerialLink* link) {
@@ -342,16 +450,15 @@ bool LinkManager::disconnectLink(BTSerialLink* link) {
         link->_hardwareDisconnect();
     }
     return true;
-
 }
 
-
-
 //new signal - have a try;
+#if defined(__ios__) || defined(__android__)
 void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
     //inrangelist/outrangelist have platform dependent types so can not use directly in implementation. needs type conversion.
     emit peripheralsDiscovered(inrangelist, outrangelist);
 }
+#endif
 
 void LinkManager::didConnectBLEHardware(QString peripheralUUID) {
     bool found=false;
@@ -399,22 +506,18 @@ void LinkManager::failedConnectBLEHardware(QString peripheralUUID) {
 
 }
 
-
 void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
     //set blelink status;
     if ((blelink->getLinkConfiguration())->getBLELinkConnectStage()==BLE_LINK_CONNECT_CHARACTERISTIC) {
         blelink->setLinkConnectedStatus(BLE_LINK_ENDPOINT_CONNECTED);
-    }
-    else {
+    } else {
         blelink->setLinkConnectedStatus(BLE_LINK_HARDWARE_CONNECTED);
-        
     }
     //remove trial link;
     _removeTrialConnect(blelink);
     _addLink(blelink);
     
     emit linkConnected(blelink);
-    
     
     BTSerialConfiguration* cfg_curlink = blelink->getLinkConfiguration();
 
@@ -439,8 +542,6 @@ void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
     else {
         return;
     }
-
-
 }
 
 void LinkManager::failedConnectBLELink(BTSerialLink* blelink) {
@@ -464,6 +565,7 @@ void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
     emit linkDisconnected(blelink);
 }
 
+#if defined(__ios__)||defined(__android__)
 void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_list) {
     Q_ASSERT(peripheral_link_list);
     
@@ -564,9 +666,8 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
     
     //emit bleLinkRSSIUpdated (peripheral_link_list);
 }
-
 #endif
-
+#endif
 LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)
 {
     Q_ASSERT(config);
@@ -697,7 +798,7 @@ void LinkManager::_addLink(LinkInterface* link)
     
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 /*
 
 bool LinkManager::containsLink(BTSerialLink* link) {
@@ -943,6 +1044,22 @@ void LinkManager::_linkConnected(void)
 void LinkManager::_linkDisconnected(void)
 {
     emit linkDisconnected((LinkInterface*)sender());
+#ifdef __mindskin__
+      #ifdef __android__
+        LinkInterface *link = (LinkInterface*)sender();
+        if(link != NULL) {
+            LinkConfiguration *linkConfig = link->getLinkConfiguration();
+            if(linkConfig != NULL) {
+//                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
+                    MSLog("[_linkDisconnected] %s",linkConfig->name().toLatin1().data());
+                    QAndroidJniObject jLinkConfigName = QAndroidJniObject::fromString(linkConfig->name());
+                    QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "(Ljava/lang/String;)V",jLinkConfigName.object<jstring>());
+                    cleanJavaException();
+//                }
+            }
+        }
+      #endif //__android__
+#endif
 }
 
 void LinkManager::_linkConnectionRemoved(LinkInterface* link)
@@ -1111,8 +1228,10 @@ void LinkManager::_updateAutoConnectLinks(void)
             break;
         }
     }
+//    qDebug() << "[_updateAutoConnectLinks] foundUDP:" << foundUDP << ", _autoconnectUDP:" << _autoconnectUDP;
     if (!foundUDP && _autoconnectUDP) {
-        qCDebug(LinkManagerLog) << "New auto-connect UDP port added";
+//        qCDebug(LinkManagerLog) << "New auto-connect UDP port added";
+        qDebug() << "[_updateAutoConnectLinks] New auto-connect UDP port added";
         UDPConfiguration* udpConfig = new UDPConfiguration(_defaultUPDLinkName);
         udpConfig->setLocalPort(QGC_UDP_LOCAL_PORT);
         udpConfig->setDynamic(true);

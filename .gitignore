@@ -30,7 +30,6 @@ deploy/mac
 deploy/linux
 deploy/qgroundcontrol*
 controller_log*
-user_config.pri
 *.app
 *.ncb
 *.vcproj
@@ -75,7 +74,11 @@ ui_*
 # android
 android/local.properties
 android/gradle.properties
-
+android/.idea
+android/.gradle
+android/.build
 # doxygen
 src/html/
 src/latex/
+android/libs/mavlink.jar
+android/android.iml

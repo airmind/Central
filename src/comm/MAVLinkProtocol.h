@@ -33,7 +33,8 @@
 #include "QGCToolbox.h"
 
 #ifdef __mindskin__
-#include "BTSerialLink.h"
+//#include "BTSerialLink.h"
+class BTSerialLink;
 #endif
 
 class LinkManager;
@@ -130,12 +131,10 @@ public:
      */
     virtual void resetMetadataForLink(const LinkInterface *link);
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void resetMetadataForLink(const BTSerialLink *link);
-    
     void linkConnected(BTSerialLink* link);
     void linkDisconnected(BTSerialLink* link);
-    
 #endif
     /// Suspend/Restart logging during replay.
     void suspendLogForReplay(bool suspend);
@@ -147,11 +146,10 @@ public slots:
     /** @brief Receive bytes from a communication interface */
     void receiveBytes(LinkInterface* link, QByteArray b);
     
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void receiveBytes(BTSerialLink* link, QByteArray b);
 #endif
     
-//<<<<<<< HEAD
     //void linkConnected(void);
     //void linkDisconnected(void);
 
@@ -170,8 +168,6 @@ public slots:
     
     /** @brief Set the rate at which heartbeats are emitted */
     //void setHeartbeatRate(int rate);
-//=======
-//>>>>>>> upstream/master
     /** @brief Set the system id of this application */
     void setSystemId(int id);
 
@@ -241,7 +237,7 @@ signals:
     /// Heartbeat received on link
     void vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     
@@ -286,7 +282,7 @@ signals:
      */
     void radioStatusChanged(LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi,
     unsigned txbuf, unsigned noise, unsigned remnoise);
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     void radioStatusChanged(BTSerialLink* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
                             unsigned txbuf, unsigned noise, unsigned remnoise);
     
@@ -301,19 +297,15 @@ private slots:
     void _vehicleCountChanged(int count);
     
 private:
-//<<<<<<< HEAD
     //void _linkStatusChanged(LinkInterface* link, bool connected);
 //#ifdef __ios__
     //void _linkStatusChanged(BTSerialLink* link, bool connected);
 //#endif
-//=======
     void _sendMessage(mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
 
-//>>>>>>> upstream/master
-
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
     /** @brief Send MAVLink message */
     void _sendMessage(BTSerialLink* link, mavlink_message_t message);
     /** @brief Send MAVLink message with correct system / component ID */
@@ -335,7 +327,6 @@ private:
     static const char*  _tempLogFileTemplate;    ///< Template for temporary log file
     static const char*  _logFileExtension;       ///< Extension for log files
 #endif
-//<<<<<<< HEAD
     
     /// List of all links connected to protocol. We keep SharedLinkInterface objects
     /// which are QSharedPointer's in order to maintain reference counts across threads.
@@ -348,8 +339,6 @@ private:
     //QTimer  _heartbeatTimer;    ///< Timer to emit heartbeats
     //int     _heartbeatRate;     ///< Heartbeat rate, controls the timer interval
     //bool    _heartbeatsEnabled; ///< Enabled/disable heartbeat emission
-//=======
-//>>>>>>> upstream/master
 
     LinkManager*            _linkMgr;
     MultiVehicleManager*    _multiVehicleManager;

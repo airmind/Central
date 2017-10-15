@@ -6,7 +6,6 @@
 # (c) 2009-2014 QGroundControl Developers
 # License terms set in COPYING.md
 # -------------------------------------------------
-
 installer {
     DEFINES += QGC_INSTALL_RELEASE
     MacBuild {
@@ -50,7 +49,7 @@ installer {
         #-- TODO: This uses hardcoded paths. It should use $${DESTDIR}
         QMAKE_POST_LINK += && mkdir -p $${DESTDIR}/package
         QMAKE_POST_LINK += && make install INSTALL_ROOT=$${DESTDIR}/android-build/
-        QMAKE_POST_LINK += && androiddeployqt --input android-libQGroundControl.so-deployment-settings.json --output $${DESTDIR}/android-build --deployment bundled --gradle --sign $${BASEDIR}/android/android_release.keystore dagar --storepass $$(ANDROID_STOREPASS)
+        QMAKE_POST_LINK += && androiddeployqt --input android-libQGroundControl.so-deployment-settings.json --output $${DESTDIR}/android-build --deployment bundled --gradle --sign $${BASEDIR}/android/android_release.keystore dagar --storepass $$(ANDROID_STOREPASS) --verbose
         QMAKE_POST_LINK += && cp $${DESTDIR}/android-build/build/outputs/apk/android-build-release-signed.apk $${DESTDIR}/package/QGroundControl.apk
     }
 }

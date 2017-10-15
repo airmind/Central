@@ -29,9 +29,9 @@ DebugBuild {
 }
 
 # Load additional config flags from user_config.pri
-exists(user_config.pri):infile(user_config.pri, CONFIG) {
-    CONFIG += $$fromfile(user_config.pri, CONFIG)
-    message($$sprintf("Using user-supplied additional config: '%1' specified in user_config.pri", $$fromfile(user_config.pri, CONFIG)))
+exists(user_config.pri) {
+message("To include user_config.pri")
+include(user_config.pri)
 }
 
 # Bluetooth
@@ -65,7 +65,7 @@ CONFIG += \
     silent
 }
 
-QT += \
+QT += core \
     concurrent \
     gui \
     location \
@@ -824,7 +824,7 @@ AndroidBuild {
         $$PWD/android/src/com/hoho/android/usbserial/driver/UsbSerialDriver.java \
         $$PWD/android/src/com/hoho/android/usbserial/driver/UsbSerialProber.java \
         $$PWD/android/src/com/hoho/android/usbserial/driver/UsbSerialRuntimeException.java \
-        $$PWD/android/src/org/qgroundcontrol/qgchelper/UsbDeviceJNI.java \
+        $$PWD/android/src/org/qgroundcontrol/qgchelper/MindSkinActivity.java \
         $$PWD/android/src/org/qgroundcontrol/qgchelper/UsbIoManager.java
 
     DISTFILES += \

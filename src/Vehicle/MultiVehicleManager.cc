@@ -21,7 +21,10 @@
 #ifdef __mobile__
 #include "MobileScreenMgr.h"
 #endif
-
+#ifdef __android__
+#include <android/log.h>
+static const char kJTag[] {"MultiVehicleManager"};
+#endif
 #include <QQmlEngine>
 
 QGC_LOGGING_CATEGORY(MultiVehicleManagerLog, "MultiVehicleManagerLog")
@@ -43,10 +46,13 @@ MultiVehicleManager::MultiVehicleManager(QGCApplication* app)
     QSettings settings;
 
     _gcsHeartbeatEnabled = settings.value(_gcsHeartbeatEnabledKey, true).toBool();
-
     _gcsHeartbeatTimer.setInterval(_gcsHeartbeatRateMSecs);
     _gcsHeartbeatTimer.setSingleShot(false);
     connect(&_gcsHeartbeatTimer, &QTimer::timeout, this, &MultiVehicleManager::_sendGCSHeartbeat);
+#ifdef __android__
+            __android_log_print(ANDROID_LOG_INFO, kJTag, "_gcsHeartbeatEnabled:%d, _gcsHeartbeatRateMSecs:%d",_gcsHeartbeatEnabled,_gcsHeartbeatRateMSecs);
+#endif
+    qDebug() << "_gcsHeartbeatEnabled:" << _gcsHeartbeatEnabled;
     if (_gcsHeartbeatEnabled) {
         _gcsHeartbeatTimer.start();
     }
@@ -69,10 +75,10 @@ void MultiVehicleManager::setToolbox(QGCToolbox *toolbox)
 #ifndef __mindskin__
     connect(_mavlinkProtocol, &MAVLinkProtocol::vehicleHeartbeatInfo, this, &MultiVehicleManager::_vehicleHeartbeatInfo);
 #else 
-    #ifdef __ios__
+//    #ifdef __ios__
     connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(LinkInterface*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
     connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(BTSerialLink*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
-    #endif
+//    #endif
     
 #endif
     
@@ -134,10 +140,13 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
 }
 
 
-#if defined(__mindskin__) && defined(__ios__)
+#ifdef __mindskin__
 
 void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
 {
+#if __android__
+            __android_log_print(ANDROID_LOG_INFO, kJTag, "_vehicleHeartbeatInfo=> vehicleId:%d",vehicleId);
+#endif
     if (_ignoreVehicleIds.contains(vehicleId) || getVehicleById(vehicleId)
         || vehicleId == 0) {
         return;
@@ -394,6 +403,19 @@ Vehicle* MultiVehicleManager::getVehicleById(int vehicleId)
     return NULL;
 }
 
+#ifdef __mindskin__
+Vehicle* MultiVehicleManager::getVehicleByLinkConfigName(QString linkConfigName) {
+    for (int i=0; i< _vehicles.count(); i++) {
+        Vehicle* vehicle = qobject_cast<Vehicle*>(_vehicles[i]);
+        if (vehicle->containsLinkConfig(linkConfigName)) {
+            return vehicle;
+        }
+    }
+
+    return NULL;
+}
+#endif
+
 void MultiVehicleManager::setGcsHeartbeatEnabled(bool gcsHeartBeatEnabled)
 {
     if (gcsHeartBeatEnabled != _gcsHeartbeatEnabled) {
@@ -413,6 +435,9 @@ void MultiVehicleManager::setGcsHeartbeatEnabled(bool gcsHeartBeatEnabled)
 
 void MultiVehicleManager::_sendGCSHeartbeat(void)
 {
+#ifdef __android__
+            __android_log_print(ANDROID_LOG_INFO, kJTag, "_sendGCSHeartbeat=> vehicle-count:%d",_vehicles.count());
+#endif
     for (int i=0; i< _vehicles.count(); i++) {
         Vehicle* vehicle = qobject_cast<Vehicle*>(_vehicles[i]);
 
