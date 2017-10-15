@@ -124,7 +124,7 @@ void FactGroup::_loadMetaData(const QString& jsonFilename)
     if (jsonFilename.isEmpty()) {
         return;
     }
-
+    
     qCDebug(FactGroupLog) << "Loading" << jsonFilename;
 
     QFile jsonFile(jsonFilename);

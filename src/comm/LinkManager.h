@@ -295,11 +295,11 @@ signals:
     
     
     //Link Radio goes out of range;
-    void radioLinkOutOfRange(BTSerialLink* link);
+    void radioLinkOutOfRange(BTSerialLink* link, int rssi);
     //Link Radio approaching out range zone;
-    void radioLinkLowAlert(BTSerialLink* link);
+    void radioLinkLowAlert(BTSerialLink* link, int rssi);
     //Link Radio approaching out range zone;
-    void radioLinkGetIntoRange(BTSerialLink* link);
+    void radioLinkGetIntoRange(BTSerialLink* link, int rssi);
     
 
 #endif

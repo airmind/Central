@@ -12,6 +12,8 @@
 #include "qt2ioshelper.h"
 #include "ConnectPopover.h"
 #include "QGCApplication.h"
+#include "mavlink.h"
+
 
 //sound play;
 #import <AudioToolbox/AudioToolbox.h>
@@ -81,6 +83,36 @@
 
 -(IBAction)onWifiButtonTapped:(id)sender {
     
+}
+
+
+-(IBAction)onLongPacketButtonTapped:(id)sender {
+    mavlink_message_t message;
+    uint8_t data[253] = {1};
+    mavlink_msg_encapsulated_data_pack_chan(2,
+                                       1,
+                                       1,
+                                       &message,
+                                       9,
+                                       data);
+    
+    // Create buffer
+    static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+    // Write message into buffer, prepending start sign
+    int len = mavlink_msg_to_send_buffer(buffer, &message);
+    
+    // Send the portion of the buffer now occupied by the message
+    //link->writeBytes((const char*)buffer, len);
+    
+    
+    NSData *chunk = [NSData dataWithBytes:buffer length:len];
+    
+    //BOOL didSend = [self.peripheralManager updateValue:chunk forCharacteristic:self.transferCharacteristic onSubscribedCentrals:nil];
+    BLE_Discovered_Peripheral* bdp = [btlinksarray objectAtIndex:0];
+    
+    BTSerialLink_objc* blink = [[BLEHelper_objc sharedInstance] linkForPeripheral:bdp.cbperipheral];
+    NSLog(@"writing long packet...\n");
+    [blink writeBytes:(char*)buffer size:len];
 }
 
 
@@ -179,7 +211,9 @@
     //cell.textLabel.text = [[object valueForKey:@"timeStamp"] description];
     int idx = [indexPath indexAtPosition:1];
     
-    int cellwidth = cell.frame.size.width;
+    //int cellwidth = cell.frame.size.width;
+    
+    //main label;
     CGRect btnrect = CGRectMake(30, 5, 120, 40);
     
     UILabel* label= (UILabel*)[cell.contentView viewWithTag:(200+idx)];
@@ -194,6 +228,19 @@
         
     }
     
+    //rssi label;
+    CGRect rssirect = CGRectMake(200, 5, 60, 40);
+    UILabel* rssilabel =(UILabel*)[cell.contentView viewWithTag:(199)];
+    if ( rssilabel== nil) {
+        
+        rssilabel = [[UILabel alloc] initWithFrame:rssirect];
+        rssilabel.tag = 199;
+        rssilabel.font = [UIFont fontWithName:@"HelveticaNeue-bold" size:14];
+        rssilabel.textColor=[UIColor colorWithRed:0.95f green:0.95f blue:0.95f alpha:1.0f];
+        [cell.contentView addSubview:rssilabel];
+        
+    }
+
     /*
      if (idx==0) {
      label.text = @"Searching ble ...";
@@ -234,8 +281,8 @@
         }
     }
     label.text = blename;
-    
-    NSLog(@"Peripheral name: %@", blename);
+    rssilabel.text = [NSNumber numberWithInt:[cbp currentFilteredRssi]].stringValue;
+    //NSLog(@"Peripheral name: %@, rssi: %d", blename, [cbp currentFilteredRssi]);
     //}
     
     //NSString* btnTitle;
@@ -301,8 +348,9 @@
     //searching bluetooth device;
     int idx = [indexPath indexAtPosition:1];
     int cellwidth = cell.frame.size.width;
-    CGRect btnrect = CGRectMake(30, 5, 160, 40);
     
+    //main label;
+    CGRect btnrect = CGRectMake(30, 5, 160, 40);
     UILabel* label =(UILabel*)[cell.contentView viewWithTag:(200+idx)];
     if ( label== nil) {
         
@@ -311,6 +359,19 @@
         label.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:16];
         label.textColor=[UIColor colorWithRed:0.95f green:0.95f blue:0.95f alpha:1.0f];
         [cell.contentView addSubview:label];
+        
+    }
+    
+    //rssi label;
+    CGRect rssirect = CGRectMake(200, 5, 60, 40);
+    UILabel* rssilabel =(UILabel*)[cell.contentView viewWithTag:(199)];
+    if ( rssilabel== nil) {
+        
+        rssilabel = [[UILabel alloc] initWithFrame:rssirect];
+        rssilabel.tag = 199;
+        rssilabel.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:16];
+        rssilabel.textColor=[UIColor colorWithRed:0.95f green:0.95f blue:0.95f alpha:1.0f];
+        [cell.contentView addSubview:rssilabel];
         
     }
     
@@ -551,6 +612,33 @@
     
 }
 
+
+-(void)didReadConnectedBTLinkRSSI:(BLE_Discovered_Peripheral_List*)bdplist {
+    NSArray* plist = [bdplist getPeripheralList];
+    for (BLE_Discovered_Peripheral* p in plist) {
+        //check display list and update UI one by one;
+        int i=0;
+        for (BLE_Discovered_Peripheral* pt in btlinksarray) {
+            
+            if ([pt.cbperipheral.identifier isEqual: p.cbperipheral.identifier]) {
+                //update rssi of the entry;
+                //[[tagnodeslistview cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]] setNeedsDisplay];
+                //[tagnodeslistview reloadData];
+                [btlinksarray replaceObjectAtIndex:i withObject:p];
+                UITableViewCell* bdpcell = [tagnodeslistview cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
+                [self configureDiscoveredBTLinksCell:bdpcell
+                                         atIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
+                
+                //NSLog(@"reload tag node table %d\n", [pt currentFilteredRssi]);
+            }
+            i++;
+        }
+        
+    }
+    
+}
+
+/*
 -(void)didReadConnectedBTLinkRSSI:(CBPeripheral*)cbp RSSI:(int)rssi inrange:(BOOL)inrange {
     //find link from peripheral;
     
@@ -590,7 +678,7 @@
         }
     }
 }
-
+*/
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -747,4 +835,5 @@
 -(void)setConnectActionDelegate:(void*)adelegate{
     delegate = adelegate;
 }
+    
 @end

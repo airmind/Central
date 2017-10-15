@@ -210,7 +210,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 //multiple links?
 -(BTSerialLink_objc*)linkForPeripheral:(CBPeripheral*)p ;
--(BLE_Discovered_Peripheral*)connectedPeripheralFromUUIDString : (NSString*)uuidstr;
+//-(BLE_Discovered_Peripheral*)connectedPeripheralFromUUIDString : (NSString*)uuidstr;
 
 -(void)disconnectLink:(BTSerialLink_objc*)link;
 -(void)disconnectPeripheral:(CBPeripheral*)p ;
@@ -544,14 +544,15 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 -(void)updaterssi : (id)sender {
     assert(cbperipheral!=nil);
     [cbperipheral readRSSI];
+    //NSLog(@"Updating rssi for connected peripheral ... \n");
+    
 }
 
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
     int filteredvalue;
     if (error == nil) {
         filteredvalue = [self getFilteredRssi:peripheral.RSSI.intValue];
-        //make a UUID Qlist of connected peripherals that has link quality status flipped;
-        
+        //NSLog(@"did read rssi from connected peripheral ... filtered %d\n", filteredvalue);
     }
     
     
@@ -559,6 +560,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 
 -(BLE_LINK_QUALITY)linkQuality {
+
     return linkquality;
 }
 
@@ -924,6 +926,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 }
 
 
+
 -(CBCentralManager*)getBLECentralManager {
     return centralmanager;
 }
@@ -1093,7 +1096,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     //if (check==YES) {
         
     
-    if (averagedRSSI < -35/*-35*/)
+    if (averagedRSSI < -55/*-35*/)
     {
         //remove from in range list;
         NSLog(@"not in range, return ...");
@@ -1207,13 +1210,16 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     
     //start update rssi of connected devices;
     if (t_connected==nil) {
-        
-        //init timer and start updating rssi for peripheral;
-        t_connected = [NSTimer scheduledTimerWithTimeInterval:0.1f
+        //The timer executes only in main (UI) thread correctly. If try to start the timer in another thread than the main thread won't fire
+        dispatch_async(dispatch_get_main_queue(), ^{
+
+            //init timer and start updating rssi for peripheral;
+            t_connected = [NSTimer scheduledTimerWithTimeInterval:0.1f
                                                        target:self
                                                      selector:@selector(updaterssi:)
                                                      userInfo:nil
                                                       repeats:YES];
+        });
         
         
     }
@@ -1234,15 +1240,16 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     for(BLE_Discovered_Peripheral* p in p_array) {
         [p updaterssi:sender];
     }
-    
+    //NSLog(@"updating rssi for connected devices...\n");
+   
     if (tt_update) {
         //do update, notify UI;
+        NSLog(@"rssi update UI ..\n");
         QList<QString> *p_uuidlist = new QList<QString>;
         
         for (BLE_Discovered_Peripheral* p in p_array) {
             p_uuidlist->append(QString::fromNSString([p.cbperipheral.identifier UUIDString]));
         }
-        
         
         tt_update = NO;
         
@@ -1308,7 +1315,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     }
 }
 
-
+#if 0
 /** The Transfer Service was discovered
  */
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error
@@ -1421,6 +1428,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
 
 }
 
+
 - (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
              error:(NSError *)error
 {
@@ -1526,7 +1534,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     }
 
 }
-
+#endif
 
 /** Once the disconnection happens, we need to clean up our local copy of the peripheral
  */
@@ -1596,18 +1604,18 @@ void BLEHelperWrapper::stopScanning() {
     [ble_objc stopScanning];
 }
 
-void BLEHelperWrapper::setPeripheralLinkQuality(QString& pname, BLE_LINK_QUALITY q){
-    BLE_Discovered_Peripheral* p = [ble_objc connectedPeripheralFromUUIDString:(qt2ioshelper::QString2NSString(&pname))];
+void BLEHelperWrapper::setPeripheralLinkQuality(QString& pname_id, BLE_LINK_QUALITY q){
+    BLE_Discovered_Peripheral* p = [ble_objc getConnectedBLEPeripheralFromIdentifier:(qt2ioshelper::QString2NSString(&pname_id))];
     [p setLinkQuality:q];
 }
 
-int BLEHelperWrapper::currentFilteredPeripheralRSSI(QString& pname){
-    BLE_Discovered_Peripheral* p = [ble_objc connectedPeripheralFromUUIDString:(qt2ioshelper::QString2NSString(&pname))];
+int BLEHelperWrapper::currentFilteredPeripheralRSSI(QString& pname_id){
+    BLE_Discovered_Peripheral* p = [ble_objc getConnectedBLEPeripheralFromIdentifier:(qt2ioshelper::QString2NSString(&pname_id))];
     return [p currentFilteredRssi];
 }
 
-BLE_LINK_QUALITY BLEHelperWrapper::currentPeripheralLinkQuality(QString& pname){
-    BLE_Discovered_Peripheral* p = [ble_objc connectedPeripheralFromUUIDString:(qt2ioshelper::QString2NSString(&pname))];
+BLE_LINK_QUALITY BLEHelperWrapper::currentPeripheralLinkQuality(QString& pname_id){
+    BLE_Discovered_Peripheral* p = [ble_objc getConnectedBLEPeripheralFromIdentifier:(qt2ioshelper::QString2NSString(&pname_id))];
     return [p linkQuality];
     
 }
@@ -1724,7 +1732,6 @@ public:
     void writeBytes(const char* data, qint64 size);
     void writeBytesNeedsAck(const char* data, qint64 size);
 
-    
     //void configBLESerialLink(QString& linkid, QString& linkname, QString& sid, QString& cid) ;
 };
 
@@ -1761,8 +1768,6 @@ void BTSerialLinkWrapper::writeBytes(const char* data, qint64 size) {
 void BTSerialLinkWrapper::writeBytesNeedsAck(const char* data, qint64 size) {
     [btl_objc writeBytesNeedsAck:data size:(long long)size];
 }
-
-
 
 BTSerialConfiguration_objc* BTSerialLinkWrapper::createObjCConfigObjectFromQObject(BTSerialConfiguration* config) {
     QString qidentifier = config->getBLEPeripheralIdentifier();
@@ -1871,6 +1876,20 @@ void BTSerialLink::setLinkConnectedStatus(BLE_LINK_STATUS status) {
 
 BLE_LINK_STATUS BTSerialLink::linkConnectedStatus() {
     return _linkstatus;
+}
+
+void BTSerialLink::setLinkRSSI(int rssi) {
+    filteredLinkRSSI = rssi;
+}
+
+int  BTSerialLink::linkRSSI() {
+    return filteredLinkRSSI;
+}
+
+
+void BTSerialLink::setLinkQuality(BLE_LINK_QUALITY lq) {
+    _linkquality = lq;
+
 }
 
 BLE_LINK_QUALITY BTSerialLink::linkQuality() {
@@ -2398,7 +2417,7 @@ BLE_LINK_CONNECT_STAGE BTSerialConfiguration::getBLELinkConnectStage() {
         //[(ConnectPopoverViewController*)delegatecontroller didConnectedBTLink];
         //callback -> BTSerialLink -> LinkManager -> UI (MainToolBarController)
         //qgcApp()->toolbox()->linkManager()->didConnectBLELink();
-
+        NSLog(@"did write long packet...\n");
         
     });
     

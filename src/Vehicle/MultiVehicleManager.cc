@@ -142,7 +142,7 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
         || vehicleId == 0) {
         return;
     }
-    
+
     qCDebug(MultiVehicleManagerLog()) << "Adding new vehicle link:vehicleId:vehicleMavlinkVersion:vehicleFirmwareType:vehicleType "
     << link->getName()
     << vehicleId

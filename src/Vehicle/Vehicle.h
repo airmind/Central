@@ -663,11 +663,11 @@ private slots:
     void _linkInactiveOrDeleted(BTSerialLink* link);
 
     //Link Radio goes out of range;
-    void _radioLinkOutOfRange(BTSerialLink* link);
+    void _radioLinkOutOfRange(BTSerialLink* link, int rssi);
     //Link Radio approaching out range zone;
-    void _radioLinkLowAlert(BTSerialLink* link);
+    void _radioLinkLowAlert(BTSerialLink* link, int rssi);
     //Link Radio approaching out range zone;
-    void _radioLinkGetIntoRange(BTSerialLink* link);
+    void _radioLinkGetIntoRange(BTSerialLink* link, int rssi);
 #endif
     //void _linkDisconnected(LinkInterface* link);
 //=======

@@ -354,7 +354,7 @@ Vehicle::Vehicle(MAV_AUTOPILOT firmwareType, MAV_TYPE vehicleType, QObject* pare
     _vibrationFactGroup.setVehicle(NULL);
 }
 
-#if defined(__mindskin__) && defined(__ios__)
+#if defined(__mindskin__) //&& defined(__ios__)
 
 
 Vehicle::Vehicle(BTSerialLink*             link,
@@ -438,12 +438,10 @@ Vehicle::Vehicle(BTSerialLink*             link,
     
     connect(_mavlink, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this, static_cast<void (Vehicle::*)(BTSerialLink*, mavlink_message_t)>(&Vehicle::_mavlinkMessageReceived));
     
+    //TODO: make this connect right;
     //connect(this, &Vehicle::_sendMessageOnLinkOnThread,       this, &Vehicle::_sendMessage, Qt::QueuedConnection);
-#ifndef __mindskin__
-    connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, &Vehicle::_sendMessageOnLink, Qt::QueuedConnection);
-#else
-    connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, static_cast<void (Vehicle::*)(LinkInterface*, mavlink_message_t)>(&Vehicle::_sendMessageOnLink), Qt::QueuedConnection);
-#endif
+    //connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, static_cast<void (Vehicle::*)(BTSerialLink*, mavlink_message_t)>(&Vehicle::_sendMessageOnLink), Qt::QueuedConnection);
+    
     connect(this, &Vehicle::flightModeChanged,          this, &Vehicle::_handleFlightModeChanged);
     connect(this, &Vehicle::armedChanged,               this, &Vehicle::_announceArmedChanged);
     _uas = new UAS(_mavlink, this, _firmwarePluginManager);
@@ -673,14 +671,24 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 //<<<<<<< HEAD
 #if defined(__mindskin__) && defined(__ios__)
 void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message) {
+    
     if (message.sysid != _id && message.sysid != 0) {
         return;
     }
-    
+
     // link out of range;
-    if (link->linkQuality() != BLE_LINK_QUALITY_OUTOFRANGE ) {
+    qDebug() << "link rssi: " << QString().sprintf("%d ", link->linkRSSI()) << "\n";
+    if (link->linkQuality() == BLE_LINK_QUALITY_OUTOFRANGE ) {
+        _say(QString("Link out of range."));
+
         return;
     }
+    else {
+        if (link->linkQuality() == BLE_LINK_QUALITY_ALERT) {
+            _say(QString("Link quality low."));
+        }
+    }
+
     
     if (!_containsLink(link) ) {
         _addLink(link);
@@ -711,7 +719,8 @@ void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t mess
                 emit messagesLostChanged();
         }
     }
-    
+
+
     // Give the plugin a change to adjust the message contents
     if (!_firmwarePlugin->adjustIncomingMavlinkMessage(this, &message)) {
         return;
@@ -1129,16 +1138,18 @@ void Vehicle::_addLink(BTSerialLink* link)
         connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkDeleted), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_linkInactiveOrDeleted));
         
         //connect radio link quality signals;
-        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::radioLinkOutOfRange), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_radioLinkOutOfRange));
-        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::radioLinkGetIntoRange), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_radioLinkGetIntoRange));
-        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::radioLinkLowAlert), this, static_cast<void (Vehicle::*)(BTSerialLink*)>(&Vehicle::_radioLinkLowAlert));
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*, int)>(&LinkManager::radioLinkOutOfRange), this, static_cast<void (Vehicle::*)(BTSerialLink*, int)>(&Vehicle::_radioLinkOutOfRange));
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*, int)>(&LinkManager::radioLinkGetIntoRange), this, static_cast<void (Vehicle::*)(BTSerialLink*, int)>(&Vehicle::_radioLinkGetIntoRange));
+        connect(qgcApp()->toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*, int)>(&LinkManager::radioLinkLowAlert), this, static_cast<void (Vehicle::*)(BTSerialLink*, int)>(&Vehicle::_radioLinkLowAlert));
         
         
     }
 }
 
 
-void Vehicle::_radioLinkOutOfRange(BTSerialLink* blink) {
+void Vehicle::_radioLinkOutOfRange(BTSerialLink* blink, int rssi) {
+    blink->setLinkQuality(BLE_LINK_QUALITY_OUTOFRANGE);
+    blink->setLinkRSSI(rssi);
     _blelinks.removeOne(blink);
     if (_links.count() == 0 && _blelinks.count()==0 && !_allLinksInactiveSent) {
         qCDebug(VehicleLog) << "All links inactive";
@@ -1150,13 +1161,17 @@ void Vehicle::_radioLinkOutOfRange(BTSerialLink* blink) {
 }
 
 
-void Vehicle::_radioLinkGetIntoRange(BTSerialLink* blink) {
+void Vehicle::_radioLinkGetIntoRange(BTSerialLink* blink, int rssi) {
+    blink->setLinkQuality(BLE_LINK_QUALITY_INRANGE);
+    blink->setLinkRSSI(rssi);
     _blelinks.append(blink);
     
 }
 
-void Vehicle::_radioLinkLowAlert(BTSerialLink* blink) {
-
+void Vehicle::_radioLinkLowAlert(BTSerialLink* blink, int rssi) {
+    blink->setLinkQuality(BLE_LINK_QUALITY_ALERT);
+    blink->setLinkRSSI(rssi);
+    
 }
 
 #endif

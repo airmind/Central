@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="7706" systemVersion="14F1021" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="7706" systemVersion="14F2511" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
     <dependencies>
-        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7703"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="tagNodesViewController">
@@ -18,44 +18,87 @@
             <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Umq-LE-vJV">
-                    <rect key="frame" x="0.0" y="0.0" width="311" height="600"/>
-                    <color key="tintColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                </imageView>
-                <tableView clipsSubviews="YES" contentMode="scaleToFill" ambiguous="YES" misplaced="YES" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="pBp-pK-uND">
+                <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="pBp-pK-uND">
                     <rect key="frame" x="309" y="0.0" width="300" height="600"/>
                     <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="300" id="h3F-qL-ePj"/>
+                    </constraints>
                     <connections>
                         <outlet property="dataSource" destination="-1" id="XZa-4j-6JW"/>
                         <outlet property="delegate" destination="-1" id="Rqc-oK-TzX"/>
                     </connections>
                 </tableView>
+                <imageView opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Umq-LE-vJV">
+                    <rect key="frame" x="0.0" y="0.0" width="311" height="600"/>
+                    <color key="tintColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="311" id="bD6-4p-kaI"/>
+                    </constraints>
+                </imageView>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Tag Nodes" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bqC-q1-n0q">
+                    <rect key="frame" x="38" y="8" width="234" height="74"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="74" id="1V8-J6-wG7"/>
+                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="74" id="4E5-vl-5ZE"/>
+                        <constraint firstAttribute="width" constant="234" id="DTM-Xd-uDq"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                    <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                    <nil key="highlightedColor"/>
+                </label>
                 <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="m42-JE-Frn">
                     <rect key="frame" x="30" y="540" width="46" height="30"/>
                     <state key="normal" title="Wifi">
+                        <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                         <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                     </state>
                     <connections>
                         <action selector="onWifiButtonTapped:" destination="-1" eventType="touchUpInside" id="XgU-28-5Z5"/>
                     </connections>
                 </button>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Tag Nodes" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bqC-q1-n0q">
-                    <rect key="frame" x="38" y="8" width="234" height="74"/>
-                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                    <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                    <nil key="highlightedColor"/>
-                </label>
+                <button opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wbs-8R-Kaj">
+                    <rect key="frame" x="53" y="154" width="184" height="64"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="64" id="yEc-uq-n0G"/>
+                    </constraints>
+                    <state key="normal" title="Long packet">
+                        <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                    <connections>
+                        <action selector="onLongPacketButtonTapped:" destination="-1" eventType="touchUpInside" id="Yqd-yJ-Vz8"/>
+                    </connections>
+                </button>
             </subviews>
             <color key="backgroundColor" red="0.3411764705882353" green="0.49019607843137253" blue="0.75294117647058822" alpha="1" colorSpace="calibratedRGB"/>
             <color key="tintColor" red="0.3411764706" green="0.49019607840000001" blue="0.75294117650000003" alpha="1" colorSpace="calibratedRGB"/>
             <constraints>
+                <constraint firstItem="bqC-q1-n0q" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="topMargin" constant="20" id="1nt-yi-fC0"/>
+                <constraint firstItem="wbs-8R-Kaj" firstAttribute="top" secondItem="bqC-q1-n0q" secondAttribute="bottom" constant="72" id="2p6-7F-Wr9"/>
+                <constraint firstItem="wbs-8R-Kaj" firstAttribute="top" secondItem="bqC-q1-n0q" secondAttribute="bottom" constant="72" id="445-C5-bda"/>
                 <constraint firstItem="Umq-LE-vJV" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="9xW-2m-YqA"/>
                 <constraint firstAttribute="bottom" secondItem="pBp-pK-uND" secondAttribute="bottom" id="Ecj-GL-L6R"/>
+                <constraint firstItem="bqC-q1-n0q" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="20" id="Gxp-3d-jyl"/>
                 <constraint firstAttribute="trailing" secondItem="pBp-pK-uND" secondAttribute="trailing" constant="-9" id="HaU-S3-PUl"/>
+                <constraint firstItem="wbs-8R-Kaj" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="53" id="MEW-1q-nHQ"/>
+                <constraint firstItem="pBp-pK-uND" firstAttribute="leading" secondItem="wbs-8R-Kaj" secondAttribute="trailing" constant="72" id="MKg-C1-IkY"/>
                 <constraint firstItem="pBp-pK-uND" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="P9r-nO-XCD"/>
+                <constraint firstItem="bqC-q1-n0q" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="38" id="S6l-Cl-ME2"/>
+                <constraint firstItem="bqC-q1-n0q" firstAttribute="top" relation="greaterThanOrEqual" secondItem="iN0-l3-epB" secondAttribute="top" constant="8" id="r1X-K2-H8o"/>
                 <constraint firstItem="Umq-LE-vJV" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="uTI-Pl-YXG"/>
                 <constraint firstAttribute="bottom" secondItem="Umq-LE-vJV" secondAttribute="bottom" id="ucQ-1d-hlA"/>
+                <constraint firstItem="Umq-LE-vJV" firstAttribute="centerX" secondItem="bqC-q1-n0q" secondAttribute="centerX" id="xx0-pZ-3AU"/>
+                <constraint firstItem="pBp-pK-uND" firstAttribute="leading" secondItem="bqC-q1-n0q" secondAttribute="trailing" constant="37" id="yus-VA-7kd"/>
             </constraints>
+            <variation key="default">
+                <mask key="constraints">
+                    <exclude reference="xx0-pZ-3AU"/>
+                    <exclude reference="Gxp-3d-jyl"/>
+                    <exclude reference="445-C5-bda"/>
+                    <exclude reference="yus-VA-7kd"/>
+                </mask>
+            </variation>
         </view>
     </objects>
 </document>

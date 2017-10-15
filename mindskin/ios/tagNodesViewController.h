@@ -24,6 +24,7 @@ typedef enum {
     IBOutlet UITableView* tagnodeslistview;
     IBOutlet UIImageView* tagImage;
     IBOutlet UIButton* wifiButton;
+    IBOutlet UIButton* longpacketButton;
     
     NSArray* conarray;
     NSMutableArray* btlinksarray;
@@ -37,5 +38,6 @@ typedef enum {
 }
 
 -(IBAction)onWifiButtonTapped:(id)sender;
+-(IBAction)onLongPacketButtonTapped:(id)sender;
 
 @end

@@ -30,7 +30,7 @@
 
 #define DRONETAG_TRIG_RANGE -35   //in dB of RSSI;
 #define DRONETAG_DISCONNECT_WARNING_RANGE -50
-#define DRONETAG_DISCONNECT_RANGE -55
+#define DRONETAG_DISCONNECT_RANGE -65
 
 
 typedef enum  {
@@ -58,8 +58,8 @@ typedef enum {
 }BLE_LINK_CONNECT_STAGE ;
 
 
-#define MAV_TRANSFER_SERVICE_UUID           @"E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
-#define MAV_TRANSFER_CHARACTERISTIC_UUID    @"08590F7E-DB05-467E-8757-72F6FAEB13D4"
+#define MAV_TRANSFER_SERVICE_UUID           @"6A400001-B5A3-F393-E0A9-E50E24DCCA9E"
+#define MAV_TRANSFER_CHARACTERISTIC_UUID    @"6A400002-B5A3-F393-E0A9-E50E24DCCA9E"
 
 #ifdef __ios__
 class BTSerialConfigurationWrapper;
@@ -239,6 +239,10 @@ public:
     BLE_LINK_STATUS linkConnectedStatus();
     void setLinkConnectedStatus(BLE_LINK_STATUS status);
 
+    //link quality;
+    void setLinkRSSI(int rssi);
+    int  linkRSSI();
+    void setLinkQuality(BLE_LINK_QUALITY lq);
     BLE_LINK_QUALITY linkQuality();
 
     

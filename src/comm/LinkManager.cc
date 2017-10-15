@@ -468,9 +468,13 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
     Q_ASSERT(peripheral_link_list);
     
     //check all links for active / inactive according to RSSI;
+    qDebug()<<"LinkManager: updating ble link rssi \n";
+    
     for (int i=0; i<peripheral_link_list->count(); i++) {
         QString pname = peripheral_link_list->at(i);
         int rssi = blehelper->currentFilteredPeripheralRSSI(pname);
+        qDebug()<<"LinkManager: current rssi " << rssi << "\n";
+
         BLE_LINK_QUALITY newlq;
         if (rssi >= DRONETAG_DISCONNECT_WARNING_RANGE) {
             newlq = BLE_LINK_QUALITY_INRANGE;
@@ -489,15 +493,18 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
             case BLE_LINK_QUALITY_INRANGE:
                 
                 if (lq == BLE_LINK_QUALITY_OUTOFRANGE) {
+                    qDebug()<<"back into range \n";
+
                     //signal all links belong to this peripheral going active;
                     for (int j=0; j<_blelinks.count(); j++) {
                         BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(j);
                         BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+                        blink->setLinkRSSI(rssi);
                         Q_ASSERT(cfg);
                         
                         if (cfg->getBLEPeripheralIdentifier() == peripheral_link_list->at(j)) {
                             //emit get into range signal;
-                            emit radioLinkGetIntoRange(blink);
+                            emit radioLinkGetIntoRange(blink, rssi);
                         }
                     }
 
@@ -505,16 +512,19 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
                 break;
             case BLE_LINK_QUALITY_ALERT:
                 if (lq == BLE_LINK_QUALITY_OUTOFRANGE) {
-                    
+                    qDebug()<<"getting into range \n";
+                   
                     //signal all links belong to this peripheral going active;
                     for (int j=0; j<_blelinks.count(); j++) {
                         BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(j);
                         BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+                        blink->setLinkRSSI(rssi);
+
                         Q_ASSERT(cfg);
                         
                         if (cfg->getBLEPeripheralIdentifier() == peripheral_link_list->at(j)) {
                             //emit get into range signal;
-                            emit radioLinkGetIntoRange(blink);
+                            emit radioLinkGetIntoRange(blink, rssi);
                         }
                     }
 
@@ -522,15 +532,19 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
                 break;
             case BLE_LINK_QUALITY_OUTOFRANGE:
                 if (lq == BLE_LINK_QUALITY_ALERT || lq == BLE_LINK_QUALITY_INRANGE) {
+                    qDebug()<<"out of range \n";
+
                     //signal all links belong to this peripheral going inactive;
                     for (int j=0; j<_blelinks.count(); j++) {
                         BTSerialLink* blink = _bletriallinks.value<BTSerialLink*>(j);
                         BTSerialConfiguration* cfg = blink->getLinkConfiguration();
+                        blink->setLinkRSSI(rssi);
+
                         Q_ASSERT(cfg);
                         
                         if (cfg->getBLEPeripheralIdentifier() == peripheral_link_list->at(j)) {
                             ////emit out of range signal;
-                            emit radioLinkOutOfRange(blink);
+                            emit radioLinkOutOfRange(blink, rssi);
                         }
                     }
                     
@@ -561,6 +575,7 @@ LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)
 #ifndef __ios__
         case LinkConfiguration::TypeSerial:
         {
+
             SerialConfiguration* serialConfig = dynamic_cast<SerialConfiguration*>(config);
             if (serialConfig) {
                 pLink = new SerialLink(serialConfig);
