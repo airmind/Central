@@ -151,7 +151,9 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
         || vehicleId == 0) {
         return;
     }
-
+#if __android__
+            __android_log_print(ANDROID_LOG_INFO, kJTag, "_vehicleHeartbeatInfo=>1 vehicleId:%d",vehicleId);
+#endif
     qCDebug(MultiVehicleManagerLog()) << "Adding new vehicle link:vehicleId:vehicleMavlinkVersion:vehicleFirmwareType:vehicleType "
     << link->getName()
     << vehicleId

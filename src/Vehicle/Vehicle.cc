@@ -387,7 +387,7 @@ Vehicle::Vehicle(MAV_AUTOPILOT firmwareType, MAV_TYPE vehicleType, QObject* pare
     _vibrationFactGroup.setVehicle(NULL);
 }
 
-#if defined(__mindskin__) //&& defined(__ios__)
+#ifdef __mindskin__
 
 
 Vehicle::Vehicle(BTSerialLink*             link,

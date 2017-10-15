@@ -57,15 +57,9 @@ typedef enum {
     
 }BLE_LINK_CONNECT_STAGE ;
 
-
+#ifdef __ios__
 #define MAV_TRANSFER_SERVICE_UUID           @"6A400001-B5A3-F393-E0A9-E50E24DCCA9E"
 #define MAV_TRANSFER_CHARACTERISTIC_UUID    @"6A400002-B5A3-F393-E0A9-E50E24DCCA9E"
-
-#ifdef __ios__
-class BTSerialConfigurationWrapper;
-class BTSerialLinkWrapper;
-class BLEHelperWrapper;
-class BTSerialLink;
 #endif
 
 #ifdef __android__
