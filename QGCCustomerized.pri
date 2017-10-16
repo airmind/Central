@@ -30,6 +30,7 @@ __mindskin__ {
         SOURCES += \
             mindskin/tagNodesManager.cpp \
             mindskin/ios/MindStickButton.cpp \
+            mindskin/mindskinlog.cc \
 
         OBJECTIVE_SOURCES += \
             BLE/ios/BTSerialLink.mm \
