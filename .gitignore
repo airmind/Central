@@ -82,3 +82,6 @@ src/html/
 src/latex/
 android/libs/mavlink.jar
 android/android.iml
+
+#obselated
+/Users/Roland/Documents/workspace/iOS/Central2/Central/src/audio/
