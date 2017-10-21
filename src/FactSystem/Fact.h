@@ -41,9 +41,9 @@ public:
     Q_PROPERTY(QString      defaultValueString      READ cookedDefaultValueString                           CONSTANT)
     Q_PROPERTY(bool         defaultValueAvailable   READ defaultValueAvailable                              CONSTANT)
     Q_PROPERTY(int          enumIndex               READ enumIndex              WRITE setEnumIndex          NOTIFY valueChanged)
-    Q_PROPERTY(QStringList  enumStrings             READ enumStrings                                        NOTIFY enumStringsChanged)
+    Q_PROPERTY(QStringList  enumStrings             READ enumStrings                                        NOTIFY enumsChanged)
     Q_PROPERTY(QString      enumStringValue         READ enumStringValue        WRITE setEnumStringValue    NOTIFY valueChanged)
-    Q_PROPERTY(QVariantList enumValues              READ enumValues                                         NOTIFY enumValuesChanged)
+    Q_PROPERTY(QVariantList enumValues              READ enumValues                                         NOTIFY enumsChanged)
     Q_PROPERTY(QString      group                   READ group                                              CONSTANT)
     Q_PROPERTY(QString      longDescription         READ longDescription                                    CONSTANT)
     Q_PROPERTY(QVariant     max                     READ cookedMax                                          CONSTANT)
@@ -55,7 +55,6 @@ public:
     Q_PROPERTY(QString      name                    READ name                                               CONSTANT)
     Q_PROPERTY(bool         rebootRequired          READ rebootRequired                                     CONSTANT)
     Q_PROPERTY(QString      shortDescription        READ shortDescription                                   CONSTANT)
-    Q_PROPERTY(FactMetaData::ValueType_t type       READ type                                               CONSTANT)
     Q_PROPERTY(QString      units                   READ cookedUnits                                        CONSTANT)
     Q_PROPERTY(QVariant     value                   READ cookedValue            WRITE setCookedValue        NOTIFY valueChanged)
     Q_PROPERTY(QVariant     rawValue                READ rawValue               WRITE setRawValue           NOTIFY rawValueChanged)
@@ -63,10 +62,16 @@ public:
     Q_PROPERTY(QString      valueString             READ cookedValueString                                  NOTIFY valueChanged)
     Q_PROPERTY(QString      enumOrValueString       READ enumOrValueString                                  NOTIFY valueChanged)
     Q_PROPERTY(double       increment               READ increment                                          CONSTANT)
+    Q_PROPERTY(bool         typeIsString            READ typeIsString                                       CONSTANT)
+    Q_PROPERTY(bool         typeIsBool              READ typeIsBool                                         CONSTANT)
+    Q_PROPERTY(bool         hasControl              READ hasControl                                         CONSTANT)
+    Q_PROPERTY(bool         readOnly                READ readOnly                                           CONSTANT)
 
     /// Convert and validate value
     ///     @param convertOnly true: validate type conversion only, false: validate against meta data as well
     Q_INVOKABLE QString validate(const QString& cookedValue, bool convertOnly);
+    /// Convert and clamp value
+    Q_INVOKABLE QVariant clamp(const QString& cookedValue);
 
     QVariant        cookedValue             (void) const;   /// Value after translation
     QVariant        rawValue                (void) const { return _rawValue; }  /// value prior to translation, careful
@@ -103,6 +108,10 @@ public:
     bool            rebootRequired          (void) const;
     QString         enumOrValueString       (void);         // This is not const, since an unknown value can modify the enum lists
     double          increment               (void) const;
+    bool            typeIsString            (void) const { return type() == FactMetaData::valueTypeString; }
+    bool            typeIsBool              (void) const { return type() == FactMetaData::valueTypeBool; }
+    bool            hasControl              (void) const;
+    bool            readOnly                (void) const;
 
     /// Returns the values as a string with full 18 digit precision if float/double.
     QString rawValueStringFullPrecision(void) const;
@@ -129,17 +138,21 @@ public:
     /// Sets the meta data associated with the Fact.
     void setMetaData(FactMetaData* metaData);
     
+    FactMetaData* metaData() { return _metaData; }
+
+    //-- Value coming from Vehicle. This does NOT send a _containerRawValueChanged signal.
     void _containerSetRawValue(const QVariant& value);
     
     /// Generally you should not change the name of a fact. But if you know what you are doing, you can.
     void _setName(const QString& name) { _name = name; }
 
-    
+    /// Generally this is done during parsing. But if you know what you are doing, you can.
+    void setEnumInfo(const QStringList& strings, const QVariantList& values);
+
 signals:
     void bitmaskStringsChanged(void);
     void bitmaskValuesChanged(void);
-    void enumStringsChanged(void);
-    void enumValuesChanged(void);
+    void enumsChanged(void);
     void sendValueChangedSignalsChanged(bool sendValueChangedSignals);
 
     /// QObject Property System signal for value property changes
@@ -153,7 +166,7 @@ signals:
     
     /// Signalled when property has been changed by a call to the property write accessor
     ///
-    /// This signal is meant for use by Fact container implementations.
+    /// This signal is meant for use by Fact container implementations. Used to send changed values to vehicle.
     void _containerRawValueChanged(const QVariant& value);
     
 protected:

@@ -49,6 +49,17 @@ class ArduRoverFirmwarePlugin : public APMFirmwarePlugin
     
 public:
     ArduRoverFirmwarePlugin(void);
+
+    // Overrides from FirmwarePlugin
+    QString pauseFlightMode                         (void) const override { return QString("Hold"); }
+    void    guidedModeChangeAltitude                (Vehicle* vehicle, double altitudeChange) final;
+    int     remapParamNameHigestMinorVersionNumber  (int majorVersionNumber) const final;
+    const FirmwarePlugin::remapParamNameMajorVersionMap_t& paramNameRemapMajorVersionMap(void) const final { return _remapParamName; }
+    bool supportsNegativeThrust(void) final;
+
+private:
+    static bool _remapParamNameIntialized;
+    static FirmwarePlugin::remapParamNameMajorVersionMap_t  _remapParamName;
 };
 
 #endif

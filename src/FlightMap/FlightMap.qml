@@ -7,15 +7,8 @@
  *
  ****************************************************************************/
 
-
-/**
- * @file
- *   @brief QGC Map Background
- *   @author Gus Grubba <mavlink@grubba.com>
- */
-
-import QtQuick          2.4
-import QtQuick.Controls 1.3
+import QtQuick          2.3
+import QtQuick.Controls 1.2
 import QtLocation       5.3
 import QtPositioning    5.3
 
@@ -27,83 +20,78 @@ import QGroundControl.ScreenTools           1.0
 import QGroundControl.MultiVehicleManager   1.0
 import QGroundControl.Vehicle               1.0
 import QGroundControl.Mavlink               1.0
+import QGroundControl.QGCPositionManager    1.0
 
 Map {
     id: _map
 
-    property string mapName:            'defaultMap'
-    property bool   isSatelliteMap:     activeMapType.name.indexOf("Satellite") > -1 || activeMapType.name.indexOf("Hybrid") > -1
+    zoomLevel:                  QGroundControl.flightMapZoom
+    center:                     QGroundControl.flightMapPosition
+    //-- Qt 5.9 has rotation gesture enabled by default. Here we limit the possible gestures.
+    gesture.acceptedGestures:   MapGestureArea.PinchGesture | MapGestureArea.PanGesture | MapGestureArea.FlickGesture
+    gesture.flickDeceleration:  3000
+    plugin:                     Plugin { name: "QGroundControl" }
+
+    property string mapName:                        'defaultMap'
+    property bool   isSatelliteMap:                 activeMapType.name.indexOf("Satellite") > -1 || activeMapType.name.indexOf("Hybrid") > -1
+    property var    gcsPosition:                    QtPositioning.coordinate()
+    property bool   userPanned:                     false   ///< true: the user has manually panned the map
+    property bool   allowGCSLocationCenter:         false   ///< true: map will center/zoom to gcs location one time
+    property bool   allowVehicleLocationCenter:     false   ///< true: map will center/zoom to vehicle location one time
+    property bool   firstGCSPositionReceived:       false   ///< true: first gcs position update was responded to
+    property bool   firstVehiclePositionReceived:   false   ///< true: first vehicle position update was responded to
+    property bool   planView:                       false   ///< true: map being using for Plan view, items should be draggable
 
     readonly property real  maxZoomLevel: 20
-    property variant        scaleLengths: [5, 10, 25, 50, 100, 150, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000]
 
-    function formatDistance(meters)
-    {
-        var dist = Math.round(meters)
-        if (dist > 1000 ){
-            if (dist > 100000){
-                dist = Math.round(dist / 1000)
-            }
-            else{
-                dist = Math.round(dist / 100)
-                dist = dist / 10
-            }
-            dist = dist + " km"
-        }
-        else{
-            dist = dist + " m"
-        }
-        return dist
+    property var    _activeVehicle:                 QGroundControl.multiVehicleManager.activeVehicle
+    property var    activeVehicleCoordinate:        _activeVehicle ? _activeVehicle.coordinate : QtPositioning.coordinate()
+
+    function setVisibleRegion(region) {
+        // This works around a bug on Qt where if you set a visibleRegion and then the user moves or zooms the map
+        // and then you set the same visibleRegion the map will not move/scale appropriately since it thinks there
+        // is nothing to do.
+        _map.visibleRegion = QtPositioning.rectangle(QtPositioning.coordinate(0, 0), QtPositioning.coordinate(0, 0))
+        _map.visibleRegion = region
     }
 
-    function calculateScale() {
-        var coord1, coord2, dist, text, f
-        f = 0
-        coord1 = _map.toCoordinate(Qt.point(0, scale.y))
-        coord2 = _map.toCoordinate(Qt.point(0 + scaleImage.sourceSize.width, scale.y))
-        dist = Math.round(coord1.distanceTo(coord2))
-        if (dist === 0) {
-            // not visible
-        } else {
-            for (var i = 0; i < scaleLengths.length - 1; i++) {
-                if (dist < (scaleLengths[i] + scaleLengths[i+1]) / 2 ) {
-                    f = scaleLengths[i] / dist
-                    dist = scaleLengths[i]
-                    break;
-                }
-            }
-            if (f === 0) {
-                f = dist / scaleLengths[i]
-                dist = scaleLengths[i]
-            }
+    function _possiblyCenterToVehiclePosition() {
+        if (!firstVehiclePositionReceived && allowVehicleLocationCenter && activeVehicleCoordinate.isValid) {
+            firstVehiclePositionReceived = true
+            center = activeVehicleCoordinate
+            zoomLevel = QGroundControl.flightMapInitialZoom
         }
-        text = formatDistance(dist)
-        scaleImage.width = (scaleImage.sourceSize.width * f) - 2 * scaleImageLeft.sourceSize.width
-        scaleText.text = text
     }
-
-    zoomLevel:                  18
-    center:                     QGroundControl.lastKnownHomePosition
-    gesture.flickDeceleration:  3000
-
-    plugin: Plugin { name: "QGroundControl" }
 
     ExclusiveGroup { id: mapTypeGroup }
 
-    property bool _initialMapPositionSet: false
-
+    // Update ground station position
     Connections {
-        target: mainWindow
-        onGcsPositionChanged: {
-            if (!_initialMapPositionSet) {
-                _initialMapPositionSet = true
-                center = mainWindow.gcsPosition
+        target: QGroundControl.qgcPositionManger
+
+        onLastPositionUpdated: {
+            if (valid && lastPosition.latitude && Math.abs(lastPosition.latitude)  > 0.001 && lastPosition.longitude && Math.abs(lastPosition.longitude)  > 0.001) {
+                gcsPosition = QtPositioning.coordinate(lastPosition.latitude,lastPosition.longitude)
+                if (!firstGCSPositionReceived && !firstVehiclePositionReceived && allowGCSLocationCenter) {
+                    firstGCSPositionReceived = true
+                    center = gcsPosition
+                    zoomLevel = QGroundControl.flightMapInitialZoom
+                }
             }
         }
     }
 
+    // We track whether the user has panned or not to correctly handle automatic map positioning
+    Connections {
+        target: gesture
+
+        onPanFinished:      userPanned = true
+        onFlickFinished:    userPanned = true
+    }
+
     function updateActiveMapType() {
-        var fullMapName = QGroundControl.flightMapSettings.mapProvider + " " + QGroundControl.flightMapSettings.mapType
+        var settings =  QGroundControl.settingsManager.flightMapSettings
+        var fullMapName = settings.mapProvider.enumStringValue + " " + settings.mapType.enumStringValue
         for (var i = 0; i < _map.supportedMapTypes.length; i++) {
             if (fullMapName === _map.supportedMapTypes[i].name) {
                 _map.activeMapType = _map.supportedMapTypes[i]
@@ -112,278 +100,37 @@ Map {
         }
     }
 
-    Component.onCompleted: updateActiveMapType()
+    onActiveVehicleCoordinateChanged: _possiblyCenterToVehiclePosition()
+
+    Component.onCompleted: {
+        updateActiveMapType()
+        _possiblyCenterToVehiclePosition()
+    }
 
     Connections {
-        target:             QGroundControl.flightMapSettings
-        onMapTypeChanged:   updateActiveMapType()
+        target:             QGroundControl.settingsManager.flightMapSettings.mapType
+        onRawValueChanged:  updateActiveMapType()
     }
 
+    Connections {
+        target:             QGroundControl.settingsManager.flightMapSettings.mapProvider
+        onRawValueChanged:  updateActiveMapType()
+    }
+
+    /// Ground Station location
     MapQuickItem {
-        anchorPoint.x:  sourceItem.width  / 2
+        anchorPoint.x:  sourceItem.width / 2
         anchorPoint.y:  sourceItem.height / 2
-        visible:        mainWindow.gcsPosition.isValid
-        coordinate:     mainWindow.gcsPosition
-        sourceItem:     MissionItemIndexLabel {
-            label: "Q"
+        visible:        gcsPosition.isValid
+        coordinate:     gcsPosition
+
+        sourceItem: Image {
+            source:         "/res/QGCLogoFull"
+            mipmap:         true
+            antialiasing:   true
+            fillMode:       Image.PreserveAspectFit
+            height:         ScreenTools.defaultFontPixelHeight * 1.75
+            sourceSize.height: height
         }
     }
-
-    //---- Polygon drawing code
-
-    //
-    // Usage:
-    //
-    // Connections {
-    //     target: map.polygonDraw
-    //
-    //    onPolygonCaptureStarted: {
-    //      // Polygon creation has started
-    //    }
-    //
-    //    onPolygonCaptureFinished: {
-    //      // Polygon capture complete, coordinates signal variable contains the polygon points
-    //    }
-    // }
-    //
-    // map.polygonDraqw.startPolgyon() - begin capturing a new polygon
-    // map.polygonDraqw.endPolygon() - end capture (right-click will also end capture)
-
-    // Not sure why this is needed, but trying to reference polygonDrawer directly from other code doesn't work
-    property alias polygonDraw: polygonDrawer
-
-    QGCLabel {
-        id:                     polygonHelp
-        anchors.topMargin:      parent.height - ScreenTools.availableHeight
-        anchors.top:            parent.top
-        anchors.left:           parent.left
-        anchors.right:          parent.right
-        horizontalAlignment:    Text.AlignHCenter
-        text:                   qsTr("Click to add point %1").arg(ScreenTools.isMobile || !polygonDrawer.polygonReady ? "" : qsTr("- Right Click to end polygon"))
-        visible:                polygonDrawer.drawingPolygon
-
-        Connections {
-            target: polygonDrawer
-
-            onDrawingPolygonChanged: {
-                if (polygonDrawer.drawingPolygon) {
-                    polygonHelp.text = qsTr("Click to add point")
-                }
-                polygonHelp.visible = polygonDrawer.drawingPolygon
-            }
-
-            onPolygonReadyChanged: {
-                if (polygonDrawer.polygonReady && !ScreenTools.isMobile) {
-                    polygonHelp.text = qsTr("Click to add point - Right Click to end polygon")
-                }
-            }
-
-            onAdjustingPolygonChanged: {
-                if (polygonDrawer.adjustingPolygon) {
-                    polygonHelp.text = qsTr("Adjust polygon by dragging corners")
-                }
-                polygonHelp.visible = polygonDrawer.adjustingPolygon
-            }
-        }
-    }
-
-    MouseArea {
-        id:                 polygonDrawer
-        anchors.fill:       parent
-        acceptedButtons:    Qt.LeftButton | Qt.RightButton
-        visible:            drawingPolygon
-        z:                  1000 // Hack to fix MouseArea layering for now
-
-        property alias  drawingPolygon:     polygonDrawer.hoverEnabled
-        property bool   adjustingPolygon:   false
-        property bool   polygonReady:       polygonDrawerPolygon.path.length > 3 ///< true: enough points have been captured to create a closed polygon
-
-        /// New polygon capture has started
-        signal polygonCaptureStarted
-
-        /// Polygon capture is complete
-        ///     @param coordinates Map coordinates for the polygon points
-        signal polygonCaptureFinished(var coordinates)
-
-        /// Polygon adjustment has begun
-        signal polygonAdjustStarted
-
-        /// Polygon Vertex coordinate has been adjusted
-        signal polygonAdjustVertex(int vertexIndex, var vertexCoordinate)
-
-        /// Polygon adjustment finished
-        signal polygonAdjustFinished
-
-        property var _vertexDragList: []
-
-        /// Begin capturing a new polygon
-        ///     polygonCaptureStarted will be signalled
-        function startCapturePolygon() {
-            polygonDrawer.drawingPolygon = true
-            polygonDrawer._clearPolygon()
-            polygonDrawer.polygonCaptureStarted()
-        }
-
-        /// Finish capturing the polygon
-        ///     polygonCaptureFinished will be signalled
-        /// @return true: polygon completed, false: not enough points to complete polygon
-        function finishCapturePolygon() {
-            if (!polygonDrawer.polygonReady) {
-                return false
-            }
-
-            var polygonPath = polygonDrawerPolygon.path
-            polygonPath.pop() // get rid of drag coordinate
-            polygonDrawer._clearPolygon()
-            polygonDrawer.drawingPolygon = false
-            polygonDrawer.polygonCaptureFinished(polygonPath)
-            return true
-        }
-
-        function startAdjustPolygon(vertexCoordinates) {
-            polygonDrawer.adjustingPolygon = true
-            for (var i=0; i<vertexCoordinates.length; i++) {
-                var mapItem = Qt.createQmlObject(
-                            "import QtQuick                     2.5; " +
-                            "import QtLocation                  5.3; " +
-                            "import QGroundControl.ScreenTools  1.0; " +
-                            "Rectangle {" +
-                            "   id:     vertexDrag; " +
-                            "   width:  _sideLength; " +
-                            "   height: _sideLength; " +
-                            "   color:  'red'; " +
-                            "" +
-                            "   property var coordinate; " +
-                            "   property int index; " +
-                            "" +
-                            "   readonly property real _sideLength:     ScreenTools.defaultFontPixelWidth * 2; " +
-                            "   readonly property real _halfSideLength: _sideLength / 2; " +
-                            "" +
-                            "   Drag.active:    dragMouseArea.drag.active; " +
-                            "   Drag.hotSpot.x: _halfSideLength; " +
-                            "   Drag.hotSpot.y: _halfSideLength; " +
-                            "" +
-                            "   onXChanged: updateCoordinate(); " +
-                            "   onYChanged: updateCoordinate(); " +
-                            "" +
-                            "   function updateCoordinate() { " +
-                            "       vertexDrag.coordinate = _map.toCoordinate(Qt.point(vertexDrag.x + _halfSideLength, vertexDrag.y + _halfSideLength), false); " +
-                            "       polygonDrawer.polygonAdjustVertex(vertexDrag.index, vertexDrag.coordinate); " +
-                            "   } " +
-                            "" +
-                            "   function updatePosition() { " +
-                            "       var vertexPoint = _map.fromCoordinate(coordinate, false); " +
-                            "       vertexDrag.x = vertexPoint.x - _halfSideLength; " +
-                            "       vertexDrag.y = vertexPoint.y - _halfSideLength; " +
-                            "   } " +
-                            "" +
-                            "   Connections { " +
-                            "       target: _map; " +
-                            "       onCenterChanged: updatePosition(); " +
-                            "       onZoomLevelChanged: updatePosition(); " +
-                            "   } " +
-                            "" +
-                            "   MouseArea { " +
-                            "       id:             dragMouseArea; " +
-                            "       anchors.fill:   parent; " +
-                            "       drag.target:    parent; " +
-                            "       drag.minimumX:  0; " +
-                            "       drag.minimumY:  0; " +
-                            "       drag.maximumX:  _map.width - parent.width; " +
-                            "       drag.maximumY:  _map.height - parent.height; " +
-                            "   } " +
-                            "} ",
-                            _map)
-                mapItem.z = QGroundControl.zOrderMapItems + 1
-                mapItem.coordinate = vertexCoordinates[i]
-                mapItem.index = i
-                mapItem.updatePosition()
-                polygonDrawer._vertexDragList.push(mapItem)
-                polygonDrawer.polygonAdjustStarted()
-            }
-        }
-
-        function finishAdjustPolygon() {
-            polygonDrawer.adjustingPolygon = false
-            for (var i=0; i<polygonDrawer._vertexDragList.length; i++) {
-                polygonDrawer._vertexDragList[i].destroy()
-            }
-            polygonDrawer._vertexDragList = []
-            polygonDrawer.polygonAdjustFinished()
-        }
-
-        function _clearPolygon() {
-            // Simpler methods to clear the path simply don't work due to bugs. This craziness does.
-            var bogusCoord = _map.toCoordinate(Qt.point(height/2, width/2))
-            polygonDrawerPolygon.path = [ bogusCoord, bogusCoord ]
-            polygonDrawerNextPoint.path = [ bogusCoord, bogusCoord ]
-            polygonDrawerPolygon.path = [ ]
-            polygonDrawerNextPoint.path = [ ]
-        }
-
-        onClicked: {
-            if (mouse.button == Qt.LeftButton) {
-                if (polygonDrawerPolygon.path.length > 2) {
-                    // Make sure the new line doesn't intersect the existing polygon
-                    var lastSegment = polygonDrawerPolygon.path.length - 2
-                    var newLineA = _map.fromCoordinate(polygonDrawerPolygon.path[lastSegment], false /* clipToViewPort */)
-                    var newLineB = _map.fromCoordinate(polygonDrawerPolygon.path[lastSegment+1], false /* clipToViewPort */)
-                    for (var i=0; i<lastSegment; i++) {
-                        var oldLineA = _map.fromCoordinate(polygonDrawerPolygon.path[i], false /* clipToViewPort */)
-                        var oldLineB = _map.fromCoordinate(polygonDrawerPolygon.path[i+1], false /* clipToViewPort */)
-                        if (QGroundControl.linesIntersect(newLineA, newLineB, oldLineA, oldLineB)) {
-                            return;
-                        }
-                    }
-                }
-
-                var clickCoordinate = _map.toCoordinate(Qt.point(mouse.x, mouse.y))
-                var polygonPath = polygonDrawerPolygon.path
-                if (polygonPath.length == 0) {
-                    // Add first coordinate
-                    polygonPath.push(clickCoordinate)
-                } else {
-                    // Update finalized coordinate
-                    polygonPath[polygonDrawerPolygon.path.length - 1] = clickCoordinate
-                }
-                // Add next drag coordinate
-                polygonPath.push(clickCoordinate)
-                polygonDrawerPolygon.path = polygonPath
-            } else if (polygonDrawer.polygonReady) {
-                finishCapturePolygon()
-            }
-        }
-
-        onPositionChanged: {
-            if (polygonDrawerPolygon.path.length) {
-                var dragCoordinate = _map.toCoordinate(Qt.point(mouse.x, mouse.y))
-
-                // Update drag line
-                polygonDrawerNextPoint.path = [ polygonDrawerPolygon.path[polygonDrawerPolygon.path.length - 2], dragCoordinate ]
-
-                // Update drag coordinate
-                var polygonPath = polygonDrawerPolygon.path
-                polygonPath[polygonDrawerPolygon.path.length - 1] = dragCoordinate
-                polygonDrawerPolygon.path = polygonPath
-            }
-        }
-    }
-
-    /// Polygon being drawn
-    MapPolygon {
-        id:         polygonDrawerPolygon
-        color:      "blue"
-        opacity:    0.5
-        visible:    polygonDrawer.drawingPolygon
-    }
-
-    /// Next line for polygon
-    MapPolyline {
-        id:         polygonDrawerNextPoint
-        line.color: "green"
-        line.width: 5
-        visible:    polygonDrawer.drawingPolygon
-    }
-
-    //---- End Polygon Drawing code
 } // Map

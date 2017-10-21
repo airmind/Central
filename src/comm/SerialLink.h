@@ -133,11 +133,11 @@ class SerialLink : public LinkInterface
 public:
     // LinkInterface
 
-    LinkConfiguration* getLinkConfiguration();
     QString getName() const;
     void    requestReset();
     bool    isConnected() const;
     qint64  getConnectionSpeed() const;
+    SerialConfiguration* getSerialConfig() const { return _serialConfig; }
 
     // These are left unimplemented in order to cause linker errors which indicate incorrect usage of
     // connect/disconnect on link directly. All connect/disconnect calls should be made through LinkManager.
@@ -168,7 +168,7 @@ private slots:
 
 private:
     // Links are only created/destroyed by LinkManager so constructor/destructor is not public
-    SerialLink(SerialConfiguration* config);
+    SerialLink(SharedLinkConfigurationPointer& config);
     ~SerialLink();
 
     // From LinkInterface
@@ -186,7 +186,7 @@ private:
     volatile bool        _reqReset;
     QMutex               _stoppMutex;      // Mutex for accessing _stopp
     QByteArray           _transmitBuffer;  // An internal buffer for receiving data from member functions and actually transmitting them via the serial port.
-    SerialConfiguration* _config;
+    SerialConfiguration* _serialConfig;
 
 signals:
     void aboutToCloseFlag();

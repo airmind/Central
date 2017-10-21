@@ -26,6 +26,7 @@
 #include <QWaitCondition>
 #include <QMutexLocker>
 #include <QtSql/QSqlDatabase>
+#include <QHostInfo>
 
 #include "QGCLoggingCategory.h"
 
@@ -49,6 +50,9 @@ public:
 protected:
     void    run             ();
 
+private slots:
+    void        _lookupReady            (QHostInfo info);
+
 private:
     void        _saveTile               (QGCMapTask* mtask);
     void        _getTile                (QGCMapTask* mtask);
@@ -57,19 +61,25 @@ private:
     void        _getTileDownloadList    (QGCMapTask* mtask);
     void        _updateTileDownloadState(QGCMapTask* mtask);
     void        _deleteTileSet          (QGCMapTask* mtask);
+    void        _renameTileSet          (QGCMapTask* mtask);
     void        _resetCacheDatabase     (QGCMapTask* mtask);
     void        _pruneCache             (QGCMapTask* mtask);
+    void        _exportSets             (QGCMapTask* mtask);
+    void        _importSets             (QGCMapTask* mtask);
+    bool        _testTask               (QGCMapTask* mtask);
+    void        _testInternet           ();
 
     quint64     _findTile               (const QString hash);
     bool        _findTileSetID          (const QString name, quint64& setID);
     void        _updateSetTotals        (QGCCachedTileSet* set);
     bool        _init                   ();
-    void        _createDB               ();
+    bool        _createDB               (QSqlDatabase *db, bool createDefault = true);
     quint64     _getDefaultTileSet      ();
     void        _updateTotals           ();
 
 signals:
     void        updateTotals            (quint32 totaltiles, quint64 totalsize, quint32 defaulttiles, quint64 defaultsize);
+    void        internetStatus          (bool active);
 
 private:
     QQueue<QGCMapTask*>     _taskQueue;
@@ -87,6 +97,7 @@ private:
     quint32                 _defaultCount;
     time_t                  _lastUpdate;
     int                     _updateTimeout;
+    int                     _hostLookupID;
 };
 
 #endif // QGC_TILE_CACHE_WORKER_H

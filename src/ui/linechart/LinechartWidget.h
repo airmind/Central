@@ -138,7 +138,6 @@ protected:
 
     QAction* addNewCurve;                 ///< Add curve candidate to the active curves
 
-    QMenu* curveMenu;
     QComboBox *timeScaleCmb;
 
     QToolButton* scalingLogButton;
@@ -195,6 +194,12 @@ signals:
     /** @brief This signal is emitted once a logfile has been finished writing */
     void logfileWritten(QString fileName);
 
+private slots:
+    void _filterTimeout(void);
+    void _restartFilterTimeout(void);
+
+private:
+    QTimer _filterTimer;
 };
 
 #endif // LINECHARTWIDGET_H

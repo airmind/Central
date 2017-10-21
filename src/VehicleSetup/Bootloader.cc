@@ -96,6 +96,9 @@ bool Bootloader::_getCommandResponse(QextSerialPort* port, int responseTimeout)
     if (response[0] != PROTO_INSYNC) {
         _errorString = tr("Invalid sync response: 0x%1 0x%2").arg(response[0], 2, 16, QLatin1Char('0')).arg(response[1], 2, 16, QLatin1Char('0'));
         return false;
+    } else if (response[0] == PROTO_INSYNC && response[1] == PROTO_BAD_SILICON_REV) {
+        _errorString = tr("This board is using a microcontroller with faulty silicon and an incorrect configuration and should be put out of service.");
+        return false;
     } else if (response[1] != PROTO_OK) {
         QString responseCode = tr("Unknown response code");
         if (response[1] == PROTO_FAILED) {
@@ -578,6 +581,13 @@ bool Bootloader::getPX4BoardInfo(QextSerialPort* port, uint32_t& bootloaderVersi
     if (!_getPX4BoardInfo(port, INFO_FLASH_SIZE, _boardFlashSize)) {
         qWarning() << _errorString;
         goto Error;
+    }
+
+    // Older V2 boards have large flash space but silicon error which prevents it from being used. Bootloader v5 and above
+    // will correctly account/report for this. Older bootloaders will not. Newer V2 board which support larger flash space are
+    // reported as V3 board id.
+    if (_boardID == boardIDPX4FMUV2 && _bootloaderVersion >= _bootloaderVersionV2CorrectFlash && _boardFlashSize > _flashSizeSmall) {
+        _boardID = boardIDPX4FMUV3;
     }
     
     bootloaderVersion = _bootloaderVersion;

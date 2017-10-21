@@ -49,14 +49,14 @@ bool SensorsComponent::requiresSetup(void) const
 bool SensorsComponent::setupComplete(void) const
 {
     foreach (const QString &triggerParam, _deviceIds) {
-        if (_autopilot->getParameterFact(FactSystem::defaultComponentId, triggerParam)->rawValue().toFloat() == 0.0f) {
+        if (_vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, triggerParam)->rawValue().toFloat() == 0.0f) {
             return false;
         }
     }
 
     if (_vehicle->fixedWing() || _vehicle->vtol()) {
-        if (_autopilot->getParameterFact(FactSystem::defaultComponentId, _airspeedBreaker)->rawValue().toInt() != 162128) {
-            if (_autopilot->getParameterFact(FactSystem::defaultComponentId, _airspeedCal)->rawValue().toFloat() == 0.0f) {
+        if (_vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, _airspeedBreaker)->rawValue().toInt() != 162128) {
+            if (_vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, _airspeedCal)->rawValue().toFloat() == 0.0f) {
                 return false;
             }
         }
@@ -93,16 +93,4 @@ QUrl SensorsComponent::summaryQmlSource(void) const
     }
     
     return QUrl::fromUserInput(summaryQml);
-}
-
-QString SensorsComponent::prerequisiteSetup(void) const
-{
-    PX4AutoPilotPlugin* plugin = dynamic_cast<PX4AutoPilotPlugin*>(_autopilot);
-    Q_ASSERT(plugin);
-    
-    if (!plugin->airframeComponent()->setupComplete()) {
-        return plugin->airframeComponent()->name();
-    }
-    
-    return QString();
 }

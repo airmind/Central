@@ -34,9 +34,6 @@
 #include "QGCConfig.h"
 #include "LinkManager.h"
 
-#define QGC_UDP_LOCAL_PORT  14550
-#define QGC_UDP_TARGET_PORT 14555
-
 class UDPConfiguration : public LinkConfiguration
 {
     Q_OBJECT
@@ -131,12 +128,13 @@ public:
     QStringList hostList    () { return _hostList; }
 
     /// From LinkConfiguration
-    LinkType    type            () { return LinkConfiguration::TypeUdp; }
-    void        copyFrom        (LinkConfiguration* source);
-    void        loadSettings    (QSettings& settings, const QString& root);
-    void        saveSettings    (QSettings& settings, const QString& root);
-    void        updateSettings  ();
-    QString     settingsURL     () { return "UdpSettings.qml"; }
+    LinkType    type                 () { return LinkConfiguration::TypeUdp; }
+    void        copyFrom             (LinkConfiguration* source);
+    void        loadSettings         (QSettings& settings, const QString& root);
+    void        saveSettings         (QSettings& settings, const QString& root);
+    void        updateSettings       ();
+    bool        isAutoConnectAllowed () { return true; }
+    QString     settingsURL          () { return "UdpSettings.qml"; }
 
 signals:
     void localPortChanged   ();
@@ -177,10 +175,7 @@ public:
     bool connect(void);
     bool disconnect(void);
 
-    LinkConfiguration* getLinkConfiguration() { return _config; }
-
 public slots:
-
     /*! @brief Add a new host to broadcast messages to */
     void addHost    (const QString& host);
     /*! @brief Remove a host from broadcasting messages to */
@@ -189,23 +184,11 @@ public slots:
     void readBytes();
 
 private slots:
-    /*!
-     * @brief Write a number of bytes to the interface.
-     *
-     * @param data Pointer to the data byte array
-     * @param size The size of the bytes array
-     **/
     void _writeBytes(const QByteArray data);
-
-protected:
-
-    QUdpSocket*         _socket;
-    UDPConfiguration*   _config;
-    bool                _connectState;
 
 private:
     // Links are only created/destroyed by LinkManager so constructor/destructor is not public
-    UDPLink(UDPConfiguration* config);
+    UDPLink(SharedLinkConfigurationPointer& config);
     ~UDPLink();
 
     // From LinkInterface
@@ -223,6 +206,9 @@ private:
 #endif
 
     bool                _running;
+    QUdpSocket*         _socket;
+    UDPConfiguration*   _udpConfig;
+    bool                _connectState;
 };
 
 #endif // UDPLINK_H

@@ -8,8 +8,8 @@
  ****************************************************************************/
 
 
-import QtQuick                  2.5
-import QtQuick.Controls         1.4
+import QtQuick                  2.3
+import QtQuick.Controls         1.2
 
 import QGroundControl               1.0
 import QGroundControl.Controls      1.0
@@ -51,7 +51,7 @@ QGCViewDialog {
         onActivated: categorySelected(textAt(index))
     }
 
-    ListView {
+    QGCListView {
         id:                 commandList
         anchors.margins:    ScreenTools.defaultFontPixelHeight
         anchors.left:       parent.left
@@ -101,5 +101,5 @@ QGCViewDialog {
                 }
             }
         }
-    } // ListView
+    } // QGCListView
 } // QGCViewDialog

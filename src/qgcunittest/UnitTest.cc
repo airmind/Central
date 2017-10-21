@@ -19,6 +19,9 @@
 #include "MainWindow.h"
 #include "Vehicle.h"
 
+#include <QTemporaryFile>
+#include <QTime>
+
 bool UnitTest::_messageBoxRespondedTo = false;
 bool UnitTest::_badResponseButton = false;
 QMessageBox::StandardButton UnitTest::_messageBoxResponseButton = QMessageBox::NoButton;
@@ -388,6 +391,12 @@ void UnitTest::_connectMockLink(MAV_AUTOPILOT autopilot)
     QVERIFY(qgcApp()->toolbox()->multiVehicleManager()->parameterReadyVehicleAvailable());
     _vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
     QVERIFY(_vehicle);
+
+    // Wait for plan request to complete
+    if (!_vehicle->initialPlanRequestComplete()) {
+        QSignalSpy spyPlan(_vehicle, SIGNAL(initialPlanRequestCompleteChanged(bool)));
+        QCOMPARE(spyPlan.wait(10000), true);
+    }
 }
 
 void UnitTest::_disconnectMockLink(void)
@@ -431,5 +440,86 @@ void UnitTest::_closeMainWindow(bool cancelExpected)
         // This leaves enough time for any dangling Qml components to get cleaned up.
         // This prevents qWarning from bad references in Qml
         QTest::qWait(1000);
+    }
+}
+
+QString UnitTest::createRandomFile(uint32_t byteCount)
+{
+    QTemporaryFile tempFile;
+
+    QTime time = QTime::currentTime();
+    qsrand((uint)time.msec());
+
+    tempFile.setAutoRemove(false);
+    if (tempFile.open()) {
+        for (uint32_t bytesWritten=0; bytesWritten<byteCount; bytesWritten++) {
+            unsigned char byte = (qrand() * 0xFF) / RAND_MAX;
+            tempFile.write((char *)&byte, 1);
+        }
+        tempFile.close();
+        return tempFile.fileName();
+    } else {
+        qWarning() << "UnitTest::createRandomFile open failed" << tempFile.errorString();
+        return QString();
+    }
+}
+
+bool UnitTest::fileCompare(const QString& file1, const QString& file2)
+{
+    QFile f1(file1);
+    QFile f2(file2);
+
+    if (QFileInfo(file1).size() != QFileInfo(file2).size()) {
+        qWarning() << "UnitTest::fileCompare file sizes differ size1:size2" << QFileInfo(file1).size() << QFileInfo(file2).size();
+        return false;
+    }
+
+    if (!f1.open(QIODevice::ReadOnly)) {
+        qWarning() << "UnitTest::fileCompare unable to open file1:" << f1.errorString();
+        return false;
+    }
+    if (!f2.open(QIODevice::ReadOnly)) {
+        qWarning() << "UnitTest::fileCompare unable to open file1:" << f1.errorString();
+        return false;
+    }
+
+    qint64 bytesRemaining = QFileInfo(file1).size();
+    qint64 offset = 0;
+    while (bytesRemaining) {
+        uint8_t b1, b2;
+
+        qint64 bytesRead = f1.read((char*)&b1, 1);
+        if (bytesRead != 1) {
+            qWarning() << "UnitTest::fileCompare file1 read failed:" << f1.errorString();
+            return false;
+        }
+        bytesRead = f2.read((char*)&b2, 1);
+        if (bytesRead != 1) {
+            qWarning() << "UnitTest::fileCompare file2 read failed:" << f2.errorString();
+            return false;
+        }
+
+        if (b1 != b2) {
+            qWarning() << "UnitTest::fileCompare mismatch offset:b1:b2" << offset << b1 << b2;
+            return false;
+        }
+
+        offset++;
+        bytesRemaining--;
+    }
+
+    return true;
+}
+
+bool UnitTest::doubleNaNCompare(double value1, double value2)
+{
+    if (qIsNaN(value1) && qIsNaN(value2)) {
+        return true;
+    } else {
+        bool ret = qFuzzyCompare(value1, value2);
+        if (!ret) {
+            qDebug() << value1 << value2;
+        }
+        return ret;
     }
 }

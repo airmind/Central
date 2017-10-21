@@ -7,14 +7,15 @@
  *
  ****************************************************************************/
 
-
-/// @file
-///     @author Don Gagne <don@thegagnes.com>
-
 #include "APMFirmwarePlugin.h"
-#include "AutoPilotPlugins/APM/APMAutoPilotPlugin.h"    // FIXME: Hack
+#include "APMAutoPilotPlugin.h"
 #include "QGCMAVLink.h"
 #include "QGCApplication.h"
+#include "APMFlightModesComponentController.h"
+#include "APMAirframeComponentController.h"
+#include "APMSensorsComponentController.h"
+#include "MissionManager.h"
+#include "ParameterManager.h"
 
 #include <QTcpSocket>
 
@@ -136,16 +137,38 @@ QString APMCustomMode::modeString() const
     return mode;
 }
 
-APMFirmwarePlugin::APMFirmwarePlugin(void)
-    : _coaxialMotors(false)
-    , _textSeverityAdjustmentNeeded(false)
+APMFirmwarePluginInstanceData::APMFirmwarePluginInstanceData(QObject* parent)
+    : QObject(parent)
+    , textSeverityAdjustmentNeeded(false)
 {
 
 }
 
-bool APMFirmwarePlugin::isCapable(const Vehicle* /*vehicle*/, FirmwareCapabilities capabilities)
+APMFirmwarePlugin::APMFirmwarePlugin(void)
+    : _coaxialMotors(false)
 {
-    return (capabilities & (SetFlightModeCapability | PauseVehicleCapability)) == capabilities;
+    qmlRegisterType<APMFlightModesComponentController>  ("QGroundControl.Controllers", 1, 0, "APMFlightModesComponentController");
+    qmlRegisterType<APMAirframeComponentController>     ("QGroundControl.Controllers", 1, 0, "APMAirframeComponentController");
+    qmlRegisterType<APMSensorsComponentController>      ("QGroundControl.Controllers", 1, 0, "APMSensorsComponentController");
+}
+
+AutoPilotPlugin* APMFirmwarePlugin::autopilotPlugin(Vehicle* vehicle)
+{
+    return new APMAutoPilotPlugin(vehicle, vehicle);
+}
+
+bool APMFirmwarePlugin::isCapable(const Vehicle* vehicle, FirmwareCapabilities capabilities)
+{
+    uint32_t available = SetFlightModeCapability | PauseVehicleCapability | GuidedModeCapability;
+    if (vehicle->multiRotor()) {
+        available |= TakeoffVehicleCapability;
+    } else if (vehicle->fixedWing() || vehicle->vtol()) {
+        // Due to the way ArduPilot marks a vtol aircraft, we don't know if something is a vtol at initial connection.
+        // So we always enabled takeoff for fixed wing.
+        available |= TakeoffVehicleCapability;
+    }
+
+    return (capabilities & available) == capabilities;
 }
 
 QList<VehicleComponent*> APMFirmwarePlugin::componentsForVehicle(AutoPilotPlugin* vehicle)
@@ -211,12 +234,14 @@ int APMFirmwarePlugin::manualControlReservedButtonCount(void)
     return -1;
 }
 
-void APMFirmwarePlugin::_handleParamValue(Vehicle* vehicle, mavlink_message_t* message)
+void APMFirmwarePlugin::_handleIncomingParamValue(Vehicle* vehicle, mavlink_message_t* message)
 {
     Q_UNUSED(vehicle);
 
     mavlink_param_value_t paramValue;
     mavlink_param_union_t paramUnion;
+
+    memset(&paramValue, 0, sizeof(paramValue));
 
     // APM stack passes all parameter values in mavlink_param_union_t.param_float no matter what
     // type they are. Fix that up to correct usage.
@@ -251,15 +276,24 @@ void APMFirmwarePlugin::_handleParamValue(Vehicle* vehicle, mavlink_message_t* m
 
     paramValue.param_value = paramUnion.param_float;
 
-    mavlink_msg_param_value_encode(message->sysid, message->compid, message, &paramValue);
+    // Re-Encoding is always done using mavlink 1.0
+    mavlink_status_t* mavlinkStatusReEncode = mavlink_get_channel_status(0);
+    mavlinkStatusReEncode->flags |= MAVLINK_STATUS_FLAG_IN_MAVLINK1;
+    mavlink_msg_param_value_encode_chan(message->sysid,
+                                        message->compid,
+                                        0,                  // Re-encoding uses reserved channel 0
+                                        message,
+                                        &paramValue);
 }
 
-void APMFirmwarePlugin::_handleParamSet(Vehicle* vehicle, mavlink_message_t* message)
+void APMFirmwarePlugin::_handleOutgoingParamSet(Vehicle* vehicle, LinkInterface* outgoingLink, mavlink_message_t* message)
 {
     Q_UNUSED(vehicle);
 
     mavlink_param_set_t     paramSet;
     mavlink_param_union_t   paramUnion;
+
+    memset(&paramSet, 0, sizeof(paramSet));
 
     // APM stack passes all parameter values in mavlink_param_union_t.param_float no matter what
     // type they are. Fix it back to the wrong way on the way out.
@@ -294,12 +328,13 @@ void APMFirmwarePlugin::_handleParamSet(Vehicle* vehicle, mavlink_message_t* mes
         qCCritical(APMFirmwarePluginLog) << "Invalid/Unsupported data type used in parameter:" << paramSet.param_type;
     }
 
-    mavlink_msg_param_set_encode(message->sysid, message->compid, message, &paramSet);
+    mavlink_msg_param_set_encode_chan(message->sysid, message->compid, outgoingLink->mavlinkChannel(), message, &paramSet);
 }
 
-bool APMFirmwarePlugin::_handleStatusText(Vehicle* vehicle, mavlink_message_t* message)
+bool APMFirmwarePlugin::_handleIncomingStatusText(Vehicle* vehicle, mavlink_message_t* message)
 {
     QString messageText;
+    APMFirmwarePluginInstanceData* instanceData = qobject_cast<APMFirmwarePluginInstanceData*>(vehicle->firmwarePluginInstanceData());
 
     mavlink_statustext_t statusText;
     mavlink_msg_statustext_decode(message, &statusText);
@@ -313,7 +348,7 @@ bool APMFirmwarePlugin::_handleStatusText(Vehicle* vehicle, mavlink_message_t* m
             if (messageText.contains(APM_COPTER_REXP) || messageText.contains(APM_PLANE_REXP) || messageText.contains(APM_ROVER_REXP) || messageText.contains(APM_SUB_REXP)) {
                 // found version string
                 APMFirmwareVersion firmwareVersion(messageText);
-                _textSeverityAdjustmentNeeded = _isTextSeverityAdjustmentNeeded(firmwareVersion);
+                instanceData->textSeverityAdjustmentNeeded = _isTextSeverityAdjustmentNeeded(firmwareVersion);
 
                 vehicle->setFirmwareVersion(firmwareVersion.majorNumber(), firmwareVersion.minorNumber(), firmwareVersion.patchNumber());
 
@@ -323,7 +358,7 @@ bool APMFirmwarePlugin::_handleStatusText(Vehicle* vehicle, mavlink_message_t* m
                 switch (vehicle->vehicleType()) {
                 case MAV_TYPE_FIXED_WING:
                     supportedMajorNumber = 3;
-                    supportedMinorNumber = 2;
+                    supportedMinorNumber = 4;
                     break;
                 case MAV_TYPE_QUADROTOR:
                 case MAV_TYPE_COAXIAL:
@@ -333,7 +368,7 @@ bool APMFirmwarePlugin::_handleStatusText(Vehicle* vehicle, mavlink_message_t* m
                 case MAV_TYPE_OCTOROTOR:
                 case MAV_TYPE_TRICOPTER:
                     supportedMajorNumber = 3;
-                    supportedMinorNumber = 2;
+                    supportedMinorNumber = 3;
                     break;
                 default:
                     break;
@@ -357,7 +392,7 @@ bool APMFirmwarePlugin::_handleStatusText(Vehicle* vehicle, mavlink_message_t* m
     }
 
     // adjust mesasge if needed
-    if (_textSeverityAdjustmentNeeded) {
+    if (instanceData->textSeverityAdjustmentNeeded) {
         _adjustSeverity(message);
     }
 
@@ -395,10 +430,10 @@ bool APMFirmwarePlugin::_handleStatusText(Vehicle* vehicle, mavlink_message_t* m
     if (messageText.startsWith("PreArm")) {
         // ArduPilot PreArm messages can come across very frequently especially on Solo, which seems to send them once a second.
         // Filter them out if they come too quickly.
-        if (_noisyPrearmMap.contains(messageText) && _noisyPrearmMap[messageText].msecsTo(QTime::currentTime()) < (10 * 1000)) {
+        if (instanceData->noisyPrearmMap.contains(messageText) && instanceData->noisyPrearmMap[messageText].msecsTo(QTime::currentTime()) < (10 * 1000)) {
             return false;
         }
-        _noisyPrearmMap[messageText] = QTime::currentTime();
+        instanceData->noisyPrearmMap[messageText] = QTime::currentTime();
 
         vehicle->setPrearmError(messageText);
     }
@@ -406,7 +441,7 @@ bool APMFirmwarePlugin::_handleStatusText(Vehicle* vehicle, mavlink_message_t* m
     return true;
 }
 
-void APMFirmwarePlugin::_handleHeartbeat(Vehicle* vehicle, mavlink_message_t* message)
+void APMFirmwarePlugin::_handleIncomingHeartbeat(Vehicle* vehicle, mavlink_message_t* message)
 {
     bool flying = false;
 
@@ -423,7 +458,7 @@ void APMFirmwarePlugin::_handleHeartbeat(Vehicle* vehicle, mavlink_message_t* me
         }
     }
 
-    vehicle->setFlying(flying);
+    vehicle->_setFlying(flying);
 }
 
 bool APMFirmwarePlugin::adjustIncomingMavlinkMessage(Vehicle* vehicle, mavlink_message_t* message)
@@ -435,19 +470,19 @@ bool APMFirmwarePlugin::adjustIncomingMavlinkMessage(Vehicle* vehicle, mavlink_m
 
     switch (message->msgid) {
     case MAVLINK_MSG_ID_PARAM_VALUE:
-        _handleParamValue(vehicle, message);
+        _handleIncomingParamValue(vehicle, message);
         break;
     case MAVLINK_MSG_ID_STATUSTEXT:
-        return _handleStatusText(vehicle, message);
+        return _handleIncomingStatusText(vehicle, message);
     case MAVLINK_MSG_ID_HEARTBEAT:
-        _handleHeartbeat(vehicle, message);
+        _handleIncomingHeartbeat(vehicle, message);
         break;
     }
 
     return true;
 }
 
-void APMFirmwarePlugin::adjustOutgoingMavlinkMessage(Vehicle* vehicle, mavlink_message_t* message)
+void APMFirmwarePlugin::adjustOutgoingMavlinkMessage(Vehicle* vehicle, LinkInterface* outgoingLink, mavlink_message_t* message)
 {
     //-- Don't process messages to/from UDP Bridge. It doesn't suffer from these issues
     if (message->compid == MAV_COMP_ID_UDP_BRIDGE) {
@@ -456,7 +491,7 @@ void APMFirmwarePlugin::adjustOutgoingMavlinkMessage(Vehicle* vehicle, mavlink_m
 
     switch (message->msgid) {
     case MAVLINK_MSG_ID_PARAM_SET:
-        _handleParamSet(vehicle, message);
+        _handleOutgoingParamSet(vehicle, outgoingLink, message);
         break;
     }
 }
@@ -518,7 +553,14 @@ void APMFirmwarePlugin::_adjustSeverity(mavlink_message_t* message) const
         break;
     }
 
-    mavlink_msg_statustext_encode(message->sysid, message->compid, message, &statusText);
+    // Re-Encoding is always done using mavlink 1.0
+    mavlink_status_t* mavlinkStatusReEncode = mavlink_get_channel_status(0);
+    mavlinkStatusReEncode->flags |= MAVLINK_STATUS_FLAG_IN_MAVLINK1;
+    mavlink_msg_statustext_encode_chan(message->sysid,
+                                       message->compid,
+                                       0,                  // Re-encoding uses reserved channel 0
+                                       message,
+                                       &statusText);
 }
 
 void APMFirmwarePlugin::_setInfoSeverity(mavlink_message_t* message) const
@@ -526,28 +568,66 @@ void APMFirmwarePlugin::_setInfoSeverity(mavlink_message_t* message) const
     mavlink_statustext_t statusText;
     mavlink_msg_statustext_decode(message, &statusText);
 
+    // Re-Encoding is always done using mavlink 1.0
+    mavlink_status_t* mavlinkStatusReEncode = mavlink_get_channel_status(0);
+    mavlinkStatusReEncode->flags |= MAVLINK_STATUS_FLAG_IN_MAVLINK1;
     statusText.severity = MAV_SEVERITY_INFO;
-    mavlink_msg_statustext_encode(message->sysid, message->compid, message, &statusText);
+    mavlink_msg_statustext_encode_chan(message->sysid,
+                                       message->compid,
+                                       0,                  // Re-encoding uses reserved channel 0
+                                       message,
+                                       &statusText);
 }
 
 void APMFirmwarePlugin::_adjustCalibrationMessageSeverity(mavlink_message_t* message) const
 {
     mavlink_statustext_t statusText;
     mavlink_msg_statustext_decode(message, &statusText);
+    // Re-Encoding is always done using mavlink 1.0
+    mavlink_status_t* mavlinkStatusReEncode = mavlink_get_channel_status(0);
+    mavlinkStatusReEncode->flags |= MAVLINK_STATUS_FLAG_IN_MAVLINK1;
     statusText.severity = MAV_SEVERITY_INFO;
-    mavlink_msg_statustext_encode(message->sysid, message->compid, message, &statusText);
+    mavlink_msg_statustext_encode_chan(message->sysid, message->compid, 0, message, &statusText);
 }
 
 void APMFirmwarePlugin::initializeVehicle(Vehicle* vehicle)
 {
-    // Streams are not started automatically on APM stack
-    vehicle->requestDataStream(MAV_DATA_STREAM_RAW_SENSORS,        2);
-    vehicle->requestDataStream(MAV_DATA_STREAM_EXTENDED_STATUS,    2);
-    vehicle->requestDataStream(MAV_DATA_STREAM_RC_CHANNELS,        2);
-    vehicle->requestDataStream(MAV_DATA_STREAM_POSITION,           3);
-    vehicle->requestDataStream(MAV_DATA_STREAM_EXTRA1,             10);
-    vehicle->requestDataStream(MAV_DATA_STREAM_EXTRA2,             10);
-    vehicle->requestDataStream(MAV_DATA_STREAM_EXTRA3,             3);
+    vehicle->setFirmwarePluginInstanceData(new APMFirmwarePluginInstanceData);
+
+    if (vehicle->isOfflineEditingVehicle()) {
+        switch (vehicle->vehicleType()) {
+        case MAV_TYPE_QUADROTOR:
+        case MAV_TYPE_HEXAROTOR:
+        case MAV_TYPE_OCTOROTOR:
+        case MAV_TYPE_TRICOPTER:
+        case MAV_TYPE_COAXIAL:
+        case MAV_TYPE_HELICOPTER:
+            vehicle->setFirmwareVersion(3, 4, 0);
+            break;
+        case MAV_TYPE_FIXED_WING:
+            vehicle->setFirmwareVersion(3, 5, 0);
+            break;
+        case MAV_TYPE_GROUND_ROVER:
+        case MAV_TYPE_SURFACE_BOAT:
+            vehicle->setFirmwareVersion(3, 0, 0);
+            break;
+        case MAV_TYPE_SUBMARINE:
+            vehicle->setFirmwareVersion(3, 4, 0);
+            break;
+        default:
+            // No version set
+            break;
+        }
+    } else {
+        // Streams are not started automatically on APM stack
+        vehicle->requestDataStream(MAV_DATA_STREAM_RAW_SENSORS,     2);
+        vehicle->requestDataStream(MAV_DATA_STREAM_EXTENDED_STATUS, 2);
+        vehicle->requestDataStream(MAV_DATA_STREAM_RC_CHANNELS,     2);
+        vehicle->requestDataStream(MAV_DATA_STREAM_POSITION,        3);
+        vehicle->requestDataStream(MAV_DATA_STREAM_EXTRA1,          10);
+        vehicle->requestDataStream(MAV_DATA_STREAM_EXTRA2,          10);
+        vehicle->requestDataStream(MAV_DATA_STREAM_EXTRA3,          3);
+    }
 }
 
 void APMFirmwarePlugin::setSupportedModes(QList<APMCustomMode> supportedModes)
@@ -604,8 +684,8 @@ QList<MAV_CMD> APMFirmwarePlugin::supportedMissionCommands(void)
          << MAV_CMD_DO_AUTOTUNE_ENABLE
          << MAV_CMD_NAV_VTOL_TAKEOFF << MAV_CMD_NAV_VTOL_LAND << MAV_CMD_DO_VTOL_TRANSITION;
 #if 0
-        // Waiting for module update
-         << MAV_CMD_DO_SET_REVERSE;
+    // Waiting for module update
+    << MAV_CMD_DO_SET_REVERSE;
 #endif
 
     return list;
@@ -652,12 +732,6 @@ bool APMFirmwarePlugin::isGuidedMode(const Vehicle* vehicle) const
     return vehicle->flightMode() == "Guided";
 }
 
-void APMFirmwarePlugin::pauseVehicle(Vehicle* vehicle)
-{
-    // Best we can do in this case
-    vehicle->setFlightMode("Loiter");
-}
-
 void APMFirmwarePlugin::_soloVideoHandshake(Vehicle* vehicle)
 {
     Q_UNUSED(vehicle);
@@ -673,8 +747,11 @@ void APMFirmwarePlugin::_artooSocketError(QAbstractSocket::SocketError socketErr
     qgcApp()->showMessage(tr("Error during Solo video link setup: %1").arg(socketError));
 }
 
-QString APMFirmwarePlugin::getParameterMetaDataFile(Vehicle* vehicle)
+QString APMFirmwarePlugin::internalParameterMetaDataFile(Vehicle* vehicle)
 {
+    int majorVersion = vehicle->firmwareMajorVersion();
+    int minorVersion = vehicle->firmwareMinorVersion();
+
     switch (vehicle->vehicleType()) {
     case MAV_TYPE_QUADROTOR:
     case MAV_TYPE_HEXAROTOR:
@@ -682,23 +759,222 @@ QString APMFirmwarePlugin::getParameterMetaDataFile(Vehicle* vehicle)
     case MAV_TYPE_TRICOPTER:
     case MAV_TYPE_COAXIAL:
     case MAV_TYPE_HELICOPTER:
-        if (vehicle->firmwareMajorVersion() < 3 || (vehicle->firmwareMajorVersion() == 3 && vehicle->firmwareMinorVersion() <= 3)) {
+        if (majorVersion < 3) {
             return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.3.xml");
-        } else {
-            return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.4.xml");
+        } else if (majorVersion == 3) {
+            switch (minorVersion) {
+            case 3:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.3.xml");
+            case 4:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.4.xml");
+            case 5:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.5.xml");
+            default:
+                if (minorVersion < 3) {
+                    return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.3.xml");
+                }
+            }
         }
+        return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Copter.3.5.xml");
     case MAV_TYPE_FIXED_WING:
-        if (vehicle->firmwareMajorVersion() < 3 || (vehicle->firmwareMajorVersion() == 3 && vehicle->firmwareMinorVersion() <= 3)) {
+        if (majorVersion < 3) {
             return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Plane.3.3.xml");
-        } else {
-            return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Plane.3.5.xml");
+        } else if (majorVersion == 3) {
+            switch (minorVersion) {
+            case 3:
+            case 4:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Plane.3.3.xml");
+            case 5:
+            case 6:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Plane.3.5.xml");
+            case 7:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Plane.3.7.xml");
+            default:
+                if (minorVersion < 3) {
+                    return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Plane.3.3.xml");
+                }
+            }
         }
+        return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Plane.3.8.xml");
     case MAV_TYPE_GROUND_ROVER:
     case MAV_TYPE_SURFACE_BOAT:
-        return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Rover.3.0.xml");
+        if (majorVersion < 3) {
+            return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Rover.3.0.xml");
+        } else if (majorVersion == 3) {
+            switch (minorVersion) {
+            case 0:
+            case 1:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Rover.3.0.xml");
+            default:
+                return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Rover.3.2.xml");
+            }
+        }
+        return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Rover.3.2.xml");
     case MAV_TYPE_SUBMARINE:
-        return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Sub.3.4.xml");
+        if (vehicle->firmwareMajorVersion() < 3 || (vehicle->firmwareMajorVersion() == 3 && vehicle->firmwareMinorVersion() <= 4)) {
+            return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Sub.3.4.xml");
+        } else {
+            return QStringLiteral(":/FirmwarePlugin/APM/APMParameterFactMetaData.Sub.3.5.xml");
+        }
     default:
         return QString();
+    }
+}
+
+void APMFirmwarePlugin::setGuidedMode(Vehicle* vehicle, bool guidedMode)
+{
+    if (guidedMode) {
+        _setFlightModeAndValidate(vehicle, "Guided");
+    } else {
+        pauseVehicle(vehicle);
+    }
+}
+
+void APMFirmwarePlugin::pauseVehicle(Vehicle* vehicle)
+{
+    _setFlightModeAndValidate(vehicle, pauseFlightMode());
+}
+
+void APMFirmwarePlugin::guidedModeGotoLocation(Vehicle* vehicle, const QGeoCoordinate& gotoCoord)
+{
+    if (qIsNaN(vehicle->altitudeRelative()->rawValue().toDouble())) {
+        qgcApp()->showMessage(QStringLiteral("Unable to go to location, vehicle position not known."));
+        return;
+    }
+
+
+    setGuidedMode(vehicle, true);
+
+    QGeoCoordinate coordWithAltitude = gotoCoord;
+    coordWithAltitude.setAltitude(vehicle->altitudeRelative()->rawValue().toDouble());
+    vehicle->missionManager()->writeArduPilotGuidedMissionItem(coordWithAltitude, false /* altChangeOnly */);
+}
+
+void APMFirmwarePlugin::guidedModeRTL(Vehicle* vehicle)
+{
+    _setFlightModeAndValidate(vehicle, rtlFlightMode());
+}
+
+void APMFirmwarePlugin::guidedModeChangeAltitude(Vehicle* vehicle, double altitudeChange)
+{
+    if (qIsNaN(vehicle->altitudeRelative()->rawValue().toDouble())) {
+        qgcApp()->showMessage(QStringLiteral("Unable to change altitude, vehicle altitude not known."));
+        return;
+    }
+
+    setGuidedMode(vehicle, true);
+
+    mavlink_message_t msg;
+    mavlink_set_position_target_local_ned_t cmd;
+
+    memset(&cmd, 0, sizeof(cmd));
+
+    cmd.target_system = vehicle->id();
+    cmd.target_component = vehicle->defaultComponentId();
+    cmd.coordinate_frame = MAV_FRAME_LOCAL_OFFSET_NED;
+    cmd.type_mask = 0xFFF8; // Only x/y/z valid
+    cmd.x = 0.0f;
+    cmd.y = 0.0f;
+    cmd.z = -(altitudeChange);
+
+    MAVLinkProtocol* mavlink = qgcApp()->toolbox()->mavlinkProtocol();
+    mavlink_msg_set_position_target_local_ned_encode_chan(mavlink->getSystemId(),
+                                                          mavlink->getComponentId(),
+                                                          vehicle->priorityLink()->mavlinkChannel(),
+                                                          &msg,
+                                                          &cmd);
+
+    vehicle->sendMessageOnLink(vehicle->priorityLink(), msg);
+}
+
+bool APMFirmwarePlugin::isVtol(const Vehicle* vehicle) const
+{
+    if (vehicle->fixedWing()) {
+        if (vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, QStringLiteral("Q_ENABLE")) &&
+            vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, QStringLiteral("Q_ENABLE"))->rawValue().toBool()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void APMFirmwarePlugin::guidedModeTakeoff(Vehicle* vehicle)
+{
+    _guidedModeTakeoff(vehicle);
+}
+
+bool APMFirmwarePlugin::_guidedModeTakeoff(Vehicle* vehicle)
+{
+    if (!vehicle->multiRotor() && !vehicle->vtol()) {
+        qgcApp()->showMessage(tr("Vehicle does not support guided takeoff"));
+        return false;
+    }
+
+    QString takeoffAltParam(vehicle->vtol() ? QStringLiteral("Q_RTL_ALT") : QStringLiteral("PILOT_TKOFF_ALT"));
+    float paramDivisor = vehicle->vtol() ? 1.0 : 100.0; // PILOT_TAKEOFF_ALT is in centimeters
+
+    float takeoffAlt = 0;
+    if (vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, takeoffAltParam)) {
+        Fact* takeoffAltFact = vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, takeoffAltParam);
+        takeoffAlt = takeoffAltFact->rawValue().toDouble();
+    }
+    if (takeoffAlt <= 0) {
+        takeoffAlt = 2.5;
+    } else {
+        takeoffAlt /= paramDivisor;   // centimeters -> meters
+    }
+
+    if (!_setFlightModeAndValidate(vehicle, "Guided")) {
+        qgcApp()->showMessage(tr("Unable to takeoff: Vehicle failed to change to Guided mode."));
+        return false;
+    }
+
+    // FIXME: Is this needed?
+    if (!_armVehicleAndValidate(vehicle)) {
+        qgcApp()->showMessage(tr("Unable to takeoff: Vehicle failed to arm."));
+        return false;
+    }
+
+    vehicle->sendMavCommand(vehicle->defaultComponentId(),
+                            MAV_CMD_NAV_TAKEOFF,
+                            true, // show error
+                            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+                            takeoffAlt);
+
+    return true;
+}
+
+// FIXME: Review for a better way to do this
+void APMFirmwarePlugin::startMission(Vehicle* vehicle)
+{
+    double currentAlt = vehicle->altitudeRelative()->rawValue().toDouble();
+
+    if (!vehicle->flying()) {
+        if (_guidedModeTakeoff(vehicle)) {
+
+            // Wait for vehicle to get off ground before switching to auto (10 seconds)
+            bool didTakeoff = false;
+            for (int i=0; i<100; i++) {
+                if (vehicle->altitudeRelative()->rawValue().toDouble() >= currentAlt + 1.0) {
+                    didTakeoff = true;
+                    break;
+                }
+                QGC::SLEEP::msleep(100);
+                qgcApp()->processEvents(QEventLoop::ExcludeUserInputEvents);
+            }
+
+            if (!didTakeoff) {
+                qgcApp()->showMessage(QStringLiteral("Unable to start mission. Vehicle takeoff failed."));
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+
+    if (!_setFlightModeAndValidate(vehicle, missionFlightMode())) {
+        qgcApp()->showMessage(QStringLiteral("Unable to start mission. Vehicle failed to change to auto."));
+        return;
     }
 }

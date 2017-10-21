@@ -15,11 +15,7 @@
 
 static const char* kJniClassName = "org/qgroundcontrol/qgchelper/MindSkinActivity";
 
-void MobileScreenMgr::setKeepScreenOn(bool keepScreenOn)
+void MobileScreenMgr::setKeepScreenOn(bool /*keepScreenOn*/)
 {
-    if (keepScreenOn) {
-        QAndroidJniObject::callStaticMethod<void>(kJniClassName, "keepScreenOn", "()V");
-    } else {
-        QAndroidJniObject::callStaticMethod<void>(kJniClassName, "restoreScreenOn", "()V");
-    }
+    //-- Screen is locked on while QGC is running on Android
 }

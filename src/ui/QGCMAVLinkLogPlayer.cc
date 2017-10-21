@@ -2,31 +2,33 @@
 #include <QtEndian>
 
 #include "MainWindow.h"
-#ifndef __ios__
+#ifndef NO_SERIAL_LINK
 #include "SerialLink.h"
 #endif
 #include "QGCMAVLinkLogPlayer.h"
 #include "QGC.h"
 #include "ui_QGCMAVLinkLogPlayer.h"
 #include "QGCApplication.h"
+#include "SettingsManager.h"
+#include "AppSettings.h"
 #include "LinkManager.h"
-#include "QGCFileDialog.h"
+#include "QGCQFileDialog.h"
 #include "QGCMessageBox.h"
 
 QGCMAVLinkLogPlayer::QGCMAVLinkLogPlayer(QWidget *parent) :
     QWidget(parent),
     _replayLink(NULL),
     _ui(new Ui::QGCMAVLinkLogPlayer)
-{    
+{
     _ui->setupUi(this);
     _ui->horizontalLayout->setAlignment(Qt::AlignTop);
 
     // Setup buttons
-    connect(_ui->selectFileButton, &QPushButton::clicked, this, &QGCMAVLinkLogPlayer::_selectLogFileForPlayback);
-    connect(_ui->playButton, &QPushButton::clicked, this, &QGCMAVLinkLogPlayer::_playPauseToggle);
-    connect(_ui->positionSlider, &QSlider::valueChanged, this, &QGCMAVLinkLogPlayer::_setPlayheadFromSlider);
-    connect(_ui->positionSlider, &QSlider::sliderPressed, this, &QGCMAVLinkLogPlayer::_pause);
-    
+    connect(_ui->selectFileButton,  &QPushButton::clicked,      this, &QGCMAVLinkLogPlayer::_selectLogFileForPlayback);
+    connect(_ui->playButton,        &QPushButton::clicked,      this, &QGCMAVLinkLogPlayer::_playPauseToggle);
+    connect(_ui->positionSlider,    &QSlider::valueChanged,     this, &QGCMAVLinkLogPlayer::_setPlayheadFromSlider);
+    connect(_ui->positionSlider,    &QSlider::sliderPressed,    this, &QGCMAVLinkLogPlayer::_pause);
+
 #if 0
     // Speed slider is removed from 3.0 release. Too broken to fix.
     connect(_ui->speedSlider, &QSlider::valueChanged, this, &QGCMAVLinkLogPlayer::_setAccelerationFromSlider);
@@ -36,10 +38,10 @@ QGCMAVLinkLogPlayer::QGCMAVLinkLogPlayer(QWidget *parent) :
 #endif
 
     _enablePlaybackControls(false);
-    
+
     _ui->positionSlider->setMinimum(0);
     _ui->positionSlider->setMaximum(100);
-    
+
 }
 
 QGCMAVLinkLogPlayer::~QGCMAVLinkLogPlayer()
@@ -68,31 +70,34 @@ void QGCMAVLinkLogPlayer::_selectLogFileForPlayback(void)
         QGCMessageBox::information(tr("Log Replay"), tr("You must close all connections prior to replaying a log."));
         return;
     }
-    
-    QString logFilename = QGCFileDialog::getOpenFileName(
+
+    QString logFilename = QGCQFileDialog::getOpenFileName(
         this,
-        tr("Load MAVLink Log File"),
-        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-        tr("MAVLink Log Files (*.mavlink);;All Files (*)"));
+        tr("Load Telemetry Log File"),
+        qgcApp()->toolbox()->settingsManager()->appSettings()->telemetrySavePath(),
+        tr("MAVLink Log Files (*.tlog);;All Files (*)"));
 
     if (logFilename.isEmpty()) {
         return;
     }
-    
+
     LinkInterface* createConnectedLink(LinkConfiguration* config);
-    
+
     LogReplayLinkConfiguration* linkConfig = new LogReplayLinkConfiguration(QString("Log Replay"));
     linkConfig->setLogFilename(logFilename);
     linkConfig->setName(linkConfig->logFilenameShort());
     _ui->logFileNameLabel->setText(linkConfig->logFilenameShort());
-    _replayLink = (LogReplayLink*)qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
-    
+
+    LinkManager* linkMgr = qgcApp()->toolbox()->linkManager();
+    SharedLinkConfigurationPointer sharedConfig = linkMgr->addConfiguration(linkConfig);
+    _replayLink = (LogReplayLink*)qgcApp()->toolbox()->linkManager()->createConnectedLink(sharedConfig);
+
     connect(_replayLink, &LogReplayLink::logFileStats, this, &QGCMAVLinkLogPlayer::_logFileStats);
     connect(_replayLink, &LogReplayLink::playbackStarted, this, &QGCMAVLinkLogPlayer::_playbackStarted);
     connect(_replayLink, &LogReplayLink::playbackPaused, this, &QGCMAVLinkLogPlayer::_playbackPaused);
     connect(_replayLink, &LogReplayLink::playbackPercentCompleteChanged, this, &QGCMAVLinkLogPlayer::_playbackPercentCompleteChanged);
     connect(_replayLink, &LogReplayLink::disconnected, this, &QGCMAVLinkLogPlayer::_replayLinkDisconnected);
-    
+
     _ui->positionSlider->setValue(0);
 #if 0
     _ui->speedSlider->setValue(0);
@@ -123,9 +128,11 @@ void QGCMAVLinkLogPlayer::_logFileStats(bool    logTimestamped,         ///< tru
 {
     Q_UNUSED(logTimestamped);
     Q_UNUSED(binaryBaudRate);
-    
+
+    qDebug() << "_logFileStats" << logDurationSeconds;
+
     _logDurationSeconds = logDurationSeconds;
-    
+
     _ui->logStatsLabel->setText(_secondsToHMS(logDurationSeconds));
 }
 
@@ -135,6 +142,7 @@ void QGCMAVLinkLogPlayer::_playbackStarted(void)
     _enablePlaybackControls(true);
     _ui->playButton->setChecked(true);
     _ui->playButton->setIcon(QIcon(":/res/Pause"));
+    _ui->positionSlider->setEnabled(false);
 }
 
 /// Signalled from LogReplayLink when replay is paused
@@ -142,6 +150,7 @@ void QGCMAVLinkLogPlayer::_playbackPaused(void)
 {
     _ui->playButton->setIcon(QIcon(":/res/Play"));
     _ui->playButton->setChecked(false);
+    _ui->positionSlider->setEnabled(true);
 }
 
 void QGCMAVLinkLogPlayer::_playbackPercentCompleteChanged(int percentComplete)
@@ -174,9 +183,9 @@ void QGCMAVLinkLogPlayer::_setAccelerationFromSlider(int value)
     if (_replayLink) {
         _replayLink->setAccelerationFactor(value);
     }
-    
+
     // Factor: -100: 0.01x, 0: 1.0x, 100: 100x
-    
+
     float accelerationFactor;
     if (value < 0) {
         accelerationFactor = 0.01f;
@@ -189,7 +198,7 @@ void QGCMAVLinkLogPlayer::_setAccelerationFromSlider(int value)
     } else {
         accelerationFactor = 1.0f;
     }
-    
+
     _ui->speedLabel->setText(QString("Speed: %1X").arg(accelerationFactor, 5, 'f', 2, '0'));
 }
 #endif

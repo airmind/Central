@@ -8,8 +8,8 @@
  ****************************************************************************/
 
 
-import QtQuick              2.5
-import QtQuick.Controls     1.4
+import QtQuick              2.3
+import QtQuick.Controls     1.2
 
 import QGroundControl.Controls  1.0
 
@@ -44,23 +44,6 @@ SetupPage {
                     step:           0.01
                 }
 
-                ListElement {
-                    title:          qsTr("Hover Altitude control sensitivity")
-                    description:    qsTr("Slide to the left to make altitude control during hover smoother and less twitchy. Slide to the right to make altitude control more accurate and more aggressive.")
-                    param:          "MPC_Z_FF"
-                    min:            0
-                    max:            1.0
-                    step:           0.1
-                }
-
-                ListElement {
-                    title:          qsTr("Hover Position control sensitivity")
-                    description:    qsTr("Slide to the left to make flight during hover in position control mode smoother and less twitchy. Slide to the right to make position control more accurate and more aggressive.")
-                    param:          "MPC_XY_FF"
-                    min:            0
-                    max:            1.0
-                    step:           0.1
-                }
                 ListElement {
                     title:          qsTr("Plane Roll sensitivity")
                     description:    qsTr("Slide to the left to make roll control faster and more accurate. Slide to the right if roll oscillates or is too twitchy.")

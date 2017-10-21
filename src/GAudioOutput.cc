@@ -7,72 +7,66 @@
  *
  ****************************************************************************/
 
-
-/**
- * @file
- *   @brief Implementation of audio output
- *
- *   @author Lorenz Meier <mavteam@student.ethz.ch>
- *   @author Thomas Gubler <thomasgubler@gmail.com>
- *
- */
-
 #include <QApplication>
-#include <QSettings>
 #include <QDebug>
+#include <QRegularExpression>
 
 #include "GAudioOutput.h"
 #include "QGCApplication.h"
 #include "QGC.h"
+#include "SettingsManager.h"
 
-#if defined __android__
-#include <QtAndroidExtras/QtAndroidExtras>
-#include <QtAndroidExtras/QAndroidJniObject>
-#endif
-
-const char* GAudioOutput::_mutedKey = "AudioMuted";
-
-GAudioOutput::GAudioOutput(QGCApplication* app)
-    : QGCTool(app)
-    , muted(false)
-#ifndef __android__
-    , thread(new QThread())
-    , worker(new QGCAudioWorker())
-#endif
+GAudioOutput::GAudioOutput(QGCApplication* app, QGCToolbox* toolbox)
+    : QGCTool(app, toolbox)
 {
-    QSettings settings;
-    muted = settings.value(_mutedKey, false).toBool();
-    muted |= app->runningUnitTests();
-#ifndef __android__
-    worker->moveToThread(thread);
-    connect(this, &GAudioOutput::textToSpeak, worker, &QGCAudioWorker::say);
-    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-    connect(thread, &QThread::finished, worker, &QObject::deleteLater);
-    thread->start();
-#endif
+    _tts = new QTextToSpeech(this);
+    connect(_tts, &QTextToSpeech::stateChanged, this, &GAudioOutput::_stateChanged);
 }
 
-GAudioOutput::~GAudioOutput()
+bool GAudioOutput::say(const QString& inText)
 {
-#ifndef __android__
-    thread->quit();
-#endif
+    bool muted = qgcApp()->toolbox()->settingsManager()->appSettings()->audioMuted()->rawValue().toBool();
+    muted |= qgcApp()->runningUnitTests();
+    if (!muted && !qgcApp()->runningUnitTests()) {
+        QString text = fixTextMessageForAudio(inText);
+        if(_tts->state() == QTextToSpeech::Speaking) {
+            if(!_texts.contains(text)) {
+                //-- Some arbitrary limit
+                if(_texts.size() > 20) {
+                    _texts.removeFirst();
+                }
+                _texts.append(text);
+            }
+        } else {
+            _tts->say(text);
+        }
+    }
+    return true;
 }
 
-
-void GAudioOutput::mute(bool mute)
+void GAudioOutput::_stateChanged(QTextToSpeech::State state)
 {
-    QSettings settings;
-    muted = mute;
-    settings.setValue(_mutedKey, mute);
-#ifndef __android__
-    emit mutedChanged(mute);
-#endif
+    if(state == QTextToSpeech::Ready) {
+        if(_texts.size()) {
+            QString text = _texts.first();
+            _texts.removeFirst();
+            _tts->say(text);
+        }
+    }
 }
 
-bool GAudioOutput::isMuted()
-{
-    return muted;
+bool GAudioOutput::getMillisecondString(const QString& string, QString& match, int& number) {
+    static QRegularExpression re("([0-9]+ms)");
+    QRegularExpressionMatchIterator i = re.globalMatch(string);
+    while (i.hasNext()) {
+        QRegularExpressionMatch qmatch = i.next();
+        if (qmatch.hasMatch()) {
+            match = qmatch.captured(0);
+            number = qmatch.captured(0).replace("ms", "").toInt();
+            return true;
+        }
+    }
+    return false;
 }
 
 bool GAudioOutput::say(const QString& inText)
@@ -86,13 +80,7 @@ bool GAudioOutput::say(const QString& inText)
             env->ExceptionDescribe();
             env->ExceptionClear();
         }
-        QString text = QGCAudioWorker::fixTextMessageForAudio(inText);
-        QAndroidJniObject javaMessage = QAndroidJniObject::fromString(text);
-        QAndroidJniObject::callStaticMethod<void>(V_jniClassName, "say", "(Ljava/lang/String;)V", javaMessage.object<jstring>());
-#endif
-#else
-        emit textToSpeak(inText);
-#endif
+        result.replace(match, newNumber);
     }
-    return true;
+    return result;
 }

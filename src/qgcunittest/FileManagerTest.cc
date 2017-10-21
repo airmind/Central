@@ -127,6 +127,9 @@ void FileManagerTest::_listTest(void)
     Q_ASSERT(_fileManager);
     Q_ASSERT(_multiSpy);
     Q_ASSERT(_multiSpy->checkNoSignals() == true);
+
+    // test the automatic retry behavior by enabling random drops
+    _fileServer->enableRandromDrops(true);
     
     // FileManager::listDirectory signalling as follows:
     //  Emits a listEntry signal for each list entry
@@ -192,6 +195,8 @@ void FileManagerTest::_listTest(void)
         _multiSpy->clearAllSignals();
         _fileServer->setErrorMode(MockLinkFileServer::errModeNone);
     }
+
+    _fileServer->enableRandromDrops(false);
 }
 
 #if 0
@@ -235,7 +240,7 @@ void FileManagerTest::_readDownloadTest(void)
             _fileManager->downloadPath(testCase->filename, QDir::temp());
             QTest::qWait(_ackTimerTimeoutMsecs); // Let the file manager timeout
             
-            // This should be a succesful download
+            // This should be a successful download
             QCOMPARE(_multiSpy->checkOnlySignalByMask(commandCompleteSignalMask), true);
             _multiSpy->clearAllSignals();
             
@@ -321,7 +326,7 @@ void FileManagerTest::_streamDownloadTest(void)
             _fileManager->streamPath(testCase->filename, QDir::temp());
             QTest::qWait(_ackTimerTimeoutMsecs); // Let the file manager timeout
             
-            // This should be a succesful download
+            // This should be a successful download
             QCOMPARE(_multiSpy->checkOnlySignalByMask(commandCompleteSignalMask), true);
             _multiSpy->clearAllSignals();
             

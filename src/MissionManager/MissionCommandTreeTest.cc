@@ -20,7 +20,7 @@ MissionCommandTreeTest::MissionCommandTreeTest(void)
 
 void MissionCommandTreeTest::init(void)
 {
-    _commandTree = new MissionCommandTree(qgcApp(), true /* unitTest */);
+    _commandTree = new MissionCommandTree(qgcApp(), qgcApp()->toolbox(), true /* unitTest */);
     _commandTree->setToolbox(qgcApp()->toolbox());
 }
 
@@ -174,12 +174,12 @@ void MissionCommandTreeTest::testJsonLoad(void)
 void MissionCommandTreeTest::testOverride(void)
 {
     // Generic/Generic should not have any overrides
-    Vehicle* vehicle = new Vehicle(MAV_AUTOPILOT_GENERIC, MAV_TYPE_GENERIC);
+    Vehicle* vehicle = new Vehicle(MAV_AUTOPILOT_GENERIC, MAV_TYPE_GENERIC, qgcApp()->toolbox()->firmwarePluginManager());
     _checkBaseValues(_commandTree->getUIInfo(vehicle, (MAV_CMD)4), 4);
     delete vehicle;
 
     // Generic/FixedWing should have overrides
-    vehicle = new Vehicle(MAV_AUTOPILOT_GENERIC, MAV_TYPE_FIXED_WING);
+    vehicle = new Vehicle(MAV_AUTOPILOT_GENERIC, MAV_TYPE_FIXED_WING, qgcApp()->toolbox()->firmwarePluginManager());
     _checkOverrideValues(_commandTree->getUIInfo(vehicle, (MAV_CMD)4), 4);
     delete vehicle;
 }
@@ -195,8 +195,8 @@ void MissionCommandTreeTest::testAllTrees(void)
     // This will cause all of the variants of collapsed trees to be built
     foreach(MAV_AUTOPILOT firmwareType, firmwareList) {
         foreach (MAV_TYPE vehicleType, vehicleList) {
-            Vehicle* vehicle = new Vehicle(firmwareType, vehicleType);
             qDebug() << firmwareType << vehicleType;
+            Vehicle* vehicle = new Vehicle(firmwareType, vehicleType, qgcApp()->toolbox()->firmwarePluginManager());
             QVERIFY(qgcApp()->toolbox()->missionCommandTree()->getUIInfo(vehicle, MAV_CMD_NAV_WAYPOINT) != NULL);
             delete vehicle;
         }

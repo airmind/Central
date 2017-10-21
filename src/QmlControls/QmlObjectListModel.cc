@@ -138,18 +138,16 @@ void QmlObjectListModel::clear(void)
 QObject* QmlObjectListModel::removeAt(int i)
 {
     QObject* removedObject = _objectList[i];
-
-    // Look for a dirtyChanged signal on the object
-    if (_objectList[i]->metaObject()->indexOfSignal(QMetaObject::normalizedSignature("dirtyChanged(bool)")) != -1) {
-        if (!_skipDirtyFirstItem || i != 0) {
-            QObject::disconnect(_objectList[i], SIGNAL(dirtyChanged(bool)), this, SLOT(_childDirtyChanged(bool)));
+    if(removedObject) {
+        // Look for a dirtyChanged signal on the object
+        if (_objectList[i]->metaObject()->indexOfSignal(QMetaObject::normalizedSignature("dirtyChanged(bool)")) != -1) {
+            if (!_skipDirtyFirstItem || i != 0) {
+                QObject::disconnect(_objectList[i], SIGNAL(dirtyChanged(bool)), this, SLOT(_childDirtyChanged(bool)));
+            }
         }
     }
-    
     removeRows(i, 1);
-    
     setDirty(true);
-    
     return removedObject;
 }
 
@@ -185,6 +183,7 @@ QObjectList QmlObjectListModel::swapObjectList(const QObjectList& newlist)
     beginResetModel();
     _objectList = newlist;
     endResetModel();
+    emit countChanged(count());
     return oldlist;
 }
 
@@ -195,18 +194,18 @@ int QmlObjectListModel::count(void) const
 
 void QmlObjectListModel::setDirty(bool dirty)
 {
-    _dirty = dirty;
-
-    if (!dirty) {
-        // Need to clear dirty from all children
-        foreach(QObject* object, _objectList) {
-            if (object->property("dirty").isValid()) {
-                object->setProperty("dirty", false);
+    if (_dirty != dirty) {
+        _dirty = dirty;
+        if (!dirty) {
+            // Need to clear dirty from all children
+            foreach(QObject* object, _objectList) {
+                if (object->property("dirty").isValid()) {
+                    object->setProperty("dirty", false);
+                }
             }
         }
+        emit dirtyChanged(_dirty);
     }
-    
-    emit dirtyChanged(_dirty);
 }
 
 void QmlObjectListModel::_childDirtyChanged(bool dirty)

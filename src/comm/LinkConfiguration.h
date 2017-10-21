@@ -7,7 +7,6 @@
  *
  ****************************************************************************/
 
-
 #ifndef LINKCONFIGURATION_H
 #define LINKCONFIGURATION_H
 
@@ -38,7 +37,7 @@ public:
 
     // Property accessors
 
-    const QString   name(void)  { return _name; }
+    QString         name(void) const { return _name; }
     LinkInterface*  link(void)  { return _link; }
 
     void            setName(const QString name);
@@ -47,7 +46,7 @@ public:
     ///  The link types supported by QGC
     ///  Any changes here MUST be reflected in LinkManager::linkTypeStrings()
     enum LinkType {
-#ifndef __ios__
+#ifndef NO_SERIAL_LINK
         TypeSerial,     ///< Serial Link
 #endif
         
@@ -58,12 +57,6 @@ public:
         TypeTcp,        ///< TCP Link
 #ifdef QGC_ENABLE_BLUETOOTH
         TypeBluetooth,  ///< Bluetooth Link
-#endif
-#if 0
-        // TODO Below is not yet implemented
-        TypeForwarding, ///< Forwarding Link
-        TypeXbee,       ///< XBee Proprietary Link
-        TypeOpal,       ///< Opal-RT Link
 #endif
 #ifdef QT_DEBUG
         TypeMock,       ///< Mock Link for Unitesting
@@ -105,7 +98,7 @@ public:
      * Is Auto Connect allowed for this type?
      * @return True if this type can be set as an Auto Connect configuration
      */
-    virtual bool isAutoConnectAllowed() { return true; }
+    virtual bool isAutoConnectAllowed() { return false; }
 
     /*!
      * @brief Connection type
@@ -194,5 +187,7 @@ private:
     bool    _dynamic;       ///< A connection added automatically and not persistent (unless it's edited).
     bool    _autoConnect;   ///< This connection is started automatically at boot
 };
+
+typedef QSharedPointer<LinkConfiguration> SharedLinkConfigurationPointer;
 
 #endif // LINKCONFIGURATION_H

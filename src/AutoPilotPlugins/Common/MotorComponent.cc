@@ -7,10 +7,7 @@
  *
  ****************************************************************************/
 
-
 #include "MotorComponent.h"
-#include "APMAutoPilotPlugin.h"
-#include "APMAirframeComponent.h"
 
 MotorComponent::MotorComponent(Vehicle* vehicle, AutoPilotPlugin* autopilot, QObject* parent) :
     VehicleComponent(vehicle, autopilot, parent),
@@ -57,9 +54,4 @@ QUrl MotorComponent::setupSource(void) const
 QUrl MotorComponent::summaryQmlSource(void) const
 {
     return QUrl();
-}
-
-QString MotorComponent::prerequisiteSetup(void) const
-{
-    return QString();
 }

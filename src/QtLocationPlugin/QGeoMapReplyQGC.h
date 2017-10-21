@@ -49,6 +49,7 @@
 
 #include <QtNetwork/QNetworkReply>
 #include <QtLocation/private/qgeotiledmapreply_p.h>
+#include <QTimer>
 
 #include "QGCMapEngineData.h"
 
@@ -61,18 +62,23 @@ public:
     void abort();
 
 private slots:
-    void replyDestroyed         ();
     void networkReplyFinished   ();
     void networkReplyError      (QNetworkReply::NetworkError error);
     void cacheReply             (QGCCacheTile* tile);
     void cacheError             (QGCMapTask::TaskType type, QString errorString);
+    void timeout                ();
+
+private:
+    void _clearReply            ();
 
 private:
     QNetworkReply*          _reply;
     QNetworkRequest         _request;
     QNetworkAccessManager*  _networkManager;
-    QByteArray              _badMapBox;
+    QByteArray              _badMapbox;
     QByteArray              _badTile;
+    QTimer                  _timer;
+    static int              _requestCount;
 };
 
 #endif // QGEOMAPREPLYQGC_H

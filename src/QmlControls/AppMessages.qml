@@ -7,9 +7,9 @@
  *
  ****************************************************************************/
 
-import QtQuick                  2.5
+import QtQuick                  2.3
 import QtQuick.Controls         1.2
-import QtQuick.Controls.Styles  1.2
+import QtQuick.Controls.Styles  1.4
 import QtQuick.Dialogs          1.2
 
 import QGroundControl               1.0
@@ -23,6 +23,8 @@ QGCView {
     viewPanel:  panel
 
     property bool loaded: false
+
+    property var _qgcView: qgcView
 
     QGCPalette { id: qgcPal; colorGroupEnabled: panel.enabled }
 
@@ -96,7 +98,7 @@ QGCView {
                 }
             }
 
-            ListView {
+            QGCListView {
                 Component.onCompleted: {
                     loaded = true
                 }
@@ -111,17 +113,17 @@ QGCView {
                 delegate:        delegateItem
             }
 
-            FileDialog {
+            QGCFileDialog {
                 id:             writeDialog
-                folder:         shortcuts.home
+                folder:         QGroundControl.settingsManager.appSettings.logSavePath
                 nameFilters:    [qsTr("Log files (*.txt)"), qsTr("All Files (*)")]
                 selectExisting: false
                 title:          qsTr("Select log save file")
-                onAccepted: {
-                    debugMessageModel.writeMessages(fileUrl);
+                qgcView:        _qgcView
+                onAcceptedForSave: {
+                    debugMessageModel.writeMessages(file);
                     visible = false;
                 }
-                onRejected:     visible = false
             }
 
             Connections {
@@ -134,7 +136,7 @@ QGCView {
                 id:              writeButton
                 anchors.bottom:  parent.bottom
                 anchors.left:    parent.left
-                onClicked:       writeDialog.visible = true
+                onClicked:       writeDialog.openForSave()
                 text:            qsTr("Save App Log")
             }
 

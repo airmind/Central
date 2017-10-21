@@ -12,7 +12,7 @@
 ///     @author Don Gagne <don@thegagnes.com>
 
 import QtQuick 2.3
-import QtQuick.Controls 1.3
+import QtQuick.Controls 1.2
 
 import QGroundControl.Controls 1.0
 import QGroundControl.Palette 1.0
@@ -31,7 +31,7 @@ FactPanel {
         if (event.key == Qt.Key_Escape) {
             reject()
             event.accepted = true
-        } else if (event.key == Qt.Key_Return) {
+        } else if (event.key == Qt.Key_Return || event.key == Qt.Key_Enter) {
             accept()
             event.accepted = true
         }

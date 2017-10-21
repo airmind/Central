@@ -25,18 +25,24 @@ class GPSManager : public QGCTool
 {
     Q_OBJECT
 public:
-    GPSManager(QGCApplication* app);
+    GPSManager(QGCApplication* app, QGCToolbox* toolbox);
     ~GPSManager();
 
-    void connectGPS(const QString& device);
-    bool connected(void) const { return _gpsProvider != nullptr; }
+    void connectGPS     (const QString& device);
+    void disconnectGPS  (void);
+    bool connected      (void) const { return _gpsProvider && _gpsProvider->isRunning(); }
+
+signals:
+    void onConnect();
+    void onDisconnect();
+    void surveyInStatus(float duration, float accuracyMM, bool valid, bool active);
+    void satelliteUpdate(int numSats);
 
 private slots:
     void GPSPositionUpdate(GPSPositionMessage msg);
     void GPSSatelliteUpdate(GPSSatelliteMessage msg);
-private:
-    void cleanup();
 
+private:
     GPSProvider* _gpsProvider = nullptr;
     RTCMMavlink* _rtcmMavlink = nullptr;
 

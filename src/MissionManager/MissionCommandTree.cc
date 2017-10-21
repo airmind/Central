@@ -17,11 +17,14 @@
 #include "QGroundControlQmlGlobal.h"
 #include "MissionCommandUIInfo.h"
 #include "MissionCommandList.h"
+#include "SettingsManager.h"
 
 #include <QQmlEngine>
 
-MissionCommandTree::MissionCommandTree(QGCApplication* app, bool unitTest)
-    : QGCTool(app)
+MissionCommandTree::MissionCommandTree(QGCApplication* app, QGCToolbox* toolbox, bool unitTest)
+    : QGCTool(app, toolbox)
+    , _allCommandsCategory(tr("All commands"))
+    , _settingsManager(NULL)
     , _unitTest(unitTest)
 {
 }
@@ -30,19 +33,21 @@ void MissionCommandTree::setToolbox(QGCToolbox* toolbox)
 {
     QGCTool::setToolbox(toolbox);
 
+    _settingsManager = toolbox->settingsManager();
+
 #ifdef UNITTEST_BUILD
     if (_unitTest) {
         // Load unit testing tree
-        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_GENERIC] =           new MissionCommandList(":/json/unittest/MavCmdInfoCommon.json", true, this);
-        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_FIXED_WING] =        new MissionCommandList(":/json/unittest/MavCmdInfoFixedWing.json", false, this);
-        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_QUADROTOR] =         new MissionCommandList(":/json/unittest/MavCmdInfoMultiRotor.json", false, this);
-        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_VTOL_QUADROTOR] =    new MissionCommandList(":/json/unittest/MavCmdInfoVTOL.json", false, this);
-        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_SUBMARINE] =         new MissionCommandList(":/json/unittest/MavCmdInfoSub.json", false, this);
-        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_GROUND_ROVER] =      new MissionCommandList(":/json/unittest/MavCmdInfoRover.json", false, this);
+        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_GENERIC] =           new MissionCommandList(":/unittest/MavCmdInfoCommon.json", true, this);
+        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_FIXED_WING] =        new MissionCommandList(":/unittest/MavCmdInfoFixedWing.json", false, this);
+        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_QUADROTOR] =         new MissionCommandList(":/unittest/MavCmdInfoMultiRotor.json", false, this);
+        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_VTOL_QUADROTOR] =    new MissionCommandList(":/unittest/MavCmdInfoVTOL.json", false, this);
+        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_SUBMARINE] =         new MissionCommandList(":/unittest/MavCmdInfoSub.json", false, this);
+        _staticCommandTree[MAV_AUTOPILOT_GENERIC][MAV_TYPE_GROUND_ROVER] =      new MissionCommandList(":/unittest/MavCmdInfoRover.json", false, this);
     } else {
 #endif
         // Load all levels of hierarchy
-        foreach (MAV_AUTOPILOT firmwareType, _toolbox->firmwarePluginManager()->knownFirmwareTypes()) {
+        foreach (MAV_AUTOPILOT firmwareType, _toolbox->firmwarePluginManager()->supportedFirmwareTypes()) {
             FirmwarePlugin* plugin = _toolbox->firmwarePluginManager()->firmwarePluginForAutopilot(firmwareType, MAV_TYPE_QUADROTOR);
 
             QList<MAV_TYPE> vehicleTypes;
@@ -62,7 +67,7 @@ void MissionCommandTree::setToolbox(QGCToolbox* toolbox)
 
 MAV_AUTOPILOT MissionCommandTree::_baseFirmwareType(MAV_AUTOPILOT firmwareType) const
 {
-    if (qgcApp()->toolbox()->firmwarePluginManager()->knownFirmwareTypes().contains(firmwareType)) {
+    if (qgcApp()->toolbox()->firmwarePluginManager()->supportedFirmwareTypes().contains(firmwareType)) {
         return firmwareType;
     } else {
         return MAV_AUTOPILOT_GENERIC;
@@ -101,6 +106,14 @@ void MissionCommandTree::_collapseHierarchy(Vehicle*                            
     _baseVehicleInfo(vehicle, baseFirmwareType, baseVehicleType);
 
     foreach (MAV_CMD command, cmdList->commandIds()) {
+        // Only add supported command to tree (MAV_CMD_NAV_LAST is used for planned home position)
+        if (!qgcApp()->runningUnitTests()
+                && !vehicle->firmwarePlugin()->supportedMissionCommands().isEmpty()
+                && !vehicle->firmwarePlugin()->supportedMissionCommands().contains(command)
+                && command != MAV_CMD_NAV_LAST) {
+            continue;
+        }
+
         MissionCommandUIInfo* uiInfo = cmdList->getUIInfo(command);
         if (uiInfo) {
             if (collapsedTree.contains(command)) {
@@ -156,6 +169,7 @@ void MissionCommandTree::_buildAvailableCommands(Vehicle* vehicle)
             _availableCategories[baseFirmwareType][baseVehicleType].append(newCategory);
         }
     }
+    _availableCategories[baseFirmwareType][baseVehicleType].append(_allCommandsCategory);
 }
 
 QStringList MissionCommandTree::_availableCategoriesForVehicle(Vehicle* vehicle)
@@ -226,7 +240,7 @@ QVariantList MissionCommandTree::getCommandsForCategory(Vehicle* vehicle, const 
     QMap<MAV_CMD, MissionCommandUIInfo*> commandMap = _availableCommands[baseFirmwareType][baseVehicleType];
     foreach (MAV_CMD command, commandMap.keys()) {
         MissionCommandUIInfo* uiInfo = commandMap[command];
-        if (uiInfo->category() == category) {
+        if (uiInfo->category() == category || category == _allCommandsCategory) {
             list.append(QVariant::fromValue(uiInfo));
         }
     }
@@ -241,7 +255,7 @@ void MissionCommandTree::_baseVehicleInfo(Vehicle* vehicle, MAV_AUTOPILOT& baseF
         baseVehicleType = _baseVehicleType(vehicle->vehicleType());
     } else {
         // No Vehicle means offline editing
-        baseFirmwareType = _baseFirmwareType((MAV_AUTOPILOT)QGroundControlQmlGlobal::offlineEditingFirmwareType()->rawValue().toInt());
-        baseVehicleType = _baseVehicleType((MAV_TYPE)QGroundControlQmlGlobal::offlineEditingVehicleType()->rawValue().toInt());
+        baseFirmwareType = _baseFirmwareType((MAV_AUTOPILOT)_settingsManager->appSettings()->offlineEditingFirmwareType()->rawValue().toInt());
+        baseVehicleType = _baseVehicleType((MAV_TYPE)_settingsManager->appSettings()->offlineEditingVehicleType()->rawValue().toInt());
     }
 }

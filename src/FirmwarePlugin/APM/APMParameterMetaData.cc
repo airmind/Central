@@ -18,6 +18,8 @@
 #include <QDebug>
 #include <QStack>
 
+static const char* kInvalidConverstion = "Internal Error: No support for string parameters";
+
 QGC_LOGGING_CATEGORY(APMParameterMetaDataLog,           "APMParameterMetaDataLog")
 QGC_LOGGING_CATEGORY(APMParameterMetaDataVerboseLog,    "APMParameterMetaDataVerboseLog")
 
@@ -39,22 +41,35 @@ QVariant APMParameterMetaData::_stringToTypedVariant(const QString& string,
 
     int convertTo = QVariant::Int; // keep compiler warning happy
     switch (type) {
-        case FactMetaData::valueTypeUint8:
-        case FactMetaData::valueTypeUint16:
-        case FactMetaData::valueTypeUint32:
-            convertTo = QVariant::UInt;
-            break;
-        case FactMetaData::valueTypeInt8:
-        case FactMetaData::valueTypeInt16:
-        case FactMetaData::valueTypeInt32:
-            convertTo = QVariant::Int;
-            break;
-        case FactMetaData::valueTypeFloat:
-            convertTo = QMetaType::Float;
-            break;
-        case FactMetaData::valueTypeDouble:
-            convertTo = QVariant::Double;
-            break;
+    case FactMetaData::valueTypeUint8:
+    case FactMetaData::valueTypeUint16:
+    case FactMetaData::valueTypeUint32:
+        convertTo = QVariant::UInt;
+        break;
+    case FactMetaData::valueTypeInt8:
+    case FactMetaData::valueTypeInt16:
+    case FactMetaData::valueTypeInt32:
+        convertTo = QVariant::Int;
+        break;
+    case FactMetaData::valueTypeFloat:
+        convertTo = QMetaType::Float;
+        break;
+    case FactMetaData::valueTypeElapsedTimeInSeconds:
+    case FactMetaData::valueTypeDouble:
+        convertTo = QVariant::Double;
+        break;
+    case FactMetaData::valueTypeString:
+        qWarning() << kInvalidConverstion;
+        convertTo = QVariant::String;
+        break;
+    case FactMetaData::valueTypeBool:
+        qWarning() << kInvalidConverstion;
+        convertTo = QVariant::Bool;
+        break;
+    case FactMetaData::valueTypeCustom:
+        qWarning() << kInvalidConverstion;
+        convertTo = QVariant::ByteArray;
+        break;
     }
 
     *convertOk = var.convert(convertTo);
@@ -229,22 +244,19 @@ void APMParameterMetaData::loadParameterFactMetaDataFile(const QString& metaData
                           << "group: " << group;
 
                 Q_ASSERT(!rawMetaData);
-                rawMetaData = new APMFactMetaDataRaw();
                 if (_vehicleTypeToParametersMap[currentCategory].contains(name)) {
-                    // We can't trust the meta dafa since we have dups
-                    qCWarning(APMParameterMetaDataLog) << "Duplicate parameter found:" << name;
-                    badMetaData = true;
+                    qCDebug(APMParameterMetaDataLog) << "Duplicate parameter found:" << name;
+                    rawMetaData = _vehicleTypeToParametersMap[currentCategory][name];
                 } else {
-                    qCDebug(APMParameterMetaDataVerboseLog) << "inserting metadata for field" << name;
+                    rawMetaData = new APMFactMetaDataRaw();
                     _vehicleTypeToParametersMap[currentCategory][name] = rawMetaData;
-                    rawMetaData->name = name;
-                    rawMetaData->group = group;
-                    rawMetaData->shortDescription = shortDescription;
-                    rawMetaData->longDescription = longDescription;
-
                     groupMembers[group] << name;
                 }
-
+                qCDebug(APMParameterMetaDataVerboseLog) << "inserting metadata for field" << name;
+                rawMetaData->name = name;
+                rawMetaData->group = group;
+                rawMetaData->shortDescription = shortDescription;
+                rawMetaData->longDescription = longDescription;
             } else {
                 // We should be getting meta data now
                 if (xmlState.top() != XmlStateFoundParameter) {
@@ -312,7 +324,7 @@ bool APMParameterMetaData::parseParameterAttributes(QXmlStreamReader& xml, APMFa
     // as long as param doens't end
     while (!(elementName == "param" && xml.isEndElement())) {
         if (elementName.isEmpty()) {
-            // skip empty elements. Somehow I am getting lot of these. Dont know what to do with them.
+            // skip empty elements. Somehow I am getting lot of these. Don't know what to do with them.
         } else if (elementName == "field") {
             QString attributeName = xml.attributes().value("name").toString();
 
@@ -566,6 +578,15 @@ void APMParameterMetaData::addMetaDataToFact(Fact* fact, MAV_TYPE vehicleType)
         } else {
             qCDebug(APMParameterMetaDataLog) << "Invalid value for increment, name:" << metaData->name() << " increment:" << rawMetaData->incrementSize;
         }
+    }
+
+    // ArduPilot does not yet support decimal places meta data. So for P/I/D parameters we force to 6 places
+    if ((fact->name().endsWith(QStringLiteral("_P")) ||
+         fact->name().endsWith(QStringLiteral("_I")) ||
+         fact->name().endsWith(QStringLiteral("_D"))) &&
+            (fact->type() == FactMetaData::valueTypeFloat ||
+             fact->type() == FactMetaData::valueTypeDouble)) {
+        metaData->setDecimalPlaces(6);
     }
 
     fact->setMetaData(metaData);

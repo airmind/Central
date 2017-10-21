@@ -8,7 +8,7 @@
  ****************************************************************************/
 
 
-import QtQuick          2.5
+import QtQuick          2.3
 import QtQuick.Controls 1.2
 import QtQuick.Dialogs  1.2
 
@@ -418,12 +418,15 @@ SetupPage {
 
                 QGCButton {
                     text:       qsTr("Copy Trims")
-                    visible:    QGroundControl.multiVehicleManager.activeVehicle.px4Firmware
                     onClicked:  showDialog(copyTrimsDialogComponent, dialogTitle, radioPage.showDialogDefaultWidth, StandardButton.Ok | StandardButton.Cancel)
                 }
 
                 Repeater {
-                    model: QGroundControl.multiVehicleManager.activeVehicle.px4Firmware ? [ "RC_MAP_FLAPS", "RC_MAP_AUX1", "RC_MAP_AUX2", "RC_MAP_PARAM1", "RC_MAP_PARAM2", "RC_MAP_PARAM3"] : 0
+                    model: QGroundControl.multiVehicleManager.activeVehicle.px4Firmware ?
+                               (QGroundControl.multiVehicleManager.activeVehicle.multiRotor ?
+                                   [ "RC_MAP_AUX1", "RC_MAP_AUX2", "RC_MAP_PARAM1", "RC_MAP_PARAM2", "RC_MAP_PARAM3"] :
+                                   [ "RC_MAP_FLAPS", "RC_MAP_AUX1", "RC_MAP_AUX2", "RC_MAP_PARAM1", "RC_MAP_PARAM2", "RC_MAP_PARAM3"]) :
+                               0
 
                     Row {
                         spacing: ScreenTools.defaultFontPixelWidth

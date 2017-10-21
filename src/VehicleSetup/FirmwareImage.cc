@@ -18,7 +18,8 @@
 #include "QGCMAVLink.h"
 #include "QGCApplication.h"
 #include "FirmwarePlugin.h"
-#include "ParameterLoader.h"
+#include "ParameterManager.h"
+#include "Bootloader.h"
 
 #include <QDebug>
 #include <QFile>
@@ -51,9 +52,8 @@ bool FirmwareImage::load(const QString& imageFilename, uint32_t boardId)
     _boardId = boardId;
     
     if (imageFilename.endsWith(".bin")) {
-        return _binLoad(imageFilename);
         _binFormat = true;
-        return true;
+        return _binLoad(imageFilename);
     } else if (imageFilename.endsWith(".px4")) {
         _binFormat = true;
         return _px4Load(imageFilename);
@@ -194,11 +194,29 @@ bool FirmwareImage::_ihxLoad(const QString& ihxFilename)
     return true;
 }
 
+bool FirmwareImage::isCompatible(uint32_t boardId, uint32_t firmwareId) {
+    bool result = false;
+    if (boardId == firmwareId ) {
+        result = true;
+    }
+    switch(boardId) {
+    case Bootloader::boardIDAUAVX2_1: // AUAVX2.1 is compatible with px4-v2/v3
+        if (firmwareId == 9) result = true;
+        break;
+    case Bootloader::boardIDPX4FMUV3:
+        if (firmwareId == 9) result = true;
+        break;
+    default:
+        break;
+    }
+    return result;
+}
+
 bool FirmwareImage::_px4Load(const QString& imageFilename)
 {
     _imageSize = 0;
     
-    // We need to collect information from the .px4 file as well as pull the binary image out to a seperate file.
+    // We need to collect information from the .px4 file as well as pull the binary image out to a separate file.
     
     QFile px4File(imageFilename);
     if (!px4File.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -237,7 +255,7 @@ bool FirmwareImage::_px4Load(const QString& imageFilename)
     }
 
     uint32_t firmwareBoardId = (uint32_t)px4Json.value(_jsonBoardIdKey).toInt();
-    if (firmwareBoardId != _boardId) {
+    if (!isCompatible(_boardId, firmwareBoardId)) {
         emit statusMessage(QString("Downloaded firmware board id does not match hardware board id: %1 != %2").arg(firmwareBoardId).arg(_boardId));
         return false;
     }
@@ -275,7 +293,7 @@ bool FirmwareImage::_px4Load(const QString& imageFilename)
         }
 
         // Cache this file with the system
-        ParameterLoader::cacheMetaDataFile(parameterFilename, firmwareType);
+        ParameterManager::cacheMetaDataFile(parameterFilename, firmwareType);
     }
 
     // Decompress the airframe xml and save to file
@@ -400,7 +418,7 @@ bool FirmwareImage::_decompressJsonValue(const QJsonObject&	jsonObject,			///< J
         return false;
     }
     
-    emit statusMessage(QString("Succesfully decompressed %1").arg(bytesKey));
+    emit statusMessage(QString("Successfully decompressed %1").arg(bytesKey));
     
     return true;
 }

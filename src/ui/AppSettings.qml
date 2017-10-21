@@ -8,14 +8,13 @@
  ****************************************************************************/
 
 
-import QtQuick          2.5
+import QtQuick          2.3
 import QtQuick.Controls 1.2
-import QtPositioning    5.2
+import QtQuick.Layouts  1.2
 
 import QGroundControl               1.0
 import QGroundControl.Palette       1.0
 import QGroundControl.Controls      1.0
-import QGroundControl.FlightDisplay 1.0
 import QGroundControl.ScreenTools   1.0
 
 Rectangle {
@@ -28,15 +27,14 @@ Rectangle {
     readonly property real _horizontalMargin:   _defaultTextWidth / 2
     readonly property real _verticalMargin:     _defaultTextHeight / 2
     readonly property real _buttonHeight:       ScreenTools.isTinyScreen ? ScreenTools.defaultFontPixelHeight * 3 : ScreenTools.defaultFontPixelHeight * 2
-    readonly property real _buttonWidth:        ScreenTools.defaultFontPixelWidth * 10
+
+    property bool _first: true
 
     QGCPalette { id: qgcPal }
 
     Component.onCompleted: {
-        //-- Default to General Settings
-        __rightPanel.source = "GeneralSettings.qml"
-        _generalButton.checked = true
-        panelActionGroup.current = _generalButton
+        //-- Default Settings
+        __rightPanel.source = QGroundControl.corePlugin.settingsPages[QGroundControl.corePlugin.defaultSettings].url
     }
 
     QGCFlickable {
@@ -53,24 +51,11 @@ Rectangle {
 
         ExclusiveGroup { id: panelActionGroup }
 
-        Column {
+        ColumnLayout {
             id:         buttonColumn
-            width:      _maxButtonWidth
             spacing:    _verticalMargin
 
             property real _maxButtonWidth: 0
-
-            Component.onCompleted: reflowWidths()
-
-            function reflowWidths() {
-                buttonColumn._maxButtonWidth = 0
-                for (var i = 0; i < children.length; i++) {
-                    buttonColumn._maxButtonWidth = Math.max(buttonColumn._maxButtonWidth, children[i].width)
-                }
-                for (var j = 0; j < children.length; j++) {
-                    children[j].width = buttonColumn._maxButtonWidth
-                }
-            }
 
             QGCLabel {
                 anchors.left:           parent.left
@@ -81,90 +66,27 @@ Rectangle {
                 visible:                !ScreenTools.isShortScreen
             }
 
-            QGCButton {
-                id:             _generalButton
-                height:         _buttonHeight
-                text:           qsTr("General")
-                exclusiveGroup: panelActionGroup
-                onClicked: {
-                    if(__rightPanel.source != "GeneralSettings.qml") {
-                        __rightPanel.source = "GeneralSettings.qml"
-                    }
-                    checked = true
-                }
-            }
+            Repeater {
+                model:  QGroundControl.corePlugin.settingsPages
+                QGCButton {
+                    height:             _buttonHeight
+                    text:               modelData.title
+                    exclusiveGroup:     panelActionGroup
+                    Layout.fillWidth:   true
 
-            QGCButton {
-                height:         _buttonHeight
-                text:           qsTr("Comm Links")
-                exclusiveGroup: panelActionGroup
-                onClicked: {
-                    if(__rightPanel.source != "LinkSettings.qml") {
-                        __rightPanel.source = "LinkSettings.qml"
+                    onClicked: {
+                        if(__rightPanel.source !== modelData.url) {
+                            __rightPanel.source = modelData.url
+                        }
+                        checked = true
                     }
-                    checked = true
-                }
-            }
 
-            QGCButton {
-                height:         _buttonHeight
-                text:           qsTr("Offline Maps")
-                exclusiveGroup: panelActionGroup
-                onClicked: {
-                    if(__rightPanel.source != "OfflineMap.qml") {
-                        __rightPanel.source = "OfflineMap.qml"
+                    Component.onCompleted: {
+                        if(_first) {
+                            _first = false
+                            checked = true
+                        }
                     }
-                    checked = true
-                }
-            }
-
-            QGCButton {
-                height:         _buttonHeight
-                text:           qsTr("MavLink")
-                exclusiveGroup: panelActionGroup
-                onClicked: {
-                    if(__rightPanel.source != "MavlinkSettings.qml") {
-                        __rightPanel.source = "MavlinkSettings.qml"
-                    }
-                    checked = true
-                }
-            }
-
-            QGCButton {
-                height:         _buttonHeight
-                text:           qsTr("Console")
-                exclusiveGroup: panelActionGroup
-                onClicked: {
-                    if(__rightPanel.source != "QGroundControl/Controls/AppMessages.qml") {
-                        __rightPanel.source = "QGroundControl/Controls/AppMessages.qml"
-                    }
-                    checked = true
-                }
-            }
-
-            QGCButton {
-                height:         _buttonHeight
-                text:           qsTr("Mock Link")
-                visible:        ScreenTools.isDebug
-                exclusiveGroup: panelActionGroup
-                onClicked: {
-                    if(__rightPanel.source != "MockLink.qml") {
-                        __rightPanel.source = "MockLink.qml"
-                    }
-                    checked = true
-                }
-            }
-
-            QGCButton {
-                height:         _buttonHeight
-                text:           qsTr("Debug")
-                visible:        ScreenTools.isDebug
-                exclusiveGroup: panelActionGroup
-                onClicked: {
-                    if(__rightPanel.source != "DebugWindow.qml") {
-                        __rightPanel.source = "DebugWindow.qml"
-                    }
-                    checked = true
                 }
             }
         }

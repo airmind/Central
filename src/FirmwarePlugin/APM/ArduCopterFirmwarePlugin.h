@@ -28,19 +28,22 @@ public:
         LOITER      = 5,   // Hold a single location
         RTL         = 6,   // AUTO control
         CIRCLE      = 7,   // AUTO control
-        POSITION    = 8,   // AUTO control
+        POSITION    = 8,   // Deprecated
         LAND        = 9,   // AUTO control
-        OF_LOITER   = 10,  // Hold a single location using optical flow
-                           // sensor
+        OF_LOITER   = 10,  // Deprecated
         DRIFT       = 11,  // Drift 'Car Like' mode
         RESERVED_12 = 12,  // RESERVED FOR FUTURE USE
-        SPORT       = 13,  // [TODO] Verify this is correct.
+        SPORT       = 13,
         FLIP        = 14,
         AUTOTUNE    = 15,
         POS_HOLD    = 16, // HYBRID LOITER.
-        BRAKE       = 17
+        BRAKE       = 17,
+        THROW       = 18,
+        AVOID_ADSB  = 19,
+        GUIDED_NOGPS= 20,
+        SAFE_RTL   = 21,   //Safe Return to Launch
     };
-    static const int modeCount = 18;
+    static const int modeCount = 22;
 
     APMCopterMode(uint32_t mode, bool settable);
 };
@@ -53,19 +56,17 @@ public:
     ArduCopterFirmwarePlugin(void);
 
     // Overrides from FirmwarePlugin
-    bool isCapable(const Vehicle *vehicle, FirmwareCapabilities capabilities) final;
-    bool isPaused(const Vehicle* vehicle) const final;
-    void setGuidedMode(Vehicle* vehicle, bool guidedMode) final;
-    void pauseVehicle(Vehicle* vehicle) final;
-    void guidedModeRTL(Vehicle* vehicle) final;
-    void guidedModeLand(Vehicle* vehicle) final;
-    void guidedModeTakeoff(Vehicle* vehicle, double altitudeRel) final;
-    void guidedModeGotoLocation(Vehicle* vehicle, const QGeoCoordinate& gotoCoord) final;
-    void guidedModeChangeAltitude(Vehicle* vehicle, double altitudeRel) final;
+    void    guidedModeLand                      (Vehicle* vehicle) final;
     const FirmwarePlugin::remapParamNameMajorVersionMap_t& paramNameRemapMajorVersionMap(void) const final { return _remapParamName; }
-    virtual int remapParamNameHigestMinorVersionNumber(int majorVersionNumber) const final;
-    virtual bool multiRotorCoaxialMotors(Vehicle* vehicle) final;
-    virtual bool multiRotorXConfig(Vehicle* vehicle) final;
+    int     remapParamNameHigestMinorVersionNumber(int majorVersionNumber) const final;
+    bool    multiRotorCoaxialMotors             (Vehicle* vehicle) final;
+    bool    multiRotorXConfig                   (Vehicle* vehicle) final;
+    QString offlineEditingParamFile             (Vehicle* vehicle) final { Q_UNUSED(vehicle); return QStringLiteral(":/FirmwarePlugin/APM/Copter.OfflineEditing.params"); }
+    QString pauseFlightMode                     (void) const override { return QString("Brake"); }
+    QString landFlightMode                      (void) const override { return QString("Land"); }
+    QString takeControlFlightMode               (void) const override { return QString("Loiter"); }
+    bool    vehicleYawsToNextWaypointInMission  (const Vehicle* vehicle) const final;
+    QString autoDisarmParameter                 (Vehicle* vehicle) final { Q_UNUSED(vehicle); return QStringLiteral("DISARM_DELAY"); }
 
 private:
     static bool _remapParamNameIntialized;

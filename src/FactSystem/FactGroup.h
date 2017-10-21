@@ -27,6 +27,7 @@ class FactGroup : public QObject
     
 public:
     FactGroup(int updateRateMsecs, const QString& metaDataFile, QObject* parent = NULL);
+    FactGroup(int updateRateMsecs, QObject* parent = NULL);
 
     Q_PROPERTY(QStringList factNames        READ factNames      CONSTANT)
     Q_PROPERTY(QStringList factGroupNames   READ factGroupNames CONSTANT)
@@ -39,10 +40,11 @@ public:
 
     QStringList factNames(void) const { return _nameToFactMap.keys(); }
     QStringList factGroupNames(void) const { return _nameToFactGroupMap.keys(); }
-    
+
 protected:
     void _addFact(Fact* fact, const QString& name);
     void _addFactGroup(FactGroup* factGroup, const QString& name);
+    void _loadFromJsonArray(const QJsonArray jsonArray);
 
     int _updateRateMSecs;   ///< Update rate for Fact::valueChanged signals, 0: immediate update
 
@@ -50,24 +52,14 @@ private slots:
     void _updateAllValues(void);
 
 private:
-    void _loadMetaData(const QString& filename);
+    void _setupTimer();
+    QTimer _updateTimer;
 
+protected:
     QMap<QString, Fact*>            _nameToFactMap;
     QMap<QString, FactGroup*>       _nameToFactGroupMap;
     QMap<QString, FactMetaData*>    _nameToFactMetaDataMap;
 
-    QTimer _updateTimer;
-
-    static const char*  _propertiesJsonKey;
-    static const char*  _nameJsonKey;
-    static const char*  _decimalPlacesJsonKey;
-    static const char*  _typeJsonKey;
-    static const char*  _versionJsonKey;
-    static const char*  _shortDescriptionJsonKey;
-    static const char*  _unitsJsonKey;
-    static const char*  _defaultValueJsonKey;
-    static const char*  _minJsonKey;
-    static const char*  _maxJsonKey;
 };
 
 #endif

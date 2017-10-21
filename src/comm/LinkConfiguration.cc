@@ -15,7 +15,7 @@
 */
 
 #include "LinkConfiguration.h"
-#ifndef __ios__
+#ifndef NO_SERIAL_LINK
 #include "SerialLink.h"
 #endif
 #ifdef __mindskin__
@@ -24,7 +24,7 @@
 
 #include "UDPLink.h"
 #include "TCPLink.h"
-#ifndef __mobile__
+#if !defined(__mobile__)
 #include "LogReplayLink.h"
 #endif
 #ifdef QGC_ENABLE_BLUETOOTH
@@ -83,7 +83,7 @@ LinkConfiguration* LinkConfiguration::createSettings(int type, const QString& na
 {
     LinkConfiguration* config = NULL;
     switch(type) {
-#ifndef __ios__
+#ifndef NO_SERIAL_LINK
         case LinkConfiguration::TypeSerial:
             config = new SerialConfiguration(name);
             break;
@@ -126,7 +126,7 @@ LinkConfiguration* LinkConfiguration::duplicateSettings(LinkConfiguration* sourc
 {
     LinkConfiguration* dupe = NULL;
     switch(source->type()) {
-#ifndef __ios__
+#ifndef NO_SERIAL_LINK
         case TypeSerial:
             dupe = new SerialConfiguration(dynamic_cast<SerialConfiguration*>(source));
             break;
