@@ -158,11 +158,12 @@
     int idx = [indexPath indexAtPosition:1];
     
     if (conn_stage == CONN_ALLLINKS) {
-        //return full height of screen;
-        
+        //return full height of screen, seems needed for xcode 8 and above;
+        return tableView.frame.size.height;
      }
     else if (conn_stage == BT_SCANNING){
         //return full height of screen;
+        return tableView.frame.size.height;
     }
     else {
         if (idx==0) {

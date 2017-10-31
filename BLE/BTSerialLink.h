@@ -170,6 +170,8 @@ public:
     bool operator == (BTSerialConfiguration* cfg);
 };
 
+typedef QSharedPointer<BTSerialConfiguration> SharedBTLinkConfigurationPointer;
+
 /**
  A BTSerialLink is a link between one ble central and one ble peripheral. One ble central can have seral links with multiple peripherals.
  

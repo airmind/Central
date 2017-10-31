@@ -67,7 +67,7 @@ LinkManager::LinkManager(QGCApplication* app, QGCToolbox* toolbox)
     qmlRegisterUncreatableType<LinkInterface>       ("QGroundControl", 1, 0, "LinkInterface",       "Reference only");
 
     QSettings settings;
-
+/*
     settings.beginGroup(_settingsGroup);
     _autoconnectUDP =       settings.value(_autoconnectUDPKey, true).toBool();
     qDebug() << "[LinkManager] _autoconnectUDP:" << _autoconnectUDP;
@@ -75,7 +75,7 @@ LinkManager::LinkManager(QGCApplication* app, QGCToolbox* toolbox)
     _autoconnect3DRRadio =  settings.value(_autoconnect3DRRadioKey, true).toBool();
     _autoconnectPX4Flow =   settings.value(_autoconnectPX4FlowKey, true).toBool();
     _autoconnectRTKGPS =    settings.value(_autoconnectRTKGPSKey, true).toBool();
-
+*/
 #ifndef __ios__
     _activeLinkCheckTimer.setInterval(_activeLinkCheckTimeoutMSecs);
     _activeLinkCheckTimer.setSingleShot(false);
@@ -134,8 +134,10 @@ void LinkManager::processPendingDatagrams()
                 TCPConfiguration* tcpConfig = qobject_cast<TCPConfiguration*>(linkConfig);
                 tcpConfig->setHost(sHost);
                 tcpConfig->setPort(6789);
-                qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
-                LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(linkConfig);
+                //Edit by Roland;
+                //qgcApp()->toolbox()->linkManager()->endCreateConfiguration(linkConfig);
+                SharedLinkConfigurationPointer tconfig = qgcApp()->toolbox()->linkManager()->addConfiguration(tcpConfig);
+                LinkInterface* linkInterface = qgcApp()->toolbox()->linkManager()->createConnectedLink(tconfig);
                 if(linkInterface == NULL) {
                     qDebug() << "[processPendingDatagrams] failed to call LinkManager.createConnectedLink()";
                 }
@@ -400,14 +402,14 @@ bool LinkManager::disconnectLink(BTSerialLink* link) {
     BTSerialConfiguration* config = link->getLinkConfiguration();
     QString uuid = config->getBLEPeripheralIdentifier();
     if (config) {
-        if (_autoconnectConfigurations.contains(config)) {
+        if (_sharedBTAutoconnectConfigurations.contains(config)) {
             config->setLink(NULL);
         }
     }
     _deleteLink(link);
-    if (_autoconnectConfigurations.contains(config)) {
+    if (_sharedBTAutoconnectConfigurations.contains(config)) {
         qCDebug(LinkManagerLog) << "Removing disconnected autoconnect config" << config->name();
-        _autoconnectConfigurations.removeOne(config);
+        _sharedBTAutoconnectConfigurations.removeOne(config);
         delete config;
     }
     
@@ -651,7 +653,19 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
 }
 #endif
 #endif
-LinkInterface* LinkManager::createConnectedLink(LinkConfiguration* config)
+
+
+// This should only be used by Qml code
+void LinkManager::createConnectedLink(LinkConfiguration* config)
+{
+    for(int i = 0; i < _sharedConfigurations.count(); i++) {
+        SharedLinkConfigurationPointer& sharedConf = _sharedConfigurations[i];
+        if (sharedConf->name() == config->name())
+            createConnectedLink(sharedConf);
+    }
+}
+
+LinkInterface* LinkManager::createConnectedLink(SharedLinkConfigurationPointer& config)
 {
     if (!config) {
         qWarning() << "LinkManager::createConnectedLink called with NULL config";
@@ -1216,7 +1230,7 @@ void LinkManager::_updateAutoConnectLinks(void)
         }
     }
 //    qDebug() << "[_updateAutoConnectLinks] foundUDP:" << foundUDP << ", _autoconnectUDP:" << _autoconnectUDP;
-    if (!foundUDP && _autoconnectUDP) {
+    if (!foundUDP && _autoConnectSettings->autoConnectUDP()->rawValue().toBool()) {
 //        qCDebug(LinkManagerLog) << "New auto-connect UDP port added";
         qDebug() << "[_updateAutoConnectLinks] New auto-connect UDP port added";
         UDPConfiguration* udpConfig = new UDPConfiguration(_defaultUPDLinkName);

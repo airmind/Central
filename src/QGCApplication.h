@@ -98,11 +98,18 @@ public:
     /// Do we have Bluetooth Support?
     bool isBluetoothAvailable() { return _bluetoothAvailable; }
 
+    /// Is Internet available?
+    bool isInternetAvailable();
+
+    /*
     QGeoCoordinate lastKnownHomePosition(void) { return _lastKnownHomePosition; }
     void setLastKnownHomePosition(QGeoCoordinate& lastKnownHomePosition);
+     */
+    
     #if defined(__mindskin__) && defined(__android__)
     void cleanJavaException(void);
     #endif
+    
 public slots:
     /// You can connect to this slot to show an information message box from a different thread.
     void informationMessageBoxOnMainThread(const QString& title, const QString& msg);

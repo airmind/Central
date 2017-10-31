@@ -107,14 +107,14 @@ ParameterManager::~ParameterManager()
     delete _parameterMetaData;
 }
 #ifdef __mindskin__
-void ParameterLoader::notifyParameterProgress(float progress) {
+void ParameterManager::notifyParameterProgress(float progress) {
 #ifdef __android__
         QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterListProgress", "(F)V", progress);
         cleanJavaException();
 #endif //__android__
 }
 
-void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue) {
+void ParameterManager::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue) {
 #ifdef __android__
     QAndroidJniObject jParameterName = QAndroidJniObject::fromString(parameterName);
     QAndroidJniObject jShortDesc = QAndroidJniObject::fromString(shortDesc);
@@ -125,7 +125,7 @@ void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavTyp
 #endif //__android__
 }
 
-void ParameterLoader::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, QVariant value) {
+void ParameterManager::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, QVariant value) {
 #ifdef __android__
     QAndroidJniObject jParameterName = QAndroidJniObject::fromString(parameterName);
     QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterUpdate", "(IIILjava/lang/String;F)V", vehicleId, componentId, mavType, jParameterName.object<jstring>(),value.toFloat());
@@ -181,8 +181,8 @@ void ParameterManager::_parameterUpdate(int vehicleId, int componentId, QString 
 
     if (_vehicle->px4Firmware() && parameterName == "_HASH_CHECK" && !_logReplay) {
         /* we received a cache hash, potentially load from cache */
-        qCDebug(ParameterLoaderLog) << "try to load parameters from cache";
-        _tryCacheHashLoad(uasId, componentId, value);
+        qCDebug(ParameterManagerLog) << "try to load parameters from cache";
+        _tryCacheHashLoad(vehicleId, componentId, value);
         return;
     }
 
@@ -292,13 +292,13 @@ void ParameterManager::_parameterUpdate(int vehicleId, int componentId, QString 
         // We are no longer waiting for any reads to complete
         if (_prevWaitingReadParamIndexCount + _prevWaitingReadParamNameCount != 0) {
             // Set progress to 0 if not already there
-            emit parameterListProgress(0);
+            _setLoadProgress(0.0);
 #ifdef __mindskin__
             notifyParameterProgress(0);
 #endif
         }
     } else {
-        emit parameterListProgress((float)(_totalParamCount - readWaitingParamCount) / (float)_totalParamCount);
+        _setLoadProgress((double)(_totalParamCount - readWaitingParamCount) / (double)_totalParamCount);
 #ifdef __mindskin__
         notifyParameterProgress((float)(_totalParamCount - readWaitingParamCount) / (float)_totalParamCount);
 #endif
@@ -360,7 +360,7 @@ void ParameterManager::_parameterUpdate(int vehicleId, int componentId, QString 
     Q_ASSERT(fact);
     fact->_containerSetRawValue(value);
 #ifdef __mindskin__
-    parameterUpdate(uasId,componentId,mavType,parameterName,parameterCount,parameterId,value, fact->shortDescription(), fact->longDescription(), fact->rawUnits(), fact->rawDefaultValue());
+    parameterUpdate(vehicleId,componentId,mavType,parameterName,parameterCount,parameterId,value, fact->shortDescription(), fact->longDescription(), fact->rawUnits(), fact->rawDefaultValue());
 #endif
     if (componentParamsComplete) {
         if (componentId == _vehicle->defaultComponentId()) {
@@ -452,7 +452,7 @@ void ParameterManager::refreshAllParameters(uint8_t componentId)
     }
 
 #ifdef __mindskin__
-    if(componentID == MAV_COMP_ID_ALL) {
+    if(componentId == MAV_COMP_ID_ALL) {
         _totalParamCount = 0;
     }
 #endif
@@ -810,7 +810,7 @@ void ParameterManager::_writeLocalParamCache(int vehicleId, int componentId)
 }
 
 #ifdef __mindskin__
-void ParameterLoader::writeLocalParamCache() {
+void ParameterManager::writeLocalParamCache() {
     Q_ASSERT(_vehicle);
     int uasId = _vehicle->id();
     foreach(int compId, _mapParameterId2Name.keys()) {
@@ -818,7 +818,8 @@ void ParameterLoader::writeLocalParamCache() {
     }
 }
 #endif
-QDir ParameterLoader::parameterCacheDir()
+
+QDir ParameterManager::parameterCacheDir()
 {
     const QString spath(QFileInfo(QSettings().fileName()).dir().absolutePath());
     return spath + QDir::separator() + "ParamCache";
@@ -835,7 +836,7 @@ void ParameterManager::_tryCacheHashLoad(int vehicleId, int componentId, QVarian
     /* The datastructure of the cache table */
     MapID2NamedParam cache_map; //map:[id:int,(name:QString,(type:int,value:QVariant))]
 
-    QFile cache_file(parameterCacheFile(uasId, componentId));
+    QFile cache_file(parameterCacheFile(vehicleId, componentId));
     if (!cache_file.exists()) {
         /* no local cache, just wait for them to come in*/
         return;

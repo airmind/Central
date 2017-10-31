@@ -76,8 +76,10 @@ APMSensorsComponentController::APMSensorsComponentController(void)
     } else {
         qWarning() << "Sensors component is missing";
     }
-
+#ifndef __mindskin__
     connect(qgcApp()->toolbox()->mavlinkProtocol(), &MAVLinkProtocol::messageReceived, this, &APMSensorsComponentController::_mavlinkMessageReceived);
+#endif
+    
 }
 
 APMSensorsComponentController::~APMSensorsComponentController()

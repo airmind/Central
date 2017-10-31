@@ -19,9 +19,9 @@ message(Qt version $$[QT_VERSION])
 
 include(QGCCommon.pri)
 
-TARGET   = QGroundControl
+TARGET   = MindSkin
 TEMPLATE = app
-QGCROOT  = $$PWD
+QGCROOT  = $$absolute_path($$PWD)
 
 DebugBuild {
     DESTDIR  = $${OUT_PWD}/debug
@@ -78,11 +78,11 @@ WindowsBuild {
 # Branding
 #
 
-QGC_APP_NAME        = "QGroundControl"
-QGC_ORG_NAME        = "QGroundControl.org"
-QGC_ORG_DOMAIN      = "org.qgroundcontrol"
-QGC_APP_DESCRIPTION = "Open source ground control app provided by QGroundControl dev team"
-QGC_APP_COPYRIGHT   = "Copyright (C) 2017 QGroundControl Development Team. All rights reserved."
+QGC_APP_NAME        = "MindSkin"
+QGC_ORG_NAME        = "DroneTag.org"
+QGC_ORG_DOMAIN      = "org.dronetag"
+QGC_APP_DESCRIPTION = "Open source ground control app provided by mindpx dev team"
+QGC_APP_COPYRIGHT   = "Copyright (C) 2017 Airmind team, All rights reserved."
 
 WindowsBuild {
     QGC_INSTALLER_ICON          = "WindowsQGC.ico"
@@ -292,10 +292,10 @@ LinuxBuild {
 }
 
 RC_ICONS = resources/icons/qgroundcontrol.ico
-QMAKE_TARGET_COMPANY = "qgroundcontrol.org"
-QMAKE_TARGET_DESCRIPTION = "Open source ground control app provided by QGroundControl dev team"
-QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2016 QGroundControl Development Team. All rights reserved."
-QMAKE_TARGET_PRODUCT = "QGroundControl"
+QMAKE_TARGET_COMPANY = "DroneTag.org"
+QMAKE_TARGET_DESCRIPTION = "Open source ground control app provided by mindpx dev team"
+QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2017 Airmind Team. All rights reserved."
+QMAKE_TARGET_PRODUCT = "MindSkin"
 
 #
 # Build-specific settings
@@ -334,7 +334,7 @@ CustomBuild {
         message("Using custom qgroundcontrol.qrc")
         RESOURCES += $$PWD/custom/qgroundcontrol.qrc
     } else {
-        RESOURCES += $$PWD/qgroundcontrol.qrc
+        RESOURCES += $$absolute_path($$PWD)/qgroundcontrol.qrc
     }
     exists($$PWD/custom/qgcresources.qrc) {
         message("Using custom qgcresources.qrc")
@@ -343,12 +343,12 @@ CustomBuild {
         RESOURCES += $$PWD/qgcresources.qrc
     }
 } else {
-    DEFINES += QGC_APPLICATION_NAME=\"\\\"QGroundControl\\\"\"
-    DEFINES += QGC_ORG_NAME=\"\\\"QGroundControl.org\\\"\"
-    DEFINES += QGC_ORG_DOMAIN=\"\\\"org.qgroundcontrol\\\"\"
+    DEFINES += QGC_APPLICATION_NAME=\"\\\"MindSkin\\\"\"
+    DEFINES += QGC_ORG_NAME=\"\\\"DroneTag.org\\\"\"
+    DEFINES += QGC_ORG_DOMAIN=\"\\\"org.dronetag\\\"\"
     RESOURCES += \
-        $$PWD/qgroundcontrol.qrc \
-        $$PWD/qgcresources.qrc
+        $$absolute_path($$PWD)/qgroundcontrol.qrc \
+        $$absolute_path($$PWD)/qgcresources.qrc
 }
 
 # On Qt 5.9 android versions there is the following bug: https://bugreports.qt.io/browse/QTBUG-61424

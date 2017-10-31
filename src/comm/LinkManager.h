@@ -193,7 +193,8 @@ public:
     
     /// Returns the QSharedPointer for this link. You must use SharedLinkInterface if you are going to
     /// keep references to a link in a thread other than the main ui thread.
-    SharedLinkInterface& sharedPointerForLink(LinkInterface* link);
+    
+    SharedLinkInterfacePointer& sharedPointerForLink(LinkInterface* link);
 
     /// Re-connects all existing links
     bool connectAll();
@@ -336,7 +337,8 @@ private:
     void _updateAutoConnectLinks(void);
     void _updateSerialPorts();
     void _fixUnnamed(LinkConfiguration* config);
-    bool _setAutoconnectWorker(bool& currentAutoconnect, bool newAutoconnect, const char* autoconnectKey);
+    void _removeConfiguration(LinkConfiguration* config);
+    //bool _setAutoconnectWorker(bool& currentAutoconnect, bool newAutoconnect, const char* autoconnectKey);
     
 #ifdef __mindskin__
     int _registerTrialConnect(BTSerialLink* blelink);
@@ -381,7 +383,18 @@ private:
     AutoConnectSettings*    _autoConnectSettings;
     MAVLinkProtocol*        _mavlinkProtocol;
 
+    
+    QList<SharedLinkInterfacePointer>       _sharedLinks;
+    QList<SharedLinkConfigurationPointer>   _sharedConfigurations;
+    QList<SharedLinkConfigurationPointer>   _sharedAutoconnectConfigurations;
+    QString                                 _autoConnectRTKPort;
+    QmlObjectListModel                      _qmlConfigurations;
+/*
     QmlObjectListModel  _links;
+    QmlObjectListModel  _linkConfigurations;
+    QmlObjectListModel  _autoconnectConfigurations;
+*/
+    
 #ifdef __mindskin__
     //BTSerialLink is not a Qthread, so need to be handled seperately.
     //QList<BTSerialLink*> _blelinks;
@@ -394,11 +407,11 @@ private:
     QmlObjectListModel  _bletriallinks;
     
     
+    QList<BTSerialConfiguration*>   _sharedBTAutoconnectConfigurations;
+
+    
 #endif
     
-    
-    QmlObjectListModel  _linkConfigurations;
-    QmlObjectListModel  _autoconnectConfigurations;
 
     QMap<QString, int>  _autoconnectWaitList;   ///< key: QGCSerialPortInfo.systemLocation, value: wait count
     QStringList _commPortList;

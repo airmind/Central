@@ -227,9 +227,9 @@ void SensorsComponentController::_handleUASTextMessage(int uasId, int compId, in
     _appendStatusLog(msg);
     qDebug() << msg;
 
-    UASInterface* uas = _autopilot->vehicle()->uas();
-    Q_ASSERT(uas);
-    if (uasId != uas->getUASID()) {
+    //UASInterface* uas = _autopilot->vehicle()->uas();
+    //Q_ASSERT(uas);
+    if (uasId != _vehicle->id()) {
         QString msg = "Not a valid uas id ... MindPX";
         _appendStatusLog(msg);
         qDebug() << msg;

@@ -236,10 +236,10 @@ public:
 #ifdef __mindskin__
     Vehicle(BTSerialLink*          link,
             int                     vehicleId,
+            int                     defaultComponentId,
             MAV_AUTOPILOT           firmwareType,
             MAV_TYPE                vehicleType,
             FirmwarePluginManager*  firmwarePluginManager,
-            AutoPilotPluginManager* autopilotPluginManager,
             JoystickManager*        joystickManager);
     
 #endif
@@ -659,8 +659,23 @@ public:
 #ifdef __mindskin__
     bool containsLinkConfig(QString& linkConfigName);
 #endif
+    /*
     void doCommandLong(int component, MAV_CMD command, float param1 = 0.0f, float param2 = 0.0f, float param3 = 0.0f, float param4 = 0.0f, float param5 = 0.0f, float param6 = 0.0f, float param7 = 0.0f);
+     */
+    
+    /// Sends the specified MAV_CMD to the vehicle. If no Ack is received command will be retried. If a sendMavCommand is already in progress
+    /// the command will be queued and sent when the previous command completes.
+    ///     @param component Component to send to
+    ///     @param command MAV_CMD to send
+    ///     @param showError true: Display error to user if command failed, false:  no error shown
+    /// Signals: mavCommandResult on success or failure
+    void sendMavCommand(int component, MAV_CMD command, bool showError, float param1 = 0.0f, float param2 = 0.0f, float param3 = 0.0f, float param4 = 0.0f, float param5 = 0.0f, float param6 = 0.0f, float param7 = 0.0f);
+    
+    /// Same as sendMavCommand but available from Qml.
+    Q_INVOKABLE void sendCommand(int component, int command, bool showError, double param1 = 0.0f, double param2 = 0.0f, double param3 = 0.0f, double param4 = 0.0f, double param5 = 0.0f, double param6 = 0.0f, double param7 = 0.0f)
+    { sendMavCommand(component, (MAV_CMD)command, showError, param1, param2, param3, param4, param5, param6, param7); }
 
+    
     int firmwareMajorVersion(void) const { return _firmwareMajorVersion; }
     int firmwareMinorVersion(void) const { return _firmwareMinorVersion; }
     int firmwarePatchVersion(void) const { return _firmwarePatchVersion; }
@@ -900,7 +915,8 @@ private:
     void _startJoystick(bool start);
     void _handleHomePosition(mavlink_message_t& message);
     void _handleHeartbeat(mavlink_message_t& message);
-    void _handleHeartbeat(LinkInterface *link, mavlink_message_t& message);
+    //void _handleHeartbeat(LinkInterface *link, mavlink_message_t& message);
+    void _handleRadioStatus(mavlink_message_t& message);
     void _handleRCChannels(mavlink_message_t& message);
     void _handleRCChannelsRaw(mavlink_message_t& message);
     void _handleBatteryStatus(mavlink_message_t& message);
@@ -913,6 +929,10 @@ private:
     void _handleCommandLong(mavlink_message_t& message);
     void _handleAutopilotVersion(LinkInterface* link, mavlink_message_t& message);
     void _handleProtocolVersion(LinkInterface* link, mavlink_message_t& message);
+#ifdef __mindskin__
+    void _handleAutopilotVersion(BTSerialLink* link, mavlink_message_t& message);
+    void _handleProtocolVersion(BTSerialLink* link, mavlink_message_t& message);
+#endif
     void _handleHilActuatorControls(mavlink_message_t& message);
     void _handleGpsRawInt(mavlink_message_t& message);
     void _handleGlobalPositionInt(mavlink_message_t& message);
@@ -929,7 +949,7 @@ private:
     void _rallyPointManagerError(int errorCode, const QString& errorMsg);
     void _mapTrajectoryStart(void);
     void _mapTrajectoryStop(void);
-    void _connectionActive(LinkInterface *link);
+    void _connectionActive(void);
     void _say(const QString& text);
     QString _vehicleIdSpeech(void);
     void _handleMavlinkLoggingData(mavlink_message_t& message);

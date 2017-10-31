@@ -115,9 +115,10 @@ private slots:
     void _setActiveVehiclePhase2(void);
     void _vehicleParametersReadyChanged(bool parametersReady);
     void _sendGCSHeartbeat(void);
-    void _vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
+    void _vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
+    void _requestProtocolVersion(unsigned version);
 #ifdef __mindskin__
-    void _vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
+    void _vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     
 private:

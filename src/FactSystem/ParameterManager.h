@@ -104,15 +104,16 @@ public:
     /// If this file is newer than anything in the cache, cache it as the latest version
     static void cacheMetaDataFile(const QString& metaDataFile, MAV_AUTOPILOT firmwareType);
 
-    int defaultComponenentId(void) { return _defaultComponentId; }
+    //int defaultComponenentId(void) { return _defaultComponentId; }
 #ifdef __mindskin__
     void writeLocalParamCache();
 #endif
-    
+  
+//This is in previous ParameterLoader.h, how does it come to this place during the merge?
+/*
 signals:
-    /// Signalled when the full set of facts are ready
     void parametersReady(bool missingParameters);
-
+*/
     /// Load a parameter set from json
     ///     @param json Json object to load from
     ///     @param required true: no parameters in object will generate error
@@ -120,6 +121,12 @@ signals:
     /// @return true: success, false: failure (errorString set)
     bool loadFromJson(const QJsonObject& json, bool required, QString& errorString);
 
+    /// Saves the specified param set to the json object.
+    ///     @param componentId Component id which contains params, MAV_COMP_ID_ALL to save all components
+    ///     @param paramsToSave List of params names to save, empty to save all for component
+    ///     @param saveObject Json object to save to
+    void saveToJson(int componentId, const QStringList& paramsToSave, QJsonObject& saveObject);
+    
     Vehicle* vehicle(void) { return _vehicle; }
 
 signals:

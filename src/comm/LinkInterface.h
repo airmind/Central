@@ -19,6 +19,8 @@
 #include <QDebug>
 
 #include "QGCMAVLink.h"
+#include "LinkConfiguration.h"
+
 class LinkManager;
 
 /**

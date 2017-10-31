@@ -172,7 +172,7 @@ signals:
     void vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 
 #ifdef __mindskin__
-    void vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
+    void vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     
     /** @brief Message received and directly copied via signal */
@@ -222,6 +222,8 @@ private:
 //#ifdef __ios__
     //void _linkStatusChanged(BTSerialLink* link, bool connected);
 //#endif
+    
+    
     void _sendMessage(mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
@@ -235,7 +237,7 @@ private:
 #endif
 
     
-#ifndef __mobile__
+
     bool _closeLogFile(void);
     void _startLogging(void);
     void _stopLogging(void);
@@ -247,7 +249,7 @@ private:
     QGCTemporaryFile    _tempLogFile;            ///< File to log to
     static const char*  _tempLogFileTemplate;    ///< Template for temporary log file
     static const char*  _logFileExtension;       ///< Extension for log files
-#endif
+
     
     /// List of all links connected to protocol. We keep SharedLinkInterface objects
     /// which are QSharedPointer's in order to maintain reference counts across threads.

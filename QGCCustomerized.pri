@@ -39,7 +39,6 @@ __mindskin__ {
             mindskin/ios/MindSkinRootView_impl_objc.mm \
             mindskin/ios/tagNodesViewController.mm \
             mindskin/ios/mindskinMessageViewController.mm \
-            mindskin/ios/mindskinlog.mm \
             mindskin/ios/RacerMainMenuView.mm \
             mindskin/ios/RacerMainMenuViewController.mm \
 

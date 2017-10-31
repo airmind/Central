@@ -124,6 +124,7 @@ void FactGroup::_updateAllValues(void)
     }
 }
 
+#if 0
 void FactGroup::_loadMetaData(const QString& jsonFilename)
 {
     if (jsonFilename.isEmpty()) {
@@ -242,3 +243,4 @@ void FactGroup::_loadMetaData(const QString& jsonFilename)
         _nameToFactMetaDataMap[name] = metaData;
     }
 }
+#endif

@@ -73,8 +73,8 @@ void MultiVehicleManager::setToolbox(QGCToolbox *toolbox)
     connect(_mavlinkProtocol, &MAVLinkProtocol::vehicleHeartbeatInfo, this, &MultiVehicleManager::_vehicleHeartbeatInfo);
 #else 
 //    #ifdef __ios__
-    connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(LinkInterface*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
-    connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, int, int, int, int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(BTSerialLink*, int, int, int, int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
+    connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, int, int, int, int,int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(LinkInterface*, int, int, int, int,int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
+    connect(_mavlinkProtocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, int, int, int, int,int)>(&MAVLinkProtocol::vehicleHeartbeatInfo), this,static_cast<void (MultiVehicleManager::*)(BTSerialLink*, int, int, int, int,int)>(&MultiVehicleManager::_vehicleHeartbeatInfo));
 //    #endif
     
 #endif
@@ -175,7 +175,7 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
 
 #ifdef __mindskin__
 
-void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
+void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
 {
 #if __android__
             __android_log_print(ANDROID_LOG_INFO, kJTag, "_vehicleHeartbeatInfo=> vehicleId:%d",vehicleId);
@@ -208,18 +208,25 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
         return;
     }
     
-    Vehicle* vehicle = new Vehicle(link, vehicleId, (MAV_AUTOPILOT)vehicleFirmwareType, (MAV_TYPE)vehicleType, _firmwarePluginManager, _autopilotPluginManager, _joystickManager);
+    Vehicle* vehicle = new Vehicle(link, vehicleId, componentId, (MAV_AUTOPILOT)vehicleFirmwareType, (MAV_TYPE)vehicleType, _firmwarePluginManager, _joystickManager);
+
     connect(vehicle, &Vehicle::allLinksInactive, this, &MultiVehicleManager::_deleteVehiclePhase1);
-    connect(vehicle->autopilotPlugin(), &AutoPilotPlugin::parametersReadyChanged, this, &MultiVehicleManager::_autopilotParametersReadyChanged);
-    
+    connect(vehicle, &Vehicle::requestProtocolVersion, this, &MultiVehicleManager::_requestProtocolVersion);
+    connect(vehicle->parameterManager(), &ParameterManager::parametersReadyChanged, this, &MultiVehicleManager::_vehicleParametersReadyChanged);
+
     _vehicles.append(vehicle);
     
     // Send QGC heartbeat ASAP, this allows PX4 to start accepting commands
     _sendGCSHeartbeat();
-
+    qgcApp()->toolbox()->settingsManager()->appSettings()->defaultFirmwareType()->setRawValue(vehicleFirmwareType);
+    
     emit vehicleAdded(vehicle);
     
-    setActiveVehicle(vehicle);
+    if (_vehicles.count() > 1) {
+        qgcApp()->showMessage(tr("Connected to Vehicle %1").arg(vehicleId));
+    } else {
+        setActiveVehicle(vehicle);
+    }
     
     // Mark link as active
     link->setActive(true);
@@ -276,6 +283,29 @@ bool MultiVehicleManager::notifyHeartbeatInfo(BTSerialLink* link, int vehicleId,
 
 #endif
 
+/// This slot is connected to the Vehicle::requestProtocolVersion signal such that the vehicle manager
+/// tries to switch MAVLink to v2 if all vehicles support it
+void MultiVehicleManager::_requestProtocolVersion(unsigned version)
+{
+    unsigned maxversion = 0;
+    
+    if (_vehicles.count() == 0) {
+        _mavlinkProtocol->setVersion(version);
+        return;
+    }
+    
+    for (int i=0; i<_vehicles.count(); i++) {
+        
+        Vehicle *v = qobject_cast<Vehicle*>(_vehicles[i]);
+        if (v && v->maxProtoVersion() > maxversion) {
+            maxversion = v->maxProtoVersion();
+        }
+    }
+    
+    if (_mavlinkProtocol->getCurrentVersion() != maxversion) {
+        _mavlinkProtocol->setVersion(maxversion);
+    }
+}
 
 
 /// This slot is connected to the Vehicle::allLinksDestroyed signal such that the Vehicle is deleted

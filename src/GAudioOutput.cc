@@ -69,16 +69,68 @@ bool GAudioOutput::getMillisecondString(const QString& string, QString& match, i
     return false;
 }
 
-bool GAudioOutput::say(const QString& inText)
-{
-    if (!muted && !qgcApp()->runningUnitTests()) {
-#if defined __android__
-#if defined QGC_SPEECH_ENABLED
-        static const char V_jniClassName[] {"org/qgroundcontrol/qgchelper/MindSkinActivity"};
-        QAndroidJniEnvironment env;
-        if (env->ExceptionCheck()) {
-            env->ExceptionDescribe();
-            env->ExceptionClear();
+QString GAudioOutput::fixTextMessageForAudio(const QString& string) {
+    QString match;
+    QString newNumber;
+    QString result = string;
+    //-- Look for codified terms
+    if(result.contains("ERR ", Qt::CaseInsensitive)) {
+        result.replace("ERR ", "error ", Qt::CaseInsensitive);
+    }
+    if(result.contains("ERR:", Qt::CaseInsensitive)) {
+        result.replace("ERR:", "error.", Qt::CaseInsensitive);
+    }
+    if(result.contains("POSCTL", Qt::CaseInsensitive)) {
+        result.replace("POSCTL", "Position Control", Qt::CaseInsensitive);
+    }
+    if(result.contains("ALTCTL", Qt::CaseInsensitive)) {
+        result.replace("ALTCTL", "Altitude Control", Qt::CaseInsensitive);
+    }
+    if(result.contains("AUTO_RTL", Qt::CaseInsensitive)) {
+        result.replace("AUTO_RTL", "auto Return To Launch", Qt::CaseInsensitive);
+    } else if(result.contains("RTL", Qt::CaseInsensitive)) {
+        result.replace("RTL", "Return To Launch", Qt::CaseInsensitive);
+    }
+    if(result.contains("ACCEL ", Qt::CaseInsensitive)) {
+        result.replace("ACCEL ", "accelerometer ", Qt::CaseInsensitive);
+    }
+    if(result.contains("RC_MAP_MODE_SW", Qt::CaseInsensitive)) {
+        result.replace("RC_MAP_MODE_SW", "RC mode switch", Qt::CaseInsensitive);
+    }
+    if(result.contains("REJ.", Qt::CaseInsensitive)) {
+        result.replace("REJ.", "Rejected", Qt::CaseInsensitive);
+    }
+    if(result.contains("WP", Qt::CaseInsensitive)) {
+        result.replace("WP", "way point", Qt::CaseInsensitive);
+    }
+    if(result.contains("CMD", Qt::CaseInsensitive)) {
+        result.replace("CMD", "command", Qt::CaseInsensitive);
+    }
+    if(result.contains("COMPID", Qt::CaseInsensitive)) {
+        result.replace("COMPID", "component eye dee", Qt::CaseInsensitive);
+    }
+    if(result.contains(" params ", Qt::CaseInsensitive)) {
+        result.replace(" params ", " parameters ", Qt::CaseInsensitive);
+    }
+    if(result.contains(" id ", Qt::CaseInsensitive)) {
+        result.replace(" id ", " eye dee ", Qt::CaseInsensitive);
+    }
+    if(result.contains(" ADSB ", Qt::CaseInsensitive)) {
+        result.replace(" ADSB ", " Hey Dee Ess Bee ", Qt::CaseInsensitive);
+    }
+    int number;
+    if(getMillisecondString(string, match, number) && number > 1000) {
+        if(number < 60000) {
+            int seconds = number / 1000;
+            newNumber = QString("%1 second%2").arg(seconds).arg(seconds > 1 ? "s" : "");
+        } else {
+            int minutes = number / 60000;
+            int seconds = (number - (minutes * 60000)) / 1000;
+            if (!seconds) {
+                newNumber = QString("%1 minute%2").arg(minutes).arg(minutes > 1 ? "s" : "");
+            } else {
+                newNumber = QString("%1 minute%2 and %3 second%4").arg(minutes).arg(minutes > 1 ? "s" : "").arg(seconds).arg(seconds > 1 ? "s" : "");
+            }
         }
         result.replace(match, newNumber);
     }

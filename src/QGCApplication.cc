@@ -788,7 +788,7 @@ void QGCApplication::showMessage(const QString& message)
 #endif //__mindskin
 }
 
-
+/*
 void QGCApplication::showFlyView(void)
 {
     QMetaObject::invokeMethod(_rootQmlObject(), "showFlyView");
@@ -798,6 +798,7 @@ void QGCApplication::showPlanView(void)
 {
     QMetaObject::invokeMethod(_rootQmlObject(), "showPlanView");
 }
+*/
 
 void QGCApplication::showSetupView(void)
 {

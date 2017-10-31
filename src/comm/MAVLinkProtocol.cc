@@ -386,7 +386,7 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 
                 mavlink_heartbeat_t heartbeat;
                 mavlink_msg_heartbeat_decode(&message, &heartbeat);
-                emit vehicleHeartbeatInfo(link, message.sysid, heartbeat.mavlink_version, heartbeat.autopilot, heartbeat.type);
+                emit vehicleHeartbeatInfo(link, message.sysid, message.compid, heartbeat.mavlink_version, heartbeat.autopilot, heartbeat.type);
             }
             
             // Increase receive counter
@@ -437,18 +437,6 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
             // It buys as reentrancy for the whole code over all threads
             emit messageReceived(link, message);
             
-            // Multiplex message if enabled
-            if (m_multiplexingEnabled)
-            {
-                // Emit message on all links that are currently connected
-                for (int i=0; i<_linkMgr->getBTSeriallinks()->count(); i++) {
-                    BTSerialLink* currLink = _linkMgr->getBTSeriallinks()->value<BTSerialLink*>(i);
-                    
-                    // Only forward this message to the other links,
-                    // not the link the message was received on
-                    if (currLink && currLink != link) _sendMessage(currLink, message, message.sysid, message.compid);
-                }
-            }
         }
     }
 }
@@ -513,7 +501,7 @@ void MAVLinkProtocol::receiveBytes(LinkInterface* link, QByteArray b)
     // that come through after the link is disconnected. For these we just drop the data
     // since the link is closed.
     
-    if (!_linkMgr->links()->contains(link)) {
+    if (!_linkMgr->containsLink(link)) {
         return;
     }
 
@@ -712,11 +700,12 @@ int MAVLinkProtocol::getComponentId()
  */
 void MAVLinkProtocol::_sendMessage(mavlink_message_t message)
 {
-    for (int i=0; i<_linkMgr->links()->count(); i++) {
+/*    for (int i=0; i<(_linkMgr->links()).count(); i++) {
         
-        LinkInterface* link = _linkMgr->links()->value<LinkInterface*>(i);
+        LinkInterface* link = (_linkMgr->links()).value<LinkInterface*>(i);
         _sendMessage(link, message);
     }
+    */
     
 #ifdef __mindskin__
     for (int i=0; i<_linkMgr->getBTSeriallinks()->count(); i++) {
@@ -735,11 +724,14 @@ void MAVLinkProtocol::_sendMessage(mavlink_message_t message)
  */
 void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t message)
 {
+    
+
+    // Give the plugin a chance to adjust
+    //_firmwarePlugin->adjustOutgoingMavlinkMessage(this, link, &message);
+
     // Create buffer
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
     // Rewriting header to ensure correct link ID is set
-    static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
-    mavlink_finalize_message_chan(&message, this->getSystemId(), this->getComponentId(), link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
     // Write message into buffer, prepending start sign
     int len = mavlink_msg_to_send_buffer(buffer, &message);
     // If link is connected
@@ -760,11 +752,6 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
 {
     // Create buffer
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
-    // Rewriting header to ensure correct link ID is set
-    static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
-    
-    mavlink_finalize_message_chan(&message, systemid, componentid, link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
-    // Write message into buffer, prepending start sign
     int len = mavlink_msg_to_send_buffer(buffer, &message);
     // If link is connected
     if (link->isConnected())
@@ -785,13 +772,11 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
  */
 void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message)
 {
+    
+
     // Create buffer
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
-    // Rewriting header to ensure correct link ID is set
-    static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
-    mavlink_finalize_message_chan(&message, this->getSystemId(), this->getComponentId(), link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
-    // Write message into buffer, prepending start sign
-    int len = mavlink_msg_to_send_buffer(buffer, &message);
+   int len = mavlink_msg_to_send_buffer(buffer, &message);
     // If link is connected
     if (link->isConnected())
     {
@@ -819,12 +804,10 @@ void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message
  */
 void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message, quint8 systemid, quint8 componentid)
 {
+   
+
     // Create buffer
     static uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
-    // Rewriting header to ensure correct link ID is set
-    static uint8_t messageKeys[256] = MAVLINK_MESSAGE_CRCS;
-    mavlink_finalize_message_chan(&message, systemid, componentid, link->getMavlinkChannel(), message.len, message.len, messageKeys[message.msgid]);
-    // Write message into buffer, prepending start sign
     int len = mavlink_msg_to_send_buffer(buffer, &message);
     // If link is connected
     if (link->isConnected())
@@ -869,68 +852,9 @@ void MAVLinkProtocol::enableHeartbeats(bool enabled)
     emit heartbeatChanged(enabled);
 }
 
-=======
->>>>>>> upstream/master
+
 */
 
-void MAVLinkProtocol::enableMultiplexing(bool enabled)
-{
-    bool changed = false;
-    if (enabled != m_multiplexingEnabled) changed = true;
-
-    m_multiplexingEnabled = enabled;
-    if (changed) emit multiplexingChanged(m_multiplexingEnabled);
-}
-
-void MAVLinkProtocol::enableAuth(bool enable)
-{
-    bool changed = false;
-    m_authEnabled = enable;
-    if (m_authEnabled != enable) {
-        changed = true;
-    }
-    if (changed) emit authChanged(m_authEnabled);
-}
-
-void MAVLinkProtocol::enableParamGuard(bool enabled)
-{
-    if (enabled != m_paramGuardEnabled) {
-        m_paramGuardEnabled = enabled;
-        emit paramGuardChanged(m_paramGuardEnabled);
-    }
-}
-
-void MAVLinkProtocol::enableActionGuard(bool enabled)
-{
-    if (enabled != m_actionGuardEnabled) {
-        m_actionGuardEnabled = enabled;
-        emit actionGuardChanged(m_actionGuardEnabled);
-    }
-}
-
-void MAVLinkProtocol::setParamRetransmissionTimeout(int ms)
-{
-    if (ms != m_paramRetransmissionTimeout) {
-        m_paramRetransmissionTimeout = ms;
-        emit paramRetransmissionTimeoutChanged(m_paramRetransmissionTimeout);
-    }
-}
-
-void MAVLinkProtocol::setParamRewriteTimeout(int ms)
-{
-    if (ms != m_paramRewriteTimeout) {
-        m_paramRewriteTimeout = ms;
-        emit paramRewriteTimeoutChanged(m_paramRewriteTimeout);
-    }
-}
-
-void MAVLinkProtocol::setActionRetransmissionTimeout(int ms)
-{
-    if (ms != m_actionRetransmissionTimeout) {
-        m_actionRetransmissionTimeout = ms;
-        emit actionRetransmissionTimeoutChanged(m_actionRetransmissionTimeout);
-    }
-}
 
 void MAVLinkProtocol::enableVersionCheck(bool enabled)
 {

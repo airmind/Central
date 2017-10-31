@@ -7,7 +7,7 @@
 //
 
 #import "ConnectPopoverViewController.h"
-#include "MainToolBarController.h"
+//#include "MainToolBarController.h"
 #include "LinkManager.h"
 #include "qt2ioshelper.h"
 #include "ConnectPopover.h"
