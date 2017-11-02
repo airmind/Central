@@ -16,6 +16,7 @@
 #include "SettingsFact.h"
 #include "QGCLoggingCategory.h"
 #include "QGCMapPolygon.h"
+#include "CameraCalc.h"
 
 Q_DECLARE_LOGGING_CATEGORY(StructureScanComplexItemLog)
 
@@ -26,24 +27,24 @@ class StructureScanComplexItem : public ComplexMissionItem
 public:
     StructureScanComplexItem(Vehicle* vehicle, QObject* parent = NULL);
 
+    Q_PROPERTY(CameraCalc*      cameraCalc                  READ cameraCalc                     CONSTANT)
     Q_PROPERTY(Fact*            altitude                    READ altitude                       CONSTANT)
     Q_PROPERTY(Fact*            layers                      READ layers                         CONSTANT)
-    Q_PROPERTY(Fact*            layerDistance               READ layerDistance                  CONSTANT)
-    Q_PROPERTY(Fact*            cameraTriggerDistance       READ cameraTriggerDistance          CONSTANT)
     Q_PROPERTY(bool             altitudeRelative            MEMBER _altitudeRelative            NOTIFY altitudeRelativeChanged)
     Q_PROPERTY(int              cameraShots                 READ cameraShots                    NOTIFY cameraShotsChanged)
     Q_PROPERTY(double           timeBetweenShots            READ timeBetweenShots               NOTIFY timeBetweenShotsChanged)
     Q_PROPERTY(double           cameraMinTriggerInterval    MEMBER _cameraMinTriggerInterval    NOTIFY cameraMinTriggerIntervalChanged)
-    Q_PROPERTY(QGCMapPolygon*   mapPolygon                  READ mapPolygon                     CONSTANT)
+    Q_PROPERTY(QGCMapPolygon*   structurePolygon            READ structurePolygon               CONSTANT)
+    Q_PROPERTY(QGCMapPolygon*   flightPolygon               READ flightPolygon                  CONSTANT)
 
-    Fact* altitude              (void) { return &_altitudeFact; }
-    Fact* layers                (void) { return &_layersFact; }
-    Fact* layerDistance         (void) { return &_layerDistanceFact; }
-    Fact* cameraTriggerDistance (void) { return &_cameraTriggerDistanceFact; }
+    CameraCalc* cameraCalc  (void) { return &_cameraCalc; }
+    Fact* altitude          (void) { return &_altitudeFact; }
+    Fact* layers            (void) { return &_layersFact; }
 
     int             cameraShots     (void) const;
-    double          timeBetweenShots(void) const;
-    QGCMapPolygon*  mapPolygon      (void) { return &_mapPolygon; }
+    double          timeBetweenShots(void);
+    QGCMapPolygon*  structurePolygon(void) { return &_structurePolygon; }
+    QGCMapPolygon*  flightPolygon   (void) { return &_flightPolygon; }
 
     Q_INVOKABLE void rotateEntryPoint(void);
 
@@ -95,9 +96,10 @@ private slots:
     void _setDirty(void);
     void _polygonDirtyChanged(bool dirty);
     void _polygonCountChanged(int count);
-    void _polygonPathChanged(void);
+    void _flightPathChanged(void);
     void _clearInternal(void);
     void _updateCoordinateAltitudes(void);
+    void _rebuildFlightPolygon(void);
 
 private:
     void _setExitCoordinate(const QGeoCoordinate& coordinate);
@@ -107,7 +109,8 @@ private:
 
     int             _sequenceNumber;
     bool            _dirty;
-    QGCMapPolygon   _mapPolygon;
+    QGCMapPolygon   _structurePolygon;
+    QGCMapPolygon   _flightPolygon;
     bool            _altitudeRelative;
     int             _entryVertex;       // Polygon vertext which is used as the mission entry point
 
@@ -117,46 +120,18 @@ private:
     double          _timeBetweenShots;
     double          _cameraMinTriggerInterval;
     double          _cruiseSpeed;
+    CameraCalc      _cameraCalc;
 
     static QMap<QString, FactMetaData*> _metaDataMap;
 
     Fact    _altitudeFact;
     Fact    _layersFact;
-    Fact    _layerDistanceFact;
-    Fact    _cameraTriggerDistanceFact;
 
     static const char* _altitudeFactName;
     static const char* _layersFactName;
-    static const char* _layerDistanceFactName;
-    static const char* _cameraTriggerDistanceFactName;
 
-    static const char* _jsonGridObjectKey;
-    static const char* _jsonGridAltitudeKey;
-    static const char* _jsonGridAltitudeRelativeKey;
-    static const char* _jsonGridAngleKey;
-    static const char* _jsonGridSpacingKey;
-    static const char* _jsonGridEntryLocationKey;
-    static const char* _jsonTurnaroundDistKey;
-    static const char* _jsonCameraTriggerDistanceKey;
-    static const char* _jsonCameraTriggerInTurnaroundKey;
-    static const char* _jsonHoverAndCaptureKey;
-    static const char* _jsonGroundResolutionKey;
-    static const char* _jsonFrontalOverlapKey;
-    static const char* _jsonSideOverlapKey;
-    static const char* _jsonCameraSensorWidthKey;
-    static const char* _jsonCameraSensorHeightKey;
-    static const char* _jsonCameraResolutionWidthKey;
-    static const char* _jsonCameraResolutionHeightKey;
-    static const char* _jsonCameraFocalLengthKey;
-    static const char* _jsonCameraMinTriggerIntervalKey;
-    static const char* _jsonManualGridKey;
-    static const char* _jsonCameraObjectKey;
-    static const char* _jsonCameraNameKey;
-    static const char* _jsonCameraOrientationLandscapeKey;
-    static const char* _jsonFixedValueIsAltitudeKey;
-    static const char* _jsonRefly90DegreesKey;
-
-    static const int _hoverAndCaptureDelaySeconds = 1;
+    static const char* _jsonCameraCalcKey;
+    static const char* _jsonAltitudeRelativeKey;
 };
 
 #endif
