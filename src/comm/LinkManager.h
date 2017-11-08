@@ -125,7 +125,7 @@ public:
     //const QList<BTSerialLink*> getBTSerialLinks();
     QmlObjectListModel* getBTSeriallinks               (void) { return &_blelinks; }
 
- #if defined(__ios__)||defined(__android__)
+#if defined(__ios__)||defined(__android__)
     //for link operation call backs;
     void setCallbackDelegate(void*);
     bool discoverBTLinks(void * delegate);
@@ -158,16 +158,13 @@ public:
     
     /// use Qt signal instead ?
     void didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_list);
- #endif
+#endif
 
 #if defined(_BLE_DEBUG_) && defined(__ios__)
     BLEDebugTextView* openDebugView();
 #endif
-#endif
-//=======
-//>>>>>>> upstream/master
-    /// Sets the flag to suspend the all new connections
-    ///     @param reason User visible reason to suspend connections
+#endif //_mindskin__
+    
     void setConnectionsSuspended(QString reason);
 
     /// Sets the flag to allow new connections to be made

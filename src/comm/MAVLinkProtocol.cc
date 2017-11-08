@@ -251,34 +251,19 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
     
     int mavlinkChannel = link->getMavlinkChannel();
     
-    static int mavlink09Count = 0;
     static int nonmavlinkCount = 0;
-    static bool decodedFirstPacket = false;
-    static bool warnedUser = false;
     static bool checkedUserNonMavlink = false;
     static bool warnedUserNonMavlink = false;
     
     for (int position = 0; position < b.size(); position++) {
         unsigned int decodeState = mavlink_parse_char(mavlinkChannel, (uint8_t)(b[position]), &message, &status);
         
-        if ((uint8_t)b[position] == 0x55) mavlink09Count++;
-        if ((mavlink09Count > 100) && !decodedFirstPacket && !warnedUser)
-        {
-            warnedUser = true;
-            // Obviously the user tries to use a 0.9 autopilot
-            // with QGroundControl built for version 1.0
-            emit protocolStatusMessage(tr("MAVLink Protocol"), tr("There is a MAVLink Version or Baud Rate Mismatch. "
-                                                                  "Your MAVLink device seems to use the deprecated version 0.9, while QGroundControl only supports version 1.0+. "
-                                                                  "Please upgrade the MAVLink version of your autopilot. "
-                                                                  "If your autopilot is using version 1.0, check if the baud rates of QGroundControl and your autopilot are the same."));
-        }
-        
-        if (decodeState == 0 && !decodedFirstPacket)
+        if (decodeState == 0 && !link->decodedFirstMavlinkPacket())
         {
             nonmavlinkCount++;
-            if (nonmavlinkCount > 2000 && !warnedUserNonMavlink)
+            if (nonmavlinkCount > 1000 && !warnedUserNonMavlink)
             {
-                //2000 bytes with no mavlink message. Are we connected to a mavlink capable device?
+                // 500 bytes with no mavlink message. Are we connected to a mavlink capable device?
                 if (!checkedUserNonMavlink)
                 {
                     link->requestReset();
@@ -287,61 +272,30 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 else
                 {
                     warnedUserNonMavlink = true;
-                    emit protocolStatusMessage(tr("MAVLink Protocol"), tr("There is a MAVLink Version or Baud Rate Mismatch. "
-                                                                          "Please check if the baud rates of QGroundControl and your autopilot are the same."));
+                    // Disconnect the link since its some other device and
+                    // QGC clinging on to it and feeding it data might have unintended
+                    // side effects (e.g. if its a modem)
+                    qDebug() << "disconnected link" << link->getName() << "as it contained no MAVLink data";
+                    QMetaObject::invokeMethod(_linkMgr, "disconnectLink", Q_ARG( BTSerialLink*, link ) );
+                    return;
                 }
             }
         }
         if (decodeState == 1)
         {
-            decodedFirstPacket = true;
-            
-            if(message.msgid == MAVLINK_MSG_ID_PING)
-            {
-                // process ping requests (tgt_system and tgt_comp must be zero)
-                mavlink_ping_t ping;
-                mavlink_msg_ping_decode(&message, &ping);
-                if(!ping.target_system && !ping.target_component)
-                {
-                    mavlink_message_t msg;
-                    mavlink_msg_ping_pack(getSystemId(), getComponentId(), &msg, ping.time_usec, ping.seq, message.sysid, message.compid);
-                    _sendMessage(msg);
+            if (!link->decodedFirstMavlinkPacket()) {
+                link->setDecodedFirstMavlinkPacket(true);
+                mavlink_status_t* mavlinkStatus = mavlink_get_channel_status(mavlinkChannel);
+                if (!(mavlinkStatus->flags & MAVLINK_STATUS_FLAG_IN_MAVLINK1) && (mavlinkStatus->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1)) {
+                    qDebug() << "Switching outbound to mavlink 2.0 due to incoming mavlink 2.0 packet:" << mavlinkStatus << mavlinkChannel << mavlinkStatus->flags;
+                    mavlinkStatus->flags &= ~MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+                    
+                    // Set all links to v2
+                    setVersion(200);
                 }
             }
             
-            if(message.msgid == MAVLINK_MSG_ID_RADIO_STATUS)
-            {
-                // process telemetry status message
-                mavlink_radio_status_t rstatus;
-                mavlink_msg_radio_status_decode(&message, &rstatus);
-                int rssi = rstatus.rssi,
-                remrssi = rstatus.remrssi;
-                // 3DR Si1k radio needs rssi fields to be converted to dBm
-                if (message.sysid == '3' && message.compid == 'D') {
-                    /* Per the Si1K datasheet figure 23.25 and SI AN474 code
-                     * samples the relationship between the RSSI register
-                     * and received power is as follows:
-                     *
-                     *                       10
-                     * inputPower = rssi * ------ 127
-                     *                       19
-                     *
-                     * Additionally limit to the only realistic range [-120,0] dBm
-                     */
-                    rssi    = qMin(qMax(qRound(static_cast<qreal>(rssi)    / 1.9 - 127.0), - 120), 0);
-                    remrssi = qMin(qMax(qRound(static_cast<qreal>(remrssi) / 1.9 - 127.0), - 120), 0);
-                } else {
-                    rssi = (int8_t) rstatus.rssi;
-                    remrssi = (int8_t) rstatus.remrssi;
-                }
-                
-                emit radioStatusChanged(link, rstatus.rxerrors, rstatus.fixed, rssi, remrssi,
-                                        rstatus.txbuf, rstatus.noise, rstatus.remnoise);
-            }
-            
-#ifndef __mobile__
             // Log data
-            
             if (!_logSuspendError && !_logSuspendReplay && _tempLogFile.isOpen()) {
                 uint8_t buf[MAVLINK_MAX_PACKET_LEN+sizeof(quint64)];
                 
@@ -368,25 +322,41 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 }
                 
                 // Check for the vehicle arming going by. This is used to trigger log save.
-                if (!_logPromptForSave && message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
+                if (!_vehicleWasArmed && message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
                     mavlink_heartbeat_t state;
                     mavlink_msg_heartbeat_decode(&message, &state);
                     if (state.base_mode & MAV_MODE_FLAG_DECODE_POSITION_SAFETY) {
-                        _logPromptForSave = true;
+                        _vehicleWasArmed = true;
                     }
                 }
             }
-#endif
             
             if (message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
-#ifndef __mobile__
                 // Start loggin on first heartbeat
                 _startLogging();
-#endif
-                
                 mavlink_heartbeat_t heartbeat;
                 mavlink_msg_heartbeat_decode(&message, &heartbeat);
                 emit vehicleHeartbeatInfo(link, message.sysid, message.compid, heartbeat.mavlink_version, heartbeat.autopilot, heartbeat.type);
+            }
+            
+            // Detect if we are talking to an old radio not supporting v2
+            mavlink_status_t* mavlinkStatus = mavlink_get_channel_status(mavlinkChannel);
+            if (message.msgid == MAVLINK_MSG_ID_RADIO_STATUS) {
+                if ((mavlinkStatus->flags & MAVLINK_STATUS_FLAG_IN_MAVLINK1)
+                    && !(mavlinkStatus->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1)) {
+                    
+                    _radio_version_mismatch_count++;
+                }
+            }
+            
+            if (_radio_version_mismatch_count == 5) {
+                // Warn the user if the radio continues to send v1 while the link uses v2
+                emit protocolStatusMessage(tr("MAVLink Protocol"), tr("Detected radio still using MAVLink v1.0 on a link with MAVLink v2.0 enabled. Please upgrade the radio firmware."));
+                // Ensure the warning can't get stuck
+                _radio_version_mismatch_count++;
+                // Flick link back to v1
+                qDebug() << "Switching outbound to mavlink 1.0 due to incoming mavlink 1.0 packet:" << mavlinkStatus << mavlinkChannel << mavlinkStatus->flags;
+                mavlinkStatus->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
             }
             
             // Increase receive counter
@@ -436,7 +406,6 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
             // kind of inefficient, but no issue for a groundstation pc.
             // It buys as reentrancy for the whole code over all threads
             emit messageReceived(link, message);
-            
         }
     }
 }

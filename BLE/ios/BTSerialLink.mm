@@ -478,7 +478,8 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     //});
     
     NSString* aStr= [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
-    NSLog(@"%@, %d", aStr, [characteristic.value length]);
+    NSLog(@"%@, %d", characteristic.value, [characteristic.value length]);
+    
     /*
      NSString *stringFromData = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
      
@@ -1912,14 +1913,6 @@ void BTSerialLink::didConnect() {
 
 void BTSerialLink::didDisconnect() {
     mavhandler->linkDisconnected(this);
-}
-
-void BTSerialLink::run()
-{
-    /*
-    _hardwareConnect();
-    exec();
-     */
 }
 
 

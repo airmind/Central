@@ -938,6 +938,8 @@ void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t mess
         qCDebug(VehicleLog) << "Vehicle::_mavlinkMessageReceived setting _maxProtoVersion" << _maxProtoVersion;
     }
     
+    qDebug() << "Message received: MsgId = " << message.msgid;
+    
     if (message.sysid != _id && message.sysid != 0) {
         // We allow RADIO_STATUS messages which come from a link the vehicle is using to pass through and be handled
         if (!(message.msgid == MAVLINK_MSG_ID_RADIO_STATUS && _containsLink(link))) {
@@ -3172,13 +3174,23 @@ void Vehicle::_sendMavCommandAgain(void)
     cmd.param7 = queuedCommand.rgParam[6];
     cmd.target_system = _id;
     cmd.target_component = queuedCommand.component;
+    
+#ifdef __mindskin__
+    mavlink_msg_command_long_encode_chan(_mavlink->getSystemId(),
+                                         _mavlink->getComponentId(),
+                                         _blelinks[0]->getMavlinkChannel(),
+                                         &msg,
+                                         &cmd);
+    sendMessageOnLink(_blelinks[0], msg);
+#else
     mavlink_msg_command_long_encode_chan(_mavlink->getSystemId(),
                                          _mavlink->getComponentId(),
                                          priorityLink()->mavlinkChannel(),
                                          &msg,
                                          &cmd);
-
     sendMessageOnLink(priorityLink(), msg);
+#endif
+    
 }
 
 void Vehicle::_sendNextQueuedMavCommand(void)

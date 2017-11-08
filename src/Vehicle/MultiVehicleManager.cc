@@ -187,6 +187,41 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
 #if __android__
             __android_log_print(ANDROID_LOG_INFO, kJTag, "_vehicleHeartbeatInfo=>1 vehicleId:%d",vehicleId);
 #endif
+    
+    if (componentId != MAV_COMP_ID_AUTOPILOT1) {
+        // Don't create vehicles for components other than the autopilot
+        if (!getVehicleById(vehicleId)) {
+            qCDebug(MultiVehicleManagerLog()) << "Ignoring heartbeat from unknown component "
+            << link->getName()
+            << vehicleId
+            << componentId
+            << vehicleMavlinkVersion
+            << vehicleFirmwareType
+            << vehicleType;
+        }
+        return;
+    }
+    
+    if (_vehicles.count() > 0 && !qgcApp()->toolbox()->corePlugin()->options()->multiVehicleEnabled()) {
+        return;
+    }
+    if (_ignoreVehicleIds.contains(vehicleId) || getVehicleById(vehicleId) || vehicleId == 0) {
+        return;
+    }
+    
+    switch (vehicleType) {
+        case MAV_TYPE_GCS:
+        case MAV_TYPE_ONBOARD_CONTROLLER:
+        case MAV_TYPE_GIMBAL:
+        case MAV_TYPE_ADSB:
+            // These are not vehicles, so don't create a vehicle for them
+            return;
+        default:
+            // All other MAV_TYPEs create vehicles
+            break;
+    }
+
+    
     qCDebug(MultiVehicleManagerLog()) << "Adding new vehicle link:vehicleId:vehicleMavlinkVersion:vehicleFirmwareType:vehicleType "
     << link->getName()
     << vehicleId

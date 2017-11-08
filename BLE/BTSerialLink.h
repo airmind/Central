@@ -197,9 +197,6 @@ private:
     //for connected link;
     int filteredLinkRSSI;
     
-    //from LinkInterface
-    bool _active;       ///< true: link is actively receiving mavlink messages
-    
     bool _mavlinkChannelSet;    ///< true: _mavlinkChannel has been set
     uint8_t _mavlinkChannel;    ///< mavlink channel to use for this link, as used by mavlink_parse_char
 
@@ -254,7 +251,50 @@ public:
     void setLinkQuality(BLE_LINK_QUALITY lq);
     BLE_LINK_QUALITY linkQuality();
 
+    //from LinkInterface;
+    /* Connection characteristics */
     
+    /**
+     * @Enable/Disable data rate collection
+     **/
+    void enableDataRate(bool enable)
+    {
+        _enableRateCollection = enable;
+    }
+    
+    /**
+     * @Brief Get the current incoming data rate.
+     *
+     * This should be over a short timespan, something like 100ms. A precise value isn't necessary,
+     * and this can be filtered, but should be a reasonable estimate of current data rate.
+     *
+     * @return The data rate of the interface in bits per second, 0 if unknown
+     **/
+    qint64 getCurrentInputDataRate() const
+    {
+        return _getCurrentDataRate(_inDataIndex, _inDataWriteTimes, _inDataWriteAmounts);
+    }
+    
+    /**
+     * @Brief Get the current outgoing data rate.
+     *
+     * This should be over a short timespan, something like 100ms. A precise value isn't necessary,
+     * and this can be filtered, but should be a reasonable estimate of current data rate.
+     *
+     * @return The data rate of the interface in bits per second, 0 if unknown
+     **/
+    qint64 getCurrentOutputDataRate() const
+    {
+        return _getCurrentDataRate(_outDataIndex, _outDataWriteTimes, _outDataWriteAmounts);
+    }
+    
+    /// mavlink channel to use for this link, as used by mavlink_parse_char. The mavlink channel is only
+    /// set into the link when it is added to LinkManager
+    uint8_t mavlinkChannel(void) const;
+    
+    bool decodedFirstMavlinkPacket(void) const { return _decodedFirstMavlinkPacket; }
+    bool setDecodedFirstMavlinkPacket(bool decodedFirstMavlinkPacket) { return _decodedFirstMavlinkPacket = decodedFirstMavlinkPacket; }
+
 public slots:
     
     // From LinkInterface
@@ -298,11 +338,6 @@ signals:
     void activeChanged(bool active);
     void _invokeWriteBytes(QByteArray);
     
-
-
-protected:
-    // From LinkInterface->QThread
-    virtual void run(void);
     
 private:
     // Links are only created/destroyed by LinkManager so constructor/destructor is not public
@@ -335,16 +370,60 @@ private:
     BLE_LINK_STATUS _linkstatus;
     BLE_LINK_QUALITY _linkquality;
     
-    quint64 _bitsSentTotal;
-    quint64 _bitsSentCurrent;
-    quint64 _bitsSentMax;
-    quint64 _bitsReceivedTotal;
-    quint64 _bitsReceivedCurrent;
-    quint64 _bitsReceivedMax;
-    quint64 _connectionStartTime;
-    QMutex  _statisticsMutex;
+private:
+    //from LinkInterface
+    /**
+     * @brief logDataRateToBuffer Stores transmission times/amounts for statistics
+     *
+     * This function logs the send times and amounts of datas to the given circular buffers.
+     * This data is used for calculating the transmission rate.
+     *
+     * @param bytesBuffer[out] The buffer to write the bytes value into.
+     * @param timeBuffer[out] The buffer to write the time value into
+     * @param writeIndex[out] The write index used for this buffer.
+     * @param bytes The amount of bytes transmit.
+     * @param time The time (in ms) this transmission occurred.
+     */
+    void _logDataRateToBuffer(quint64 *bytesBuffer, qint64 *timeBuffer, int *writeIndex, quint64 bytes, qint64 time);
+    
+    /**
+     * @brief getCurrentDataRate Get the current data rate given a data rate buffer.
+     *
+     * This function attempts to use the times and number of bytes transmit into a current data rate
+     * estimation. Since it needs to use timestamps to get the timeperiods over when the data was sent,
+     * this is effectively a global data rate over the last _dataRateBufferSize - 1 data points. Also note
+     * that data points older than NOW - dataRateCurrentTimespan are ignored.
+     *
+     * @param index The first valid sample in the data rate buffer. Refers to the oldest time sample.
+     * @param dataWriteTimes The time, in ms since epoch, that each data sample took place.
+     * @param dataWriteAmounts The amount of data (in bits) that was transferred.
+     * @return The bits per second of data transferrence of the interface over the last [-statsCurrentTimespan, 0] timespan.
+     */
+    qint64 _getCurrentDataRate(int index, const qint64 dataWriteTimes[], const quint64 dataWriteAmounts[]) const;
+    
+    
+    static const int _dataRateBufferSize = 20; ///< Specify how many data points to capture for data rate calculations.
+    
+    static const qint64 _dataRateCurrentTimespan = 500; ///< Set the maximum age of samples to use for data calculations (ms).
+    
+    // Implement a simple circular buffer for storing when and how much data was received.
+    // Used for calculating the incoming data rate. Use with *StatsBuffer() functions.
+    int     _inDataIndex;
+    quint64 _inDataWriteAmounts[_dataRateBufferSize]; // In bytes
+    qint64  _inDataWriteTimes[_dataRateBufferSize]; // in ms
+    
+    // Implement a simple circular buffer for storing when and how much data was transmit.
+    // Used for calculating the outgoing data rate. Use with *StatsBuffer() functions.
+    int     _outDataIndex;
+    quint64 _outDataWriteAmounts[_dataRateBufferSize]; // In bytes
+    qint64  _outDataWriteTimes[_dataRateBufferSize]; // in ms
+    
+    mutable QMutex _dataRateMutex; // Mutex for accessing the data rate member variables
+    
+    bool _active;                       ///< true: link is actively receiving mavlink messages
+    bool _enableRateCollection;
+    bool _decodedFirstMavlinkPacket;    ///< true: link has correctly decoded it's first mavlink packet
 };
 
-
-
+typedef QSharedPointer<BTSerialLink> SharedBTLinkPointer;
 #endif
