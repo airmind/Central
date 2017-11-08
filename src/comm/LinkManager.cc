@@ -1039,7 +1039,7 @@ SharedLinkInterfacePointer LinkManager::sharedLinkInterfacePointerForLink(LinkIn
 bool LinkManager::_connectionsSuspendedMsg(void)
 {
     if (_connectionsSuspended) {
-        qgcApp()->showMessage(QString("Connect not allowed: %1").arg(_connectionsSuspendedReason));
+        qgcApp()->showMessage(tr("Connect not allowed: %1").arg(_connectionsSuspendedReason));
         return true;
     } else {
         return false;
@@ -1397,7 +1397,7 @@ void LinkManager::_updateAutoConnectLinks(void)
 
 void LinkManager::shutdown(void)
 {
-    setConnectionsSuspended("Shutdown");
+    setConnectionsSuspended(tr("Shutdown"));
     disconnectAll();
 }
 

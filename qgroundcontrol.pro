@@ -397,7 +397,7 @@ INCLUDEPATH += \
     src/Settings \
     src/VehicleSetup \
     src/ViewWidgets \
-    src/audio \
+    src/Audio \
     src/comm \
     src/input \
     src/lib/qmapcontrol \
@@ -459,6 +459,7 @@ DebugBuild { PX4FirmwarePlugin { PX4FirmwarePluginFactory  { APMFirmwarePlugin {
 
     HEADERS += \
         src/AnalyzeView/LogDownloadTest.h \
+        src/Audio/AudioOutputTest.h \
         src/FactSystem/FactSystemTestBase.h \
         src/FactSystem/FactSystemTestGeneric.h \
         src/FactSystem/FactSystemTestPX4.h \
@@ -494,6 +495,7 @@ DebugBuild { PX4FirmwarePlugin { PX4FirmwarePluginFactory  { APMFirmwarePlugin {
 
     SOURCES += \
         src/AnalyzeView/LogDownloadTest.cc \
+        src/Audio/AudioOutputTest.cc \
         src/FactSystem/FactSystemTestBase.cc \
         src/FactSystem/FactSystemTestGeneric.cc \
         src/FactSystem/FactSystemTestPX4.cc \
@@ -535,6 +537,7 @@ HEADERS += \
     src/AnalyzeView/ExifParser.h \
     src/AnalyzeView/ULogParser.h \
     src/AnalyzeView/PX4LogParser.h \
+    src/Audio/AudioOutput.h \
     src/Camera/QGCCameraControl.h \
     src/Camera/QGCCameraIO.h \
     src/Camera/QGCCameraManager.h \
@@ -543,13 +546,14 @@ HEADERS += \
     src/FlightDisplay/VideoManager.h \
     src/FlightMap/Widgets/ValuesWidgetController.h \
     src/FollowMe/FollowMe.h \
-    src/GAudioOutput.h \
     src/Joystick/Joystick.h \
     src/Joystick/JoystickManager.h \
     src/JsonHelper.h \
     src/LogCompressor.h \
     src/MG.h \
+    src/MissionManager/CameraCalc.h \
     src/MissionManager/CameraSection.h \
+    src/MissionManager/CameraSpec.h \
     src/MissionManager/ComplexMissionItem.h \
     src/MissionManager/FixedWingLandingComplexItem.h \
     src/MissionManager/GeoFenceController.h \
@@ -725,6 +729,7 @@ SOURCES += \
     src/AnalyzeView/ExifParser.cc \
     src/AnalyzeView/ULogParser.cc \
     src/AnalyzeView/PX4LogParser.cc \
+    src/Audio/AudioOutput.cc \
     src/Camera/QGCCameraControl.cc \
     src/Camera/QGCCameraIO.cc \
     src/Camera/QGCCameraManager.cc \
@@ -732,12 +737,13 @@ SOURCES += \
     src/FlightDisplay/VideoManager.cc \
     src/FlightMap/Widgets/ValuesWidgetController.cc \
     src/FollowMe/FollowMe.cc \
-    src/GAudioOutput.cc \
     src/Joystick/Joystick.cc \
     src/Joystick/JoystickManager.cc \
     src/JsonHelper.cc \
     src/LogCompressor.cc \
+    src/MissionManager/CameraCalc.cc \
     src/MissionManager/CameraSection.cc \
+    src/MissionManager/CameraSpec.cc \
     src/MissionManager/ComplexMissionItem.cc \
     src/MissionManager/FixedWingLandingComplexItem.cc \
     src/MissionManager/GeoFenceController.cc \
