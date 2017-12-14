@@ -8,6 +8,8 @@
 
 #import "BTSerialLink_objc.h"
 #import "tagNodesViewController.h"
+#import "tagNodeInfoViewController.h"
+
 #include "LinkManager.h"
 #include "qt2ioshelper.h"
 #include "ConnectPopover.h"
@@ -596,8 +598,10 @@
         
         //get tag node system ID;
         
-        //get into main menu UI;
-        //[self ];
+        //Load Flight controller UI;
+        tagInfovc = [[tagNodeInfoViewController alloc] initWithNibName:@"tagNodeInfoViewController" bundle:nil];
+        
+        [self presentedViewController:tagInfovc];
         
     }
     else {
@@ -836,5 +840,35 @@
 -(void)setConnectActionDelegate:(void*)adelegate{
     delegate = adelegate;
 }
-    
+
+#pragma mark - Split view support
+
+- (void)splitViewController: (UISplitViewController*)svc willHideViewController:(UIViewController *)aViewController withBarButtonItem:(UIBarButtonItem *)barButtonItem forPopoverController:(UIPopoverController*)popoverController
+{
+    barButtonItem.title = NSLocalizedString(@"Master", @"Master");
+    [self.navigationItem setLeftBarButtonItem:barButtonItem animated:YES];
+    self.masterPopoverController = popoverController;
+}
+
+
+// Called when the view is shown again in the split view, invalidating the button and popover controller.
+- (void)splitViewController: (UISplitViewController*)svc willShowViewController:(UIViewController *)aViewController invalidatingBarButtonItem:(UIBarButtonItem *)barButtonItem
+{
+    // Called when the view is shown again in the split view, invalidating the button and popover controller.
+    [self.navigationItem setLeftBarButtonItem:nil animated:YES];
+    self.masterPopoverController = nil;
+}
+
+
+// Called when the hidden view controller is about to be displayed in a popover.
+- (void)splitViewController:(UISplitViewController*)svc popoverController:(UIPopoverController*)pc willPresentViewController:(UIViewController *)aViewController
+{
+    // Check whether the popover presented from the "Tap" UIBarButtonItem is visible.
+    if ([self.barButtonItemPopover isPopoverVisible])
+    {
+        // Dismiss the popover.
+        [self.barButtonItemPopover dismissPopoverAnimated:YES];
+    } 
+}
+
 @end

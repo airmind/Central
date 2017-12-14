@@ -98,6 +98,10 @@ ParameterManager::ParameterManager(Vehicle* vehicle)
     // Ensure the cache directory exists
     QFileInfo(QSettings().fileName()).dir().mkdir("ParamCache");
 #ifndef __mindskin__
+    if (paraHelper == NULL) {
+        //create parameter helper instance;
+        paraHelper = new ParameterLoadHeler();
+    }
     refreshAllParameters();
 #endif
 }
@@ -112,6 +116,10 @@ void ParameterManager::notifyParameterProgress(float progress) {
         QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/ParameterManager", "parameterListProgress", "(F)V", progress);
         cleanJavaException();
 #endif //__android__
+    
+#ifdef __ios__
+    paraHelper->notifyParameterProgress(progress);
+#endif //__ios__
 }
 
 void ParameterManager::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue) {

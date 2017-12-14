@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 
 #import "tagNodesViewController.h"
-
+#import "sideMenuViewController.h"
 #include "MindSkinRootView.h"
 #include "MindSkinRootView_impl_objc.h"
 #include "qt2ioshelper.h"
@@ -133,13 +133,21 @@ void MindSkinRootView::showMessage(const QString& msg) {
 #else
     //todo: try to get a link to see if its racer or mindpx
     //launch racer by default;
+    tagNodesViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
+    sideMenuViewController* sidemenunctlr = [[sideMenuViewController alloc] initWithNibName:@"sideMenuViewController" bundle:nil];
     
-    UIViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
-
     //UIViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"RacerMainMenuViewController" bundle:nil];
-    skinrootcontroller = racermainctlr;
     
-    [rootcontroller presentViewController:racermainctlr animated:YES completion:^{
+    skinrootcontroller = racermainctlr;
+
+    //add a splitview as container;
+    UISplitViewController *splitViewController = [[UISplitViewController alloc] init];
+    UINavigationController *masterNav = [[UINavigationController alloc] initWithRootViewController:sidemenunctlr];
+    UINavigationController *detailNav = [[UINavigationController alloc] initWithRootViewController:racermainctlr];
+    splitViewController.viewControllers = [NSArray arrayWithObjects:masterNav, detailNav, nil];
+    splitViewController.delegate = racermainctlr;
+
+    [rootcontroller presentViewController:splitViewController animated:YES completion:^{
         qgcApp()->_initSetting();
     }];
 #endif

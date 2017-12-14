@@ -78,7 +78,7 @@ public:
 	/// Returns all parameter names
 	QStringList parameterNames(int componentId);
     
-    /// Returns the specified Parameter. Returns a default empty fact is parameter does not exists. Also will pop
+    /// Returns the specified Parameter. Returns a default empty fact id parameter does not exists. Also will pop
     /// a missing parameter error to user if parameter does not exist.
     ///     @param componentId Component id or FactSystem::defaultComponentId
     ///     @param name Parameter name
@@ -226,6 +226,11 @@ private:
     static const char* _jsonCompIdKey;
     static const char* _jsonParamNameKey;
     static const char* _jsonParamValueKey;
+    
+#ifdef __mindskin__
+    ParameterLoadHelper* paraHelper = NULL;
+#endif
+
 };
 
 #endif
