@@ -98,11 +98,12 @@ ParameterManager::ParameterManager(Vehicle* vehicle)
     // Ensure the cache directory exists
     QFileInfo(QSettings().fileName()).dir().mkdir("ParamCache");
 #ifndef __mindskin__
+    refreshAllParameters();
+#else
     if (paraHelper == NULL) {
         //create parameter helper instance;
-        paraHelper = new ParameterLoadHeler();
+        paraHelper = new ParameterLoadHelper();
     }
-    refreshAllParameters();
 #endif
 }
 
@@ -449,6 +450,7 @@ void ParameterManager::_valueUpdated(const QVariant& value)
 
 void ParameterManager::refreshAllParameters(uint8_t componentId)
 {
+    qDebug() << "start refresh FCU parameters.....";
     if (_logReplay) {
         return;
     }
@@ -478,8 +480,9 @@ void ParameterManager::refreshAllParameters(uint8_t componentId)
     _dataMutex.unlock();
 
     MAVLinkProtocol* mavlink = qgcApp()->toolbox()->mavlinkProtocol();
-
     mavlink_message_t msg;
+    
+#ifndef __mindskin__
     mavlink_msg_param_request_list_pack_chan(mavlink->getSystemId(),
                                              mavlink->getComponentId(),
                                              _vehicle->priorityLink()->mavlinkChannel(),
@@ -487,6 +490,29 @@ void ParameterManager::refreshAllParameters(uint8_t componentId)
                                              _vehicle->id(),
                                              componentId);
     _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
+    
+#else
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        mavlink_msg_param_request_list_pack_chan(mavlink->getSystemId(),
+                                                 mavlink->getComponentId(),
+                                                 ((LinkInterface*)vlink)->mavlinkChannel(),
+                                                 &msg,
+                                                 _vehicle->id(),
+                                                 componentId);
+        _vehicle->sendMessageOnLink((LinkInterface*)vlink, msg);
+
+    }
+    else {
+        mavlink_msg_param_request_list_pack_chan(mavlink->getSystemId(),
+                                                 mavlink->getComponentId(),
+                                                 ((BTSerialLink*)vlink)->getMavlinkChannel(),
+                                                 &msg,
+                                                 _vehicle->id(),
+                                                 componentId);
+        _vehicle->sendMessageOnLink((BTSerialLink*)vlink, msg);
+    }
+#endif
 
     QString what = (componentId == MAV_COMP_ID_ALL) ? "MAV_COMP_ID_ALL" : QString::number(componentId);
     qCDebug(ParameterManagerLog) << _logVehiclePrefix() << "Request to refresh all parameters for component ID:" << what;

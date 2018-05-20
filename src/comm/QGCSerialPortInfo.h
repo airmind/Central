@@ -48,7 +48,7 @@ public:
 
     /// @return true: Board is currently in bootloader
     bool isBootloader(void) const;
-
+    static bool isSystemPort(QSerialPortInfo* port);
 private:
     typedef struct {
         const char* classString;

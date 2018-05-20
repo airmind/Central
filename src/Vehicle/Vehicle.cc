@@ -1825,6 +1825,8 @@ void Vehicle::_addLink(LinkInterface* link)
     #endif
     if (!_containsLink(link)) {
         qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
+        _links += link;
+        _updatePriorityLink();
 #ifndef __mindskin__
 
         connect(qgcApp()->toolbox()->linkManager(), &LinkManager::linkInactive, this, &Vehicle::_linkInactiveOrDeleted);
@@ -1909,6 +1911,8 @@ void Vehicle::_linkInactiveOrDeleted(LinkInterface* link)
     qCDebug(VehicleLog) << "_linkInactiveOrDeleted linkCount" << _links.count();
 
     _links.removeOne(link);
+    _updatePriorityLink();
+    
 #ifdef __mindskin__
         if (_links.count() == 0 && _blelinks.count()==0 && !_allLinksInactiveSent) {
 #else
@@ -2039,9 +2043,37 @@ void Vehicle::_sendMessageOnLink(LinkInterface* link, mavlink_message_t message)
     emit messagesSentChanged();
 }
 
+#ifdef __mindskin__
+QObject* Vehicle::priorityLinkBLE(void) {
+    LinkInterface* alink = _priorityLink.data();
+#ifndef NO_SERIAL_LINK
+    if (alink) {
+        SerialLink* pSerialLink = qobject_cast<SerialLink*>(alink);
+        LinkConfiguration* config = pSerialLink->getLinkConfiguration();
+        if (pSerialConfig && pSerialConfig->usbDirect()) {
+            return alink;
+        }
+    }
+#endif
+    
+    //if BLE link exists, use BLE link (one of);
+    if (_blelinks.count()>0) {
+        //take first one;
+        BTSerialLink* blink = _blelinks.at(0);
+        if (blink->isConnected()) {
+            return blink;
+        }
+    }
+    
+    return alink;
+    
+}
+#endif
+
+    
 void Vehicle::_updatePriorityLink(void)
 {
-    LinkInterface* newPriorityLink = NULL;
+     LinkInterface* newPriorityLink = NULL;
 
 #ifndef NO_SERIAL_LINK
     // Note that this routine specificallty does not clear _priorityLink when there are no links remaining.
@@ -2074,7 +2106,6 @@ void Vehicle::_updatePriorityLink(void)
     if (newPriorityLink) {
         _priorityLink = _toolbox->linkManager()->sharedLinkInterfacePointerForLink(newPriorityLink);
     }
-
 }
     
 /*
@@ -2807,6 +2838,7 @@ void Vehicle::_connectionActive(void)
         }
         return false;
     }
+    
 #endif
 
 void Vehicle::_say(const QString& text)

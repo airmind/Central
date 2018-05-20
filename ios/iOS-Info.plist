@@ -58,15 +58,17 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.9.0</string>
+	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>3</string>
 	<key>ForAppStore</key>
-	<string>No</string>
+	<string>YES</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Connect flight controller through BLE</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>MindCentral for Airmind filght controller</string>
 	<key>NSLocationUsageDescription</key>

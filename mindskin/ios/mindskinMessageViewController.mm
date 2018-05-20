@@ -39,7 +39,7 @@
         //textview.font = msgfont;
         //textview.textColor = msgcolor;
         textview.backgroundColor = [UIColor clearColor];
-        [self.view addSubview:textview];
+        [((UIVisualEffectView*)(self.view)).contentView addSubview:textview];
         
     }
     else {
@@ -93,10 +93,8 @@
                                               msgcolor, NSForegroundColorAttributeName,
                                               nil];
         
-        
         NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:message attributes:attributesDictionary];
         //messageview.attributedText = attributedString; //this is the key!
-        
         
         CGSize constraint = CGSizeMake(textviewwidth, CGFLOAT_MAX);
         
@@ -104,14 +102,11 @@
         CGRect msgrect = [attributedString boundingRectWithSize:constraint options:(NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading) context:nil];
         
         //do padding;
-        
         msgrect.size.height = msgrect.size.height + 20;
         
         //place in invisible area first;
         CGRect viewframe = CGRectMake(self.view.frame.origin.x, self.view.frame.origin.y-(msgrect.size.height + 40),
                                       screenSize.width, msgrect.size.height + 40);
-        
-        
         
         self.view.frame = viewframe;
         
@@ -120,17 +115,13 @@
                                        screenSize.width-40, msgrect.size.height);
         textview.text = message;
 
-    
         [attributedString release];
-        
     
         [parentview addSubview:self.view];
     
         //animate view in;
         CGRect normalrect = viewframe;
         normalrect.origin.y = normalrect.origin.y + (msgrect.size.height + 40);
-    
-
         [UIView animateWithDuration:0.5
                               delay:0
                             options:UIViewAnimationOptionBeginFromCurrentState
@@ -152,8 +143,6 @@
                                                                          userInfo:nil
                                                                           repeats:NO];
                                  }
-
-                                 
                              }
                              
                          }];

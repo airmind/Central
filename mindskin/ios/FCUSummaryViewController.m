@@ -7,7 +7,7 @@
 //
 
 #import "FCUSummaryViewController.h"
-#include "MAVLinkProtocol.h"
+//#include "MAVLinkProtocol.h"
 
 @interface FCUSummaryViewController ()
 
@@ -17,39 +17,23 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    // get parameter loader instance;
-    paramhelper = [ParameterLoadHelper_objc sharedInstance];
-    
-    //set delegation;
-    [paramhelper setParameterLoadDelegate: self];
-    
-    //issue fetch all parameter command;
+        
     paraProgressView.progress = 0.0f;
-    [paramhelper refreshAllParameters:MAV_COMP_ID_ALL];
 }
 
+-(void)setParameterHelper:(ParameterLoadHelper_objc*)paramHelper {
+    m_paramhelper = paramHelper;
+}
 
--(void)parameterLoadHelper:(ParameterLoadHelper_objc*)paramhelper progressUpdate:(float)progress {
-    //update progress bar;
+-(void)parameterProgressUpdate:(float)progress {
     [paraProgressView setProgress:progress animated:YES];
-
-
 }
-
--(void)parameterLoadHelper:(ParameterLoadHelper_objc*)paramhelper parameterReadyChanged:(BOOL)yon {
-    //update displayed params;
-    if (yon == YES) {
-        //parse params, get airframe type;
-    }
-    
-}
-
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+
 
 /*
 #pragma mark - Navigation

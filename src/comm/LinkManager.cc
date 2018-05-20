@@ -555,12 +555,12 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
     Q_ASSERT(peripheral_link_list);
     
     //check all links for active / inactive according to RSSI;
-    qDebug()<<"LinkManager: updating ble link rssi \n";
+    //qDebug()<<"LinkManager: updating ble link rssi \n";
     
     for (int i=0; i<peripheral_link_list->count(); i++) {
         QString pname = peripheral_link_list->at(i);
         int rssi = blehelper->currentFilteredPeripheralRSSI(pname);
-        qDebug()<<"LinkManager: current rssi " << rssi << "\n";
+        //qDebug()<<"LinkManager: current rssi " << rssi << "\n";
 
         BLE_LINK_QUALITY newlq;
         if (rssi >= DRONETAG_DISCONNECT_WARNING_RANGE) {
@@ -658,6 +658,7 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
 // This should only be used by Qml code
 void LinkManager::createConnectedLink(LinkConfiguration* config)
 {
+    qDebug() << "create link from QML";
     for(int i = 0; i < _sharedConfigurations.count(); i++) {
         SharedLinkConfigurationPointer& sharedConf = _sharedConfigurations[i];
         if (sharedConf->name() == config->name())
@@ -678,9 +679,10 @@ LinkInterface* LinkManager::createConnectedLink(SharedLinkConfigurationPointer& 
         case LinkConfiguration::TypeSerial:
         {
 
-            SerialConfiguration* serialConfig = dynamic_cast<SerialConfiguration*>(config);
+            qDebug() << "LinkManager::create serial link...";
+            SerialConfiguration* serialConfig = dynamic_cast<SerialConfiguration*>(config.data());
             if (serialConfig) {
-                pLink = new SerialLink(serialConfig);
+                pLink = new SerialLink(config);
                 if (serialConfig->usbDirect()) {
                     _activeLinkCheckList.append((SerialLink*)pLink);
                     if (!_activeLinkCheckTimer.isActive()) {
@@ -689,7 +691,7 @@ LinkInterface* LinkManager::createConnectedLink(SharedLinkConfigurationPointer& 
                 }
             }
         }
-    }
+    
         break;
 #endif
     case LinkConfiguration::TypeUdp:
@@ -966,6 +968,7 @@ void LinkManager::disconnectAll(void)
 
 bool LinkManager::connectLink(LinkInterface* link)
 {
+    qDebug() << "connect link...";
     if (link) {
         if (_connectionsSuspendedMsg()) {
             return false;
@@ -1273,6 +1276,12 @@ void LinkManager::_updateAutoConnectLinks(void)
         QString boardName;
 
         if (portInfo.getBoardInfo(boardType, boardName)) {
+            if (portInfo.isSystemPort(&portInfo)) {
+                              // Don't connect to system ports
+                              qCDebug(LinkManagerLog) << "Not opening known system ports" << portInfo.systemLocation();
+                              continue;
+            }
+            
             if (portInfo.isBootloader()) {
                 // Don't connect to bootloader
                 qCDebug(LinkManagerLog) << "Waiting for bootloader to finish" << portInfo.systemLocation();

@@ -21,10 +21,38 @@
 #import <AudioToolbox/AudioToolbox.h>
 
 @interface tagNodesViewController ()
+@property (strong, nonatomic) UIPopoverController *masterPopoverController;
+- (void)configureView;
 
 @end
 
 @implementation tagNodesViewController
+
+#pragma mark - Managing the detail item
+
+- (void)setDetailItem:(id)newDetailItem
+{
+    if (_detailItem != newDetailItem) {
+        _detailItem = newDetailItem;
+        
+        // Update the view.
+        [self configureView];
+    }
+    
+    if (self.masterPopoverController != nil) {
+        [self.masterPopoverController dismissPopoverAnimated:YES];
+    }
+}
+
+- (void)configureView
+{
+    // Update the user interface for the detail item.
+    
+    if (self.detailItem) {
+        //self.detailDescriptionLabel.text = [[self.detailItem valueForKey:@"timeStamp"] description];
+    }
+}
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -597,11 +625,9 @@
         AudioServicesPlaySystemSound(soundID);
         
         //get tag node system ID;
-        
         //Load Flight controller UI;
-        tagInfovc = [[tagNodeInfoViewController alloc] initWithNibName:@"tagNodeInfoViewController" bundle:nil];
-        
-        [self presentedViewController:tagInfovc];
+        tagNodeInfoViewController* tagInfovc = [[tagNodeInfoViewController alloc] initWithNibName:@"tagNodeInfoViewController" bundle:nil];
+        [self presentViewController:tagInfovc animated:YES completion:nil];
         
     }
     else {
@@ -616,7 +642,6 @@
     
     
 }
-
 
 -(void)didReadConnectedBTLinkRSSI:(BLE_Discovered_Peripheral_List*)bdplist {
     NSArray* plist = [bdplist getPeripheralList];
@@ -864,11 +889,13 @@
 - (void)splitViewController:(UISplitViewController*)svc popoverController:(UIPopoverController*)pc willPresentViewController:(UIViewController *)aViewController
 {
     // Check whether the popover presented from the "Tap" UIBarButtonItem is visible.
+    /*
     if ([self.barButtonItemPopover isPopoverVisible])
     {
         // Dismiss the popover.
         [self.barButtonItemPopover dismissPopoverAnimated:YES];
     } 
+     */
 }
 
 @end

@@ -8,15 +8,27 @@
 
 #import <Foundation/Foundation.h>
 #import "ParameterLoadHelper_objc.h"
+#import "TagNodesUIDelegateHelper.h"
 
+#include <QString>
+#include "qt2ioshelper.h"
+#include "QGCApplication.h"
+#include "BTSerialLink.h"
 #include "ParameterLoadHelper.h"
-#include "ParameterLoadHelper_objc.h"
-
+#include "ParameterManager.h"
 
 #pragma - implementation ParameterLoadHelper_objc
 
+@interface ParameterLoadHelper_objc ()  {
+    ParameterManager* refParamManager;
+    
+}
+
+@end
+
 @implementation ParameterLoadHelper_objc
 
+/*
 +(ParameterLoadHelper_objc*)sharedInstance{
     static ParameterLoadHelper_objc* sharedInstance;
     
@@ -29,32 +41,51 @@
         return sharedInstance;
     }
     
-}
-
+}*/
 
 //register callback delegate for update;
--(void)setParameterLoadDelegate:(id)delegate {
-    qgcApp()->toolbox()->multiVehicleManager()->getVehicleByLinkConfigName()->parameterManager;
+-(void) setParameterLoadDelegate:(id)delegate {
+    param_delegate = delegate;
 }
 
 //get parameter list;
--(void) refreshAllParameters:(LinkConfiguration)cfg {
-    parameterManager->refreshAllParameters();
+
+-(void) refreshAllParameters:(int)componentid {
+    
+    if (refParamManager == nil) {
+        //BTSerialConfiguration_objc* btc = [node getNodeLinkConfiguration];
+        //QGC not support multiple vehicles yet. use activeVehicle for the moment;
+        refParamManager = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle()->parameterManager();
+    }
+    
+    param_delegate = [[TagNodesUIDelegateHelper sharedInstance] tagNodeReady:componentid];
+    [param_delegate setParameterHelper:self];
+    
+    //refParamManager->paramLoadHelper()->setParameterLoadDelegate(self);
+
+    refParamManager->refreshAllParameters();
 }
 
--(void) refreshAllParameters:(BTLinkConfiguration)cfg {
-    parameterManager->refreshAllParameters();
+/*
+-(void) refreshAllParameters:(BTSerialConfiguration_objc*)cfg {
+    refParamManager->refreshAllParameters();
 
 }
+*/
 
 /// Request a refresh on the specific parameter
 -(void) refreshParameter:(int) componentId paramName: (NSString*)name {
-    parameterManager->refreshParameter(componentId, name);
+    refParamManager->refreshParameter(componentId, QString::fromNSString(name));
 
 }
 
 -(void)notifyParameterProgress : (float)progress {
     [param_delegate parameterLoadHelper:self progressUpdate:progress];
+}
+
+
+-(void)parameterReadyChanged:(BOOL)yon {
+    [param_delegate parameterLoadHelper:self parameterReadyChanged:yon];
 }
 
 
@@ -77,14 +108,17 @@ public:
     void setCallbackDelegate(void*);
     void notifyParameterProgress(float progress);
 
-    void ParameterManager::parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue) ;
-    void ParameterManager::_parameterUpdate(int vehicleId, int componentId, QString parameterName, int parameterCount, int parameterId, int mavType, QVariant value);
+    void parameterUpdate(int vehicleId, int componentId, int mavType, QString parameterName, int parameterCount, int parameterIndex,  QVariant value, QString shortDesc, QString longDesc, QString unit, QVariant defaultValue) ;
+    void _parameterUpdate(int vehicleId, int componentId, QString parameterName, int parameterCount, int parameterId, int mavType, QVariant value);
+    
+    void parameterReadyChanged(bool yon);
+    void refreshAllParameters(int componentid);
     
 
 };
 
 ParameterLoadHelperWrapper::ParameterLoadHelperWrapper(){
-    paraHelper_objc = [ParameterLoadHelper_objc sharedInstance];
+    paraHelper_objc = [[ParameterLoadHelper_objc alloc] init];
     
 }
 
@@ -93,16 +127,28 @@ ParameterLoadHelperWrapper::~ParameterLoadHelperWrapper() {
 
 
 void ParameterLoadHelperWrapper::setCallbackDelegate(void* delegate) {
-    [paraHelper_objc setCallbackDelegate:(__bridge id)delegate];
+    [paraHelper_objc setParameterLoadDelegate:(__bridge id)delegate];
+    
 }
 
 void ParameterLoadHelperWrapper::notifyParameterProgress(float progress) {
-    [paraHelper_objc notifyParameterProgress:progress];
+    if (nil != paraHelper_objc) {
+        [paraHelper_objc notifyParameterProgress:progress];
+    }
 }
 
 void ParameterLoadHelperWrapper::parameterReadyChanged(bool yon) {
-    [paraHelper_objc parameterReadyChanged:yon];
+    if (nil != paraHelper_objc) {
+        [paraHelper_objc parameterReadyChanged:yon];
+    }
     
+}
+
+void ParameterLoadHelperWrapper::refreshAllParameters(int componentid) {
+    if (nil != paraHelper_objc) {
+        [paraHelper_objc refreshAllParameters:componentid];
+    }
+
 }
 
 
@@ -114,13 +160,16 @@ ParameterLoadHelper::ParameterLoadHelper(){
 }
 
 ParameterLoadHelper::~ParameterLoadHelper() {
-    if (ble_wrapper != NULL) {
+    if (parahelper_wrapper != NULL) {
         delete parahelper_wrapper;
     }
 }
 
+void ParameterLoadHelper::refreshAllParameters(int componentid) {
+    parahelper_wrapper->refreshAllParameters(componentid);
+}
 
-void ParameterLoadHelper::setCallbackDelegate(void* delegate) {
+void ParameterLoadHelper::setParameterLoadDelegate(void* delegate) {
     parahelper_wrapper->setCallbackDelegate(delegate);
 }
 

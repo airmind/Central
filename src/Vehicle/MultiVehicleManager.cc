@@ -188,6 +188,8 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
             __android_log_print(ANDROID_LOG_INFO, kJTag, "_vehicleHeartbeatInfo=>1 vehicleId:%d",vehicleId);
 #endif
     
+    qDebug () << "[BLE Multi-vehicle Mgr] Heart beat received ....";
+
     if (componentId != MAV_COMP_ID_AUTOPILOT1) {
         // Don't create vehicles for components other than the autopilot
         if (!getVehicleById(vehicleId)) {
@@ -233,8 +235,10 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
         _app->showMessage(QString("Warning: A vehicle is using the same system id as QGroundControl: %1").arg(vehicleId));
     }
     
+    qDebug () << "[BLE Multi-vehicle Mgr] check mavlink version ....";
+
     QSettings settings;
-    bool mavlinkVersionCheck = settings.value("VERSION_CHECK_ENABLED", true).toBool();
+    bool mavlinkVersionCheck = false; //settings.value("VERSION_CHECK_ENABLED", true).toBool();
     if (mavlinkVersionCheck && vehicleMavlinkVersion != MAVLINK_VERSION) {
         _ignoreVehicleIds += vehicleId;
         _app->showMessage(QString("The MAVLink protocol version on vehicle #%1 and QGroundControl differ! "
@@ -252,6 +256,8 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
     _vehicles.append(vehicle);
     
     // Send QGC heartbeat ASAP, this allows PX4 to start accepting commands
+    qDebug () << "[BLE Multi-vehicle Mgr] Sending heartbeat back ASAP ....";
+
     _sendGCSHeartbeat();
     qgcApp()->toolbox()->settingsManager()->appSettings()->defaultFirmwareType()->setRawValue(vehicleFirmwareType);
     
@@ -261,6 +267,7 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleI
         qgcApp()->showMessage(tr("Connected to Vehicle %1").arg(vehicleId));
     } else {
         setActiveVehicle(vehicle);
+
     }
     
     // Mark link as active
@@ -462,6 +469,10 @@ void MultiVehicleManager::_setActiveVehiclePhase2(void)
             _parameterReadyVehicleAvailable = true;
             emit parameterReadyVehicleAvailableChanged(true);
         }
+#ifdef __mindskin__
+        //call mindskin UI to trigger param loading;
+        _activeVehicle->parameterManager()->paramLoadHelper()->refreshAllParameters(-1);
+#endif
     }
 }
 
@@ -552,6 +563,7 @@ void MultiVehicleManager::_sendGCSHeartbeat(void)
                                    0,                       // custom mode
                                    MAV_STATE_ACTIVE);       // MAV_STATE
         vehicle->sendMessageOnPriorityLink(message);
+        qDebug() << "Sent heartbeat message over link...";
     }
 }
 

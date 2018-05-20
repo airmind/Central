@@ -38,6 +38,9 @@ typedef enum {
 
 }
 
+@property (strong, nonatomic) id detailItem;
+
+
 -(IBAction)onWifiButtonTapped:(id)sender;
 -(IBAction)onLongPacketButtonTapped:(id)sender;
 

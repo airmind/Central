@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "ParameterLoadHelper_objc.h"
 
-@interface FCUSummaryViewController : UIViewController <UIParameterLoadProgressDelegate> {
+@interface FCUSummaryViewController : UIViewController  {
     IBOutlet UILabel* primAccl;
     IBOutlet UILabel* primAccl_status;
     IBOutlet UILabel* primGyro;
@@ -26,9 +26,12 @@
     
     IBOutlet UIProgressView* paraProgressView;
     
-    ParameterLoadHelper_objc* paramhelper;
+    ParameterLoadHelper_objc* m_paramhelper;
     
     
 }
+
+-(void)setParameterHelper:(ParameterLoadHelper_objc*)paramHelper;
+-(void)parameterProgressUpdate:(float)progress;
 
 @end

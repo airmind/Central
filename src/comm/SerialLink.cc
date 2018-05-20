@@ -122,7 +122,9 @@ void SerialLink::_disconnect(void)
 bool SerialLink::_connect(void)
 {
     qCDebug(SerialLinkLog) << "CONNECT CALLED";
-
+    
+    qDebug() << "Serial port _connect>>";
+    
     _disconnect();
 
 #ifdef __android__

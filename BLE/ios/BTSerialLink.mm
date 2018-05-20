@@ -549,10 +549,11 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     
 }
 
-- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
+//- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
+-(void) peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error {
     int filteredvalue;
     if (error == nil) {
-        filteredvalue = [self getFilteredRssi:peripheral.RSSI.intValue];
+        filteredvalue = [self getFilteredRssi:RSSI.intValue];
         //NSLog(@"did read rssi from connected peripheral ... filtered %d\n", filteredvalue);
     }
     
@@ -1245,7 +1246,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
    
     if (tt_update) {
         //do update, notify UI;
-        NSLog(@"rssi update UI ..\n");
+        //NSLog(@"rssi update UI ..\n");
         QList<QString> *p_uuidlist = new QList<QString>;
         
         for (BLE_Discovered_Peripheral* p in p_array) {
@@ -1269,16 +1270,16 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
     
 }
 
-- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
+//- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
+-(void) peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error {
     int filteredvalue;
-    //QList<QString>* p_uuidlist = new QList<QString>();
-
+ 
     BLE_Discovered_Peripheral* p = [connectedPeripheral containsPeripheral:peripheral];
     assert(p==nil);
     
     //BTSerialLink_objc* link = [self linkForPeripheral:peripheral];
     if (error == nil) {
-        filteredvalue = [p getFilteredRssi:peripheral.RSSI.intValue];
+        filteredvalue = [p getFilteredRssi:RSSI.intValue];
         //make a UUID Qlist of connected peripherals that has link quality status flipped;
         
     }
@@ -1534,7 +1535,7 @@ static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedo
         [centralmanager cancelPeripheralConnection:peripheral];
     }
 
-}
+}
 #endif
 
 /** Once the disconnection happens, we need to clean up our local copy of the peripheral

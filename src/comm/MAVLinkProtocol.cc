@@ -402,6 +402,7 @@ void MAVLinkProtocol::receiveBytes(BTSerialLink* link, QByteArray b)
                 emit receiveLossTotalChanged(message.sysid, totalLossCounter[mavlinkChannel]);
             }
             
+            qDebug() << "mavlink message received with msgid->" << message.msgid << "seqid->" << message.seq << "length->" << message.len;
             // The packet is emitted as a whole, as it is only 255 - 261 bytes short
             // kind of inefficient, but no issue for a groundstation pc.
             // It buys as reentrancy for the whole code over all threads
@@ -512,6 +513,7 @@ void MAVLinkProtocol::receiveBytes(LinkInterface* link, QByteArray b)
         }
         if (decodeState == 1)
         {
+            qDebug () << "message parsed id = %d" << message.msgid;
             if (!link->decodedFirstMavlinkPacket()) {
                 link->setDecodedFirstMavlinkPacket(true);
                 mavlink_status_t* mavlinkStatus = mavlink_get_channel_status(mavlinkChannel);

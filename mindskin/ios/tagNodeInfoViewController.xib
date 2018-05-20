@@ -23,7 +23,7 @@
                         <viewControllerLayoutGuide type="top" id="fp5-rE-yrg"/>
                         <viewControllerLayoutGuide type="bottom" id="BYM-FH-6SX"/>
                     </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" misplaced="YES" id="X3g-oa-ESV">
+                    <view key="view" contentMode="scaleToFill" id="X3g-oa-ESV">
                         <rect key="frame" x="0.0" y="0.0" width="736" height="414"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>

@@ -9,21 +9,12 @@
 #ifndef qgroundcontrol_BTSerialLink_objc_h
 #define qgroundcontrol_BTSerialLink_objc_h
 
-#include "BTSerialLink.h"
+#include "BLE_definitions.h"
 #import <CoreBluetooth/CoreBluetooth.h>
 #import "BLELinkConnectionDelegate.h"
 
 //class BTSerialConfigurationWrapper;
 //class BTSerialLinkWrapper;
-
-#define LP_RSSI_WINDOW_LENGTH 10
-
-typedef enum {
-    BLE_Peripheral_HARDWARE_NOTCONNECTED,
-    BLE_Peripheral_HARDWARE_CONNECTING,
-    BLE_Peripheral_HARDWARE_CONNECTED
-    
-}BLE_Peripheral_HARDWARECONNECT_STATUS;
 
 @interface BLE_LowPassFilter_objc : NSObject {
     int lp_win[LP_RSSI_WINDOW_LENGTH]; //ring buffer

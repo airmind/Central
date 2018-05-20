@@ -14,6 +14,7 @@
 #include "MindSkinRootView_impl_objc.h"
 #include "qt2ioshelper.h"
 #include "QGCApplication.h"
+#include "ParameterLoadHelper.h"
 
 #import "mindskinMessageViewController.h"
 
@@ -134,7 +135,10 @@ void MindSkinRootView::showMessage(const QString& msg) {
     //todo: try to get a link to see if its racer or mindpx
     //launch racer by default;
     tagNodesViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
-    sideMenuViewController* sidemenunctlr = [[sideMenuViewController alloc] initWithNibName:@"sideMenuViewController" bundle:nil];
+    CGRect rect = [racermainctlr.view frame];
+    
+    sideMenuViewController* sidemenunctlr = [[sideMenuViewController alloc] init];
+    [sidemenunctlr.view setFrame:CGRectMake(rect.origin.x, rect.origin.y, 200, rect.size.height)];
     
     //UIViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"RacerMainMenuViewController" bundle:nil];
     
@@ -146,6 +150,10 @@ void MindSkinRootView::showMessage(const QString& msg) {
     UINavigationController *detailNav = [[UINavigationController alloc] initWithRootViewController:racermainctlr];
     splitViewController.viewControllers = [NSArray arrayWithObjects:masterNav, detailNav, nil];
     splitViewController.delegate = racermainctlr;
+    
+    //enable swipe gesture to show/hide master in landscape mode;
+    splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModePrimaryHidden;
+    splitViewController.presentsWithGesture = YES;
 
     [rootcontroller presentViewController:splitViewController animated:YES completion:^{
         qgcApp()->_initSetting();

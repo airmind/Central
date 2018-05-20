@@ -25,6 +25,10 @@
 #include "QGCMAVLink.h"
 #include "Vehicle.h"
 
+#ifdef __mindskin__
+#include "ParameterLoadHelper.h"
+#endif
+
 /// @file
 ///     @author Don Gagne <don@thegagnes.com>
 
@@ -107,6 +111,7 @@ public:
     //int defaultComponenentId(void) { return _defaultComponentId; }
 #ifdef __mindskin__
     void writeLocalParamCache();
+    ParameterLoadHelper* paramLoadHelper() {return paraHelper;}
 #endif
   
 //This is in previous ParameterLoader.h, how does it come to this place during the merge?

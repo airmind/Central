@@ -27,16 +27,16 @@ public:
     ~ParameterLoadHelper();
     
     //register callback delegate for update;
-    -(void)setParameterLoadDelegate:(id)delegate;
+    void setParameterLoadDelegate(void* delegate);
     
     //send progress notification;
-    -(void)notifyParameterProgress(float progress);
+    void notifyParameterProgress(float progress);
     
     //init load parameter finished and ready;
     void parameterReadyChanged(bool yon);
     
     //get parameter list;
-    //-(void) refreshAllParameters:(LinkConfiguration)cfg;
+    void refreshAllParameters(int componentid);
     //-(void) refreshAllParameters:(BTLinkConfiguration)cfg;
 
     

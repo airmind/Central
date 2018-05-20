@@ -486,10 +486,15 @@ public:
     MAV_TYPE vehicleType(void) const { return _vehicleType; }
     Q_INVOKABLE QString vehicleTypeName(void) const;
 
+
     /// Returns the highest quality link available to the Vehicle. If you need to hold a reference to this link use
     /// LinkManager::sharedLinkInterfaceForGet to get QSharedPointer for link.
     LinkInterface* priorityLink(void) { return _priorityLink.data(); }
-
+#ifdef __mindskin__
+    QObject* priorityLinkBLE(void);
+    
+#endif
+    
     /// Sends a message to the specified link
     /// @return true: message sent, false: Link no longer connected
     bool sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
@@ -652,7 +657,7 @@ public:
 
     ParameterManager* parameterManager(void) { return _parameterManager; }
     ParameterManager* parameterManager(void) const { return _parameterManager; }
-
+    
     static const int cMaxRcChannels = 18;
 
     bool containsLink(LinkInterface* link) { return _links.contains(link); }

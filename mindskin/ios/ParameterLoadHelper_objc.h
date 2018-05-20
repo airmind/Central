@@ -6,10 +6,13 @@
 //
 //
 
-#ifndef ParameterLoadHelper_h
-#define ParameterLoadHelper_h
+#ifndef ParameterLoadHelper_objc_h
+#define ParameterLoadHelper_objc_h
 
-#include "ParameterLoadHelper.h"
+#import <UIKit/UIKit.h>
+//#include "ParameterLoadHelper.h"
+//#import "tagNodeInfoViewController.h"
+#import "BTSerialLink_objc.h"
 
 @class ParameterLoadHelper_objc;
 
@@ -25,35 +28,37 @@
 
 @interface ParameterLoadHelper_objc : NSObject {
     id <UIParameterLoadProgressDelegate> param_delegate;
+    //ParameterManager* refParamManager;
+    
 }
 
-+(ParameterLoadHelper_objc*)sharedInstance;
+-(ParameterLoadHelper_objc*)initForTagNode:(UIViewController*)node ;
 
 //register callback delegate for update;
 -(void)setParameterLoadDelegate:(id)delegate;
 
 //get parameter list;
--(void) refreshAllParameters:(LinkConfiguration)cfg;
--(void) refreshAllParameters:(BTLinkConfiguration)cfg;
+//-(void) refreshAllParameters:(LinkConfiguration)cfg;
+-(void) refreshAllParameters:(int)componentid;
 /// Request a refresh on the specific parameter
 -(void) refreshParameter:(int) componentId paramName: (NSString*)name;
 
 -(void)notifyParameterProgress:(float)progress;
 
--(BOOL)paramSetupComplete;
+-(void)parameterReadyChanged:(BOOL)yon;
 
+-(BOOL)paramSetupComplete;
+/*
 public static void refreshAllFlightParameters(String linkConfigName){
     if(controller != null){
         refreshAllParameters(linkConfigName);
     }else{
-        //throw new NullPointerException("ParametersController is NULL in ParameterManager. " +
-        //        "Must implement 'IParametersController' interface and call setController() before refreshing parameters.");
     }
 }
 
-
+*/
 
 @end
 
 
-#endif /* ParameterLoadHelper_h */
+#endif /* ParameterLoadHelper_objc_h */
