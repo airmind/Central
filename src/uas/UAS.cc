@@ -967,6 +967,7 @@ void UAS::processParamValueMsg(mavlink_message_t& msg, const QString& paramName,
     }
 
     qCDebug(UASLog) << "Received PARAM_VALUE" << paramName << paramValue << rawValue.param_type;
+    qDebug() << "[UAS log] received param value msg: param index %d" << rawValue.param_index;
 
     emit parameterUpdate(uasId, compId, paramName, rawValue.param_count, rawValue.param_index, rawValue.param_type, paramValue);
 }

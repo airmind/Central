@@ -191,6 +191,7 @@ void ParameterManager::_parameterUpdate(int vehicleId, int componentId, QString 
     if (_vehicle->px4Firmware() && parameterName == "_HASH_CHECK" && !_logReplay) {
         /* we received a cache hash, potentially load from cache */
         qCDebug(ParameterManagerLog) << "try to load parameters from cache";
+        qDebug("try to load parameters from cache");
         _tryCacheHashLoad(vehicleId, componentId, value);
         return;
     }
@@ -205,7 +206,7 @@ void ParameterManager::_parameterUpdate(int vehicleId, int componentId, QString 
         _paramCountMap[componentId] = parameterCount;
         _totalParamCount += parameterCount;
     }
-
+    qDebug("Total parameter count: %d", _totalParamCount);
     _mapParameterId2Name[componentId][parameterId] = parameterName;
 
     // If we've never seen this component id before, setup the wait lists.
@@ -296,6 +297,7 @@ void ParameterManager::_parameterUpdate(int vehicleId, int componentId, QString 
         }
     }
 
+    qDebug("%d parameters waiting for", readWaitingParamCount);
     // Update progress bar for waiting reads
     if (readWaitingParamCount == 0) {
         // We are no longer waiting for any reads to complete
@@ -756,6 +758,8 @@ void ParameterManager::_readParameterRaw(int componentId, const QString& paramNa
     char fixedParamName[MAVLINK_MSG_PARAM_REQUEST_READ_FIELD_PARAM_ID_LEN];
 
     strncpy(fixedParamName, paramName.toStdString().c_str(), sizeof(fixedParamName));
+    
+#ifndef __mindskin__
     mavlink_msg_param_request_read_pack_chan(_mavlink->getSystemId(),   // QGC system id
                                              _mavlink->getComponentId(),     // QGC component id
                                              _vehicle->priorityLink()->mavlinkChannel(),
@@ -765,6 +769,33 @@ void ParameterManager::_readParameterRaw(int componentId, const QString& paramNa
                                              fixedParamName,                 // Named parameter being requested
                                              paramIndex);                    // Parameter index being requested, -1 for named
     _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
+#else
+    
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        mavlink_msg_param_request_read_pack_chan(_mavlink->getSystemId(),
+                                                 _mavlink->getComponentId(),
+                                                 ((LinkInterface*)vlink)->mavlinkChannel(),
+                                                 &msg,
+                                                 _vehicle->id(),                 // Target system id
+                                                 componentId,                    // Target component id
+                                                 fixedParamName,                 // Named parameter being requested
+                                                 paramIndex);                    // Parameter index being requested, -1 for named
+        _vehicle->sendMessageOnLink((LinkInterface*)vlink, msg);
+        
+    }
+    else {
+        mavlink_msg_param_request_read_pack_chan(_mavlink->getSystemId(),
+                                                 _mavlink->getComponentId(),
+                                                 ((BTSerialLink*)vlink)->getMavlinkChannel(),
+                                                 &msg,
+                                                 _vehicle->id(),                 // Target system id
+                                                 componentId,                    // Target component id
+                                                 fixedParamName,                 // Named parameter being requested
+                                                 paramIndex);                    // Parameter index being requested, -1 for named
+        _vehicle->sendMessageOnLink((BTSerialLink*)vlink, msg);
+    }
+#endif
 }
 
 void ParameterManager::_writeParameterRaw(int componentId, const QString& paramName, const QVariant& value)
@@ -818,12 +849,34 @@ void ParameterManager::_writeParameterRaw(int componentId, const QString& paramN
     strncpy(p.param_id, paramName.toStdString().c_str(), sizeof(p.param_id));
 
     mavlink_message_t msg;
+#ifndef __mindskin__
     mavlink_msg_param_set_encode_chan(_mavlink->getSystemId(),
                                       _mavlink->getComponentId(),
                                       _vehicle->priorityLink()->mavlinkChannel(),
                                       &msg,
                                       &p);
     _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
+#else
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        mavlink_msg_param_set_encode_chan(_mavlink->getSystemId(),
+                                          _mavlink->getComponentId(),
+                                          ((LinkInterface*)vlink)->mavlinkChannel(),
+                                          &msg,
+                                          &p);
+        _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
+    }
+    else {
+        mavlink_msg_param_set_encode_chan(_mavlink->getSystemId(),
+                                          _mavlink->getComponentId(),
+                                          ((BTSerialLink*)vlink)->getMavlinkChannel(),
+                                          &msg,
+                                          &p);
+        _vehicle->sendMessageOnLink(_vehicle->priorityLink(), msg);
+    }
+
+#endif
+    
 }
 
 void ParameterManager::_writeLocalParamCache(int vehicleId, int componentId)
@@ -1121,6 +1174,8 @@ void ParameterManager::_checkInitialLoadComplete(void)
 {
     // Already processed?
     if (_initialLoadComplete) {
+        qDebug() << "Parameters initial load complete.....";
+
         return;
     }
 
@@ -1140,7 +1195,9 @@ void ParameterManager::_checkInitialLoadComplete(void)
     _initialLoadComplete = true;
 
     qCDebug(ParameterManagerLog) << _logVehiclePrefix() << "Initial load complete";
-
+    qDebug() << "Parameters initial load complete.....";
+    qgcApp()->showMessage ("Parameters initial load complete.....");
+    
     // Check for index based load failures
     QString indexList;
     bool initialLoadFailures = false;
