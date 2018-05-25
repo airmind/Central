@@ -154,6 +154,7 @@ void PlanManager::_requestList(void)
     _clearMissionItems();
 
     _dedicatedLink = _vehicle->priorityLink();
+#ifndef __mindskin__
     mavlink_msg_mission_request_list_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                                qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
                                                _dedicatedLink->mavlinkChannel(),
@@ -163,6 +164,34 @@ void PlanManager::_requestList(void)
                                                _planType);
 
     _vehicle->sendMessageOnLink(_dedicatedLink, message);
+#else
+
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        mavlink_msg_mission_request_list_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                                   qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                                   ((LinkInterface*)vlink)->mavlinkChannel(),
+                                                   &message,
+                                                   _vehicle->id(),
+                                                   MAV_COMP_ID_MISSIONPLANNER,
+                                                   _planType);
+        
+        _vehicle->sendMessageOnLink(((LinkInterface*)vlink), message);
+    }
+    else {
+        mavlink_msg_mission_request_list_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                                   qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                                   ((BTSerialLink*)vlink)->getMavlinkChannel(),
+                                                   &message,
+                                                   _vehicle->id(),
+                                                   MAV_COMP_ID_MISSIONPLANNER,
+                                                   _planType);
+        
+        _vehicle->sendMessageOnLink(((BTSerialLink*)vlink), message);
+
+    }
+#endif
+    
     _startAckTimeout(AckMissionCount);
 }
 
@@ -274,7 +303,7 @@ void PlanManager::_readTransactionComplete(void)
     qCDebug(PlanManagerLog) << "_readTransactionComplete read sequence complete";
     
     mavlink_message_t message;
-    
+#ifndef __mindskin__
     mavlink_msg_mission_ack_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                       qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
                                       _dedicatedLink->mavlinkChannel(),
@@ -285,7 +314,34 @@ void PlanManager::_readTransactionComplete(void)
                                       _planType);
     
     _vehicle->sendMessageOnLink(_dedicatedLink, message);
+#else
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        mavlink_msg_mission_ack_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                          qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                          ((LinkInterface*)vlink)->mavlinkChannel(),
+                                          &message,
+                                          _vehicle->id(),
+                                          MAV_COMP_ID_MISSIONPLANNER,
+                                          MAV_MISSION_ACCEPTED,
+                                          _planType);
+        
+        _vehicle->sendMessageOnLink(((LinkInterface*)vlink), message);
+    }
+    else {
+        mavlink_msg_mission_ack_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                          qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                          ((BTSerialLink*)vlink)->getMavlinkChannel(),
+                                          &message,
+                                          _vehicle->id(),
+                                          MAV_COMP_ID_MISSIONPLANNER,
+                                          MAV_MISSION_ACCEPTED,
+                                          _planType);
+        
+        _vehicle->sendMessageOnLink(((BTSerialLink*)vlink), message);
 
+    }
+#endif
     _finishTransaction(true);
 }
 
@@ -329,8 +385,8 @@ void PlanManager::_requestNextMissionItem(void)
     }
 
     qCDebug(PlanManagerLog) << QStringLiteral("_requestNextMissionItem %1 sequenceNumber:retry").arg(_planTypeString()) << _itemIndicesToRead[0] << _retryCount;
-
     mavlink_message_t message;
+#ifndef __mindskin__
     if (_vehicle->capabilityBits() & MAV_PROTOCOL_CAPABILITY_MISSION_INT) {
         mavlink_msg_mission_request_int_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                                   qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
@@ -352,6 +408,47 @@ void PlanManager::_requestNextMissionItem(void)
     }
     
     _vehicle->sendMessageOnLink(_dedicatedLink, message);
+    
+#else
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    uint8_t channel;
+    bool useBLELink = true;
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        channel = ((LinkInterface*)vlink)->mavlinkChannel();
+        useBLELink = false;
+    }
+    else {
+        channel = ((BTSerialLink*)vlink)->getMavlinkChannel();
+        useBLELink = true;
+    }
+
+    if (_vehicle->capabilityBits() & MAV_PROTOCOL_CAPABILITY_MISSION_INT) {
+        mavlink_msg_mission_request_int_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                                  qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                                  channel,
+                                                  &message,
+                                                  _vehicle->id(),
+                                                  MAV_COMP_ID_MISSIONPLANNER,
+                                                  _itemIndicesToRead[0],
+                                                  _planType);
+    } else {
+        mavlink_msg_mission_request_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                              qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                              channel,
+                                              &message,
+                                              _vehicle->id(),
+                                              MAV_COMP_ID_MISSIONPLANNER,
+                                              _itemIndicesToRead[0],
+                                              _planType);
+    }
+    
+    if (useBLELink) {
+        _vehicle->sendMessageOnLink(((BTSerialLink*)vlink), message);
+    }
+    else {
+        _vehicle->sendMessageOnLink(((LinkInterface*)vlink), message);
+    }
+#endif
     _startAckTimeout(AckMissionItem);
 }
 
@@ -514,6 +611,7 @@ void PlanManager::_handleMissionRequest(const mavlink_message_t& message, bool m
     qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionRequest %1 sequenceNumber:command").arg(_planTypeString()) << missionRequest.seq << item->command();
 
     mavlink_message_t   messageOut;
+#ifndef __mindskin__
     if (missionItemInt) {
         mavlink_msg_mission_item_int_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                                qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
@@ -557,6 +655,67 @@ void PlanManager::_handleMissionRequest(const mavlink_message_t& message, bool m
     }
     
     _vehicle->sendMessageOnLink(_dedicatedLink, messageOut);
+#else
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    uint8_t channel;
+    bool useBLELink = true;
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        channel = ((LinkInterface*)vlink)->mavlinkChannel();
+        useBLELink = false;
+    }
+    else {
+        channel = ((BTSerialLink*)vlink)->getMavlinkChannel();
+        useBLELink = true;
+    }
+    if (missionItemInt) {
+        mavlink_msg_mission_item_int_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                               qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                               channel,
+                                               &messageOut,
+                                               _vehicle->id(),
+                                               MAV_COMP_ID_MISSIONPLANNER,
+                                               missionRequest.seq,
+                                               item->frame(),
+                                               item->command(),
+                                               missionRequest.seq == 0,
+                                               item->autoContinue(),
+                                               item->param1(),
+                                               item->param2(),
+                                               item->param3(),
+                                               item->param4(),
+                                               item->param5() * qPow(10.0, 7.0),
+                                               item->param6() * qPow(10.0, 7.0),
+                                               item->param7(),
+                                               _planType);
+    } else {
+        mavlink_msg_mission_item_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                           qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                           channel,
+                                           &messageOut,
+                                           _vehicle->id(),
+                                           MAV_COMP_ID_MISSIONPLANNER,
+                                           missionRequest.seq,
+                                           item->frame(),
+                                           item->command(),
+                                           missionRequest.seq == 0,
+                                           item->autoContinue(),
+                                           item->param1(),
+                                           item->param2(),
+                                           item->param3(),
+                                           item->param4(),
+                                           item->param5(),
+                                           item->param6(),
+                                           item->param7(),
+                                           _planType);
+    }
+    
+    if (useBLELink) {
+        _vehicle->sendMessageOnLink(((BTSerialLink*)vlink), message);
+    }
+    else {
+        _vehicle->sendMessageOnLink(((LinkInterface*)vlink), message);
+    }
+#endif
     _startAckTimeout(AckMissionRequest);
 }
 
@@ -872,6 +1031,7 @@ void PlanManager::_removeAllWorker(void)
     emit progressPct(0);
 
     _connectToMavlink();
+#ifndef __mindskin__
     _dedicatedLink = _vehicle->priorityLink();
     mavlink_msg_mission_clear_all_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                             qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
@@ -881,6 +1041,34 @@ void PlanManager::_removeAllWorker(void)
                                             MAV_COMP_ID_MISSIONPLANNER,
                                             _planType);
     _vehicle->sendMessageOnLink(_vehicle->priorityLink(), message);
+#else
+    QObject* vlink = _vehicle->priorityLinkBLE();
+    uint8_t channel;
+    bool useBLELink = true;
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        channel = ((LinkInterface*)vlink)->mavlinkChannel();
+        useBLELink = false;
+    }
+    else {
+        channel = ((BTSerialLink*)vlink)->getMavlinkChannel();
+        useBLELink = true;
+    }
+
+    mavlink_msg_mission_clear_all_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
+                                            qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
+                                            channel,
+                                            &message,
+                                            _vehicle->id(),
+                                            MAV_COMP_ID_MISSIONPLANNER,
+                                            _planType);
+    if (useBLELink) {
+        _vehicle->sendMessageOnLink(((BTSerialLink*)vlink), message);
+    }
+    else {
+        _vehicle->sendMessageOnLink(((LinkInterface*)vlink), message);
+    }
+    
+#endif
     _startAckTimeout(AckMissionClearAll);
 }
 
