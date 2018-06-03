@@ -34,7 +34,7 @@
 #include "ADSBVehicle.h"
 #include "QGCCameraManager.h"
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 #include "AirframeComponentController.h"
 #include <mindskinlog.h>
 #endif
@@ -111,7 +111,7 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _updateCount(0)
     , _rcRSSI(255)
     , _rcRSSIstore(255)
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     , _autoDisconnect(true)
 #else
     , _autoDisconnect(false)
@@ -189,14 +189,11 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _temperatureFactGroup(this)
 {
 
-#ifdef __mindskin__
-    MSLog("create vehicle");
-#endif
     _addLink(link);
 
     _mavlink = qgcApp()->toolbox()->mavlinkProtocol();
 //<<<<<<< HEAD
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     connect(_mavlink, &MAVLinkProtocol::messageReceived, this, &Vehicle::_mavlinkMessageReceived);
 #else
     connect(_mavlink, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this, static_cast<void (Vehicle::*)(LinkInterface*, mavlink_message_t)>(&Vehicle::_mavlinkMessageReceived));
@@ -206,7 +203,7 @@ Vehicle::Vehicle(LinkInterface*             link,
 //=======
 //>>>>>>> upstream/master
 
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, &Vehicle::_sendMessageOnLink, Qt::QueuedConnection);
 #else
     connect(this, &Vehicle::_sendMessageOnLinkOnThread, this, static_cast<void (Vehicle::*)(LinkInterface*, mavlink_message_t)>(&Vehicle::_sendMessageOnLink), Qt::QueuedConnection);
@@ -278,7 +275,7 @@ Vehicle::Vehicle(LinkInterface*             link,
     emit dynamicCamerasChanged();
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 void Vehicle::setAirFrameType(int airFrameType) {
     AirframeComponentController controller;
     controller.changeAutostart(airFrameType);
@@ -457,9 +454,7 @@ void Vehicle::_commonInit(void)
     _flightTimeFact.setRawValue(0);
 }
 
-#ifdef __mindskin__
-
-
+#ifdef __DRONETAG_BLE__
 Vehicle::Vehicle(BTSerialLink*             link,
                  int                        vehicleId,
                  int                        defaultComponentId,
@@ -494,7 +489,7 @@ Vehicle::Vehicle(BTSerialLink*             link,
 , _updateCount(0)
 , _rcRSSI(255)
 , _rcRSSIstore(255)
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 , _autoDisconnect(true)
 #else
 , _autoDisconnect(false)
@@ -763,9 +758,6 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     }
 
     if (!_containsLink(link)) {
-        #ifdef __mindskin__
-        MSLog("[Vehicle::_mavlinkMessageReceived] to add link");
-        #endif
         _addLink(link);
     }
 
@@ -929,7 +921,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
 }
 
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 void Vehicle::_mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message) {
     
     // if the minimum supported version of MAVLink is already 2.0
@@ -1321,7 +1313,7 @@ void Vehicle::_handleProtocolVersion(LinkInterface *link, mavlink_message_t& mes
     _setMaxProtoVersion(protoVersion.max_version);
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 
 void Vehicle::_handleAutopilotVersion(BTSerialLink* link, mavlink_message_t& message) {
     Q_UNUSED(link);
@@ -1820,14 +1812,11 @@ bool Vehicle::_containsLink(LinkInterface* link)
 
 void Vehicle::_addLink(LinkInterface* link)
 {
-    #ifdef __mindskin__
-    MSLog("_addLink");
-    #endif
     if (!_containsLink(link)) {
         qCDebug(VehicleLog) << "_addLink:" << QString("%1").arg((ulong)link, 0, 16);
         _links += link;
         _updatePriorityLink();
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
 
         connect(qgcApp()->toolbox()->linkManager(), &LinkManager::linkInactive, this, &Vehicle::_linkInactiveOrDeleted);
         connect(qgcApp()->toolbox()->linkManager(), &LinkManager::linkDeleted, this, &Vehicle::_linkInactiveOrDeleted);
@@ -1837,13 +1826,11 @@ void Vehicle::_addLink(LinkInterface* link)
         connect(link, &LinkInterface::disconnected, this, &Vehicle::disconnected);
 #endif
     } else {
-        #ifdef __mindskin__
-        MSLog("[_addLink] link already be there");
-        #endif
+
     }
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 bool Vehicle::_containsLink(BTSerialLink* link)
 {
     return _blelinks.contains(link);
@@ -1913,7 +1900,7 @@ void Vehicle::_linkInactiveOrDeleted(LinkInterface* link)
     _links.removeOne(link);
     _updatePriorityLink();
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
         if (_links.count() == 0 && _blelinks.count()==0 && !_allLinksInactiveSent) {
 #else
         if (_links.count() == 0 && !_allLinksInactiveSent) {
@@ -1926,7 +1913,7 @@ void Vehicle::_linkInactiveOrDeleted(LinkInterface* link)
 }
 
 //<<<<<<< HEAD
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 void Vehicle::_linkInactiveOrDeleted(BTSerialLink* link)
 {
     qCDebug(VehicleLog) << "_linkInactiveOrDeleted linkCount" << _links.count();
@@ -1951,7 +1938,7 @@ void Vehicle::sendMessage(mavlink_message_t message)
 //=======
 //>>>>>>> master
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 bool Vehicle::sendMessageOnPriorityLink(mavlink_message_t message) {
     //return BLE link as priority;
     
@@ -2009,7 +1996,7 @@ void Vehicle::_sendMessageOnLink(BTSerialLink* link, mavlink_message_t message)
     _messagesSent++;
     emit messagesSentChanged();
 }
-#endif  //__mindskin__
+#endif  //__DRONETAG_BLE__
 
 bool Vehicle::sendMessageOnLink(LinkInterface* link, mavlink_message_t message)
 {
@@ -2043,15 +2030,18 @@ void Vehicle::_sendMessageOnLink(LinkInterface* link, mavlink_message_t message)
     emit messagesSentChanged();
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 QObject* Vehicle::priorityLinkBLE(void) {
     LinkInterface* alink = _priorityLink.data();
 #ifndef NO_SERIAL_LINK
     if (alink) {
         SerialLink* pSerialLink = qobject_cast<SerialLink*>(alink);
         LinkConfiguration* config = pSerialLink->getLinkConfiguration();
-        if (pSerialConfig && pSerialConfig->usbDirect()) {
-            return alink;
+        if (config) {
+            SerialConfiguration* pSerialConfig = qobject_cast<SerialConfiguration*>(config);
+            if (pSerialConfig && pSerialConfig->usbDirect()) {
+                return alink;
+            }
         }
     }
 #endif
@@ -2401,24 +2391,23 @@ bool Vehicle::active(void)
     return _active;
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 void Vehicle::disconnected() {
-    MSLog("[Vehicle::disconnected()] enter");
-    if(_parameterManager != NULL) {
+     if(_parameterManager != NULL) {
         LinkInterface *link = (LinkInterface*)sender();
         if(link != NULL) {
             LinkConfiguration *linkConfig = link->getLinkConfiguration();
             if(linkConfig != NULL) {
                 if(linkConfig->type() != LinkConfiguration::TypeUdp) {
-                    MSLog("[disconnected] to flush fact/parameters into cache file in order to speed-up initial-load of parameters, linkType:%d",linkConfig->type());
+                    //MSLog("[disconnected] to flush fact/parameters into cache file in order to speed-up initial-load of parameters, linkType:%d",linkConfig->type());
                     _parameterManager->writeLocalParamCache();
                 }
             }
         } else {
-            MSLog("[Vehicle::disconnected()] link is null");
+            //MSLog("[Vehicle::disconnected()] link is null");
         }
     } else {
-        MSLog("[Vehicle::disconnected()] getParameterLoader() return null");
+        //MSLog("[Vehicle::disconnected()] getParameterLoader() return null");
     }
 }
 #endif
@@ -2432,7 +2421,7 @@ void Vehicle::setActive(bool active)
 
     _startJoystick(_active);
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     //try to flush fact into cache after the vehicle is disconnected
     if(_active == false && _parameterManager != NULL) {
         qCDebug(VehicleLog) << "[setActive(false)] to flush fact/parameters into cache file in order to speed-up initial-load of parameters";
@@ -2800,7 +2789,7 @@ void Vehicle::_connectionActive(void)
 
     this->_hearbeatsCount++;
     if(this->_hearbeatsCount == 1) {
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     if( link ) {
         #ifdef __android__
         /*
@@ -2827,7 +2816,7 @@ void Vehicle::_connectionActive(void)
     }
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     bool Vehicle::containsLinkConfig(QString& linkConfigName) {
         foreach (LinkInterface* link, _links) {
             LinkConfiguration* linkCfg = link->getLinkConfiguration();
@@ -3211,7 +3200,7 @@ void Vehicle::_sendMavCommandAgain(void)
     cmd.target_system = _id;
     cmd.target_component = queuedCommand.component;
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     mavlink_msg_command_long_encode_chan(_mavlink->getSystemId(),
                                          _mavlink->getComponentId(),
                                          _blelinks[0]->getMavlinkChannel(),

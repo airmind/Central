@@ -42,8 +42,14 @@ QGCMAVLinkInspector::QGCMAVLinkInspector(const QString& title, QAction* action, 
 
     // Connect external connections
     connect(qgcApp()->toolbox()->multiVehicleManager(), &MultiVehicleManager::vehicleAdded, this, &QGCMAVLinkInspector::_vehicleAdded);
+#ifndef __DRONETAG_BLE__
     connect(protocol, &MAVLinkProtocol::messageReceived, this, &QGCMAVLinkInspector::receiveMessage);
-
+#else
+    connect(protocol, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this,static_cast<void (QGCMAVLinkInspector::*)(LinkInterface*, mavlink_message_t)>(&QGCMAVLinkInspector::receiveMessage));
+    connect(protocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this,static_cast<void (QGCMAVLinkInspector::*)(BTSerialLink*, mavlink_message_t)>(&QGCMAVLinkInspector::receiveMessage));
+#endif
+    
+    
     // Attach the UI's refresh rate to a timer.
     connect(&updateTimer, &QTimer::timeout, this, &QGCMAVLinkInspector::refreshView);
     updateTimer.start(updateInterval);
@@ -413,6 +419,131 @@ void QGCMAVLinkInspector::receiveMessage(LinkInterface* link,mavlink_message_t m
 
     }
 }
+
+#ifdef __DRONETAG_BLE__
+void QGCMAVLinkInspector::receiveMessage(BTSerialLink* link,mavlink_message_t message)
+{
+    Q_UNUSED(link);
+    
+    quint64 receiveTime;
+    
+    if (selectedSystemID != 0 && selectedSystemID != message.sysid) return;
+    if (selectedComponentID != 0 && selectedComponentID != message.compid) return;
+    
+    // Create dynamically an array to store the messages for each UAS
+    if (!uasMessageStorage.contains(message.sysid))
+    {
+        mavlink_message_t* msg = new mavlink_message_t;
+        *msg = message;
+        uasMessageStorage.insertMulti(message.sysid,msg);
+    }
+    
+    bool msgFound = false;
+    QMap<int, mavlink_message_t* >::const_iterator iteMsg = uasMessageStorage.find(message.sysid);
+    mavlink_message_t* uasMessage = iteMsg.value();
+    while((iteMsg != uasMessageStorage.end()) && (iteMsg.key() == message.sysid))
+    {
+        if (iteMsg.value()->msgid == message.msgid)
+        {
+            msgFound = true;
+            uasMessage = iteMsg.value();
+            break;
+        }
+        ++iteMsg;
+    }
+    if (!msgFound)
+    {
+        mavlink_message_t* msgIdMessage = new mavlink_message_t;
+        *msgIdMessage = message;
+        uasMessageStorage.insertMulti(message.sysid,msgIdMessage);
+    }
+    else
+    {
+        *uasMessage = message;
+    }
+    
+    // Looking if this message has already been received once
+    msgFound = false;
+    QMap<int, QMap<int, quint64>* >::const_iterator ite = uasLastMessageUpdate.find(message.sysid);
+    QMap<int, quint64>* lastMsgUpdate = ite.value();
+    while((ite != uasLastMessageUpdate.end()) && (ite.key() == message.sysid))
+    {
+        if(ite.value()->contains(message.msgid))
+        {
+            msgFound = true;
+            
+            // Point to the found message
+            lastMsgUpdate = ite.value();
+            break;
+        }
+        ++ite;
+    }
+    
+    receiveTime = QGC::groundTimeMilliseconds();
+    
+    // If the message doesn't exist, create a map for the frequency, message count and time of reception
+    if(!msgFound)
+    {
+        // Create a map for the message frequency
+        QMap<int, float>* messageHz = new QMap<int,float>;
+        messageHz->insert(message.msgid,0.0f);
+        uasMessageHz.insertMulti(message.sysid,messageHz);
+        
+        // Create a map for the message count
+        QMap<int, unsigned int>* messagesCount = new QMap<int, unsigned int>;
+        messagesCount->insert(message.msgid,0);
+        uasMessageCount.insertMulti(message.sysid,messagesCount);
+        
+        // Create a map for the time of reception of the message
+        QMap<int, quint64>* lastMessage = new QMap<int, quint64>;
+        lastMessage->insert(message.msgid,receiveTime);
+        uasLastMessageUpdate.insertMulti(message.sysid,lastMessage);
+        
+        // Point to the created message
+        lastMsgUpdate = lastMessage;
+    }
+    else
+    {
+        // The message has been found/created
+        if ((lastMsgUpdate->contains(message.msgid))&&(uasMessageCount.contains(message.sysid)))
+        {
+            // Looking for and updating the message count
+            unsigned int count = 0;
+            QMap<int, QMap<int, unsigned int>* >::const_iterator iter = uasMessageCount.find(message.sysid);
+            QMap<int, unsigned int> * uasMsgCount = iter.value();
+            while((iter != uasMessageCount.end()) && (iter.key() == message.sysid))
+            {
+                if(iter.value()->contains(message.msgid))
+                {
+                    uasMsgCount = iter.value();
+                    count = uasMsgCount->value(message.msgid,0);
+                    uasMsgCount->insert(message.msgid,count+1);
+                    break;
+                }
+                ++iter;
+            }
+        }
+        lastMsgUpdate->insert(message.msgid,receiveTime);
+    }
+    
+    if (selectedSystemID == 0 || selectedComponentID == 0)
+    {
+        return;
+    }
+    
+    switch (message.msgid)
+    {
+        case MAVLINK_MSG_ID_DATA_STREAM:
+        {
+            mavlink_data_stream_t stream;
+            mavlink_msg_data_stream_decode(&message, &stream);
+            onboardMessageInterval.insert(stream.stream_id, stream.message_rate);
+        }
+            break;
+            
+    }
+}
+#endif
 
 QGCMAVLinkInspector::~QGCMAVLinkInspector()
 {

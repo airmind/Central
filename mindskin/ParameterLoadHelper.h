@@ -9,17 +9,12 @@
 #ifndef ParameterLoadHelper_h
 #define ParameterLoadHelper_h
 
-
-#ifdef __ios__
 class ParameterLoadHelperWrapper;
-#endif
-
 
 class ParameterLoadHelper {
 private:
-#ifdef __ios__
+
     ParameterLoadHelperWrapper* parahelper_wrapper;
-#endif
     
 public:
     

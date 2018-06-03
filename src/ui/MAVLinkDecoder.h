@@ -40,6 +40,10 @@ signals:
 public slots:
     /** @brief Receive one message from the protocol and decode it */
     void receiveMessage(LinkInterface* link,mavlink_message_t message);
+#ifdef __DRONETAG_BLE__
+    void receiveMessage(BTSerialLink* link,mavlink_message_t message);
+#endif
+    
 protected:
     /** @brief Emit the value of one message field */
     void emitFieldValue(mavlink_message_t* msg, int fieldid, quint64 time);

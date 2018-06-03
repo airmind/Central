@@ -148,8 +148,8 @@ DEFINES += EIGEN_MPL2_ONLY
 
 installer {
     CONFIG -= debug
-    CONFIG -= debug_and_release
-    CONFIG += release
+    CONFIG += debug_and_release
+    CONFIG -= release
     message(Build Installer)
 }
 
@@ -171,9 +171,9 @@ BASEDIR      = $$IN_PWD
 
 !iOSBuild {
     OBJECTS_DIR  = $${OUT_PWD}/obj
-    MOC_DIR      = $${OUT_PWD}/moc
+    MOC_DIR      = $$absolute_path($${OUT_PWD})/moc
     UI_DIR       = $${OUT_PWD}/ui
-    RCC_DIR      = $${OUT_PWD}/rcc
+    RCC_DIR      = $$absolute_path($${OUT_PWD})/rcc
 }
 
 LANGUAGE = C++
@@ -226,7 +226,7 @@ WindowsBuild {
         QMAKE_CXXFLAGS_WARN_ON += /WX
     }
 }
-
+1
 #
 # Build-specific settings
 #

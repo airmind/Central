@@ -35,6 +35,14 @@ static NSString * const kWrriteCharacteristicUUID = @"FC21";  //selectedobject
 static NSString * const kWrriteCharacteristicConfigureUUID = @"FC26";  //selectedobject
 static NSString * const kWrriteCharacteristicMAVDataUUID = @"FC28";  //selectedobject
 
+NSString* qt2ioshelper::QString2NSString (const QString* qstr) {
+    
+    std::string str = qstr->toStdString();
+    const char *s= str.c_str();
+    NSString* nstring = [NSString stringWithUTF8String:s];
+    return nstring;
+}
+
 
 /****
  

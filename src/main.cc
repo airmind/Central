@@ -76,7 +76,7 @@ int WindowsCrtReportHook(int reportType, char* message, int* returnValue)
 #if defined(__android__) && !defined(NO_SERIAL_LINK)
 #include <jni.h>
 #include "qserialport.h"
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 #include "qble.h"
 #endif
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
@@ -89,7 +89,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
     }
 
     QSerialPort::setNativeMethods();
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     QBLE::setNativeMethods();
 #endif
     return JNI_VERSION_1_6;

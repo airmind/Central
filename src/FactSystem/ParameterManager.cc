@@ -424,7 +424,7 @@ void ParameterManager::_valueUpdated(const QVariant& value)
     int componentId = fact->componentId();
     QString name = fact->name();
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     if(!fact->rebootRequired()) {
         parameterUpdate(_mavlink->getSystemId(),componentId,fact->type(),name,value);
     }
@@ -463,7 +463,7 @@ void ParameterManager::refreshAllParameters(uint8_t componentId)
         _initialRequestTimeoutTimer.start();
     }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     if(componentId == MAV_COMP_ID_ALL) {
         _totalParamCount = 0;
     }
@@ -484,7 +484,7 @@ void ParameterManager::refreshAllParameters(uint8_t componentId)
     MAVLinkProtocol* mavlink = qgcApp()->toolbox()->mavlinkProtocol();
     mavlink_message_t msg;
     
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     mavlink_msg_param_request_list_pack_chan(mavlink->getSystemId(),
                                              mavlink->getComponentId(),
                                              _vehicle->priorityLink()->mavlinkChannel(),
@@ -759,7 +759,7 @@ void ParameterManager::_readParameterRaw(int componentId, const QString& paramNa
 
     strncpy(fixedParamName, paramName.toStdString().c_str(), sizeof(fixedParamName));
     
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     mavlink_msg_param_request_read_pack_chan(_mavlink->getSystemId(),   // QGC system id
                                              _mavlink->getComponentId(),     // QGC component id
                                              _vehicle->priorityLink()->mavlinkChannel(),
@@ -849,7 +849,7 @@ void ParameterManager::_writeParameterRaw(int componentId, const QString& paramN
     strncpy(p.param_id, paramName.toStdString().c_str(), sizeof(p.param_id));
 
     mavlink_message_t msg;
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     mavlink_msg_param_set_encode_chan(_mavlink->getSystemId(),
                                       _mavlink->getComponentId(),
                                       _vehicle->priorityLink()->mavlinkChannel(),

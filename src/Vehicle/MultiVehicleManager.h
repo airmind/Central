@@ -20,7 +20,7 @@
 #include "QGCToolbox.h"
 #include "QGCLoggingCategory.h"
 
-#ifdef __ios__
+#ifdef __DRONETAG_BLE__
 #include "BTSerialLink.h"
 #endif
 
@@ -78,7 +78,7 @@ public:
     bool parameterReadyVehicleAvailable(void) { return _parameterReadyVehicleAvailable; }
 
     Vehicle* activeVehicle(void) { return _activeVehicle; }
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     Vehicle* getVehicleByLinkConfigName(QString linkConfigName);
 #endif
     void setActiveVehicle(Vehicle* vehicle);
@@ -117,7 +117,7 @@ private slots:
     void _sendGCSHeartbeat(void);
     void _vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
     void _requestProtocolVersion(unsigned version);
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void _vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     

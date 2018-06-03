@@ -100,7 +100,7 @@ void UnitTest::init(void)
 
     if (!_linkManager) {
         _linkManager = qgcApp()->toolbox()->linkManager();
-        connect(_linkManager, &LinkManager::linkDeleted, this, &UnitTest::_linkDeleted);
+        //connect(_linkManager, &LinkManager::linkDeleted, this, &UnitTest::_linkDeleted);
     }
 
     _linkManager->restart();

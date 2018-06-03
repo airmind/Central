@@ -28,13 +28,11 @@
 
 #define _BLE_DEBUG_ 1 //for the moment;
 
-
-#ifdef __ios__
 class BTSerialConfigurationWrapper;
 class BTSerialLinkWrapper;
 class BLEHelperWrapper;
 class BTSerialLink;
-#endif
+
 
 //class MAVLinkProtocol;
 
@@ -46,9 +44,7 @@ class BTSerialLink;
 
 class BLEHelper {
 private:
-#ifdef __ios__
     BLEHelperWrapper* ble_wrapper;
-#endif
 
 public:
     BLEHelper();
@@ -68,9 +64,7 @@ public:
 class BTSerialConfiguration : public LinkConfiguration
 {
 private:
-#ifdef __ios__
     BTSerialConfigurationWrapper* btcwrapper;
-#endif
     //for peripheral on the link;
     QString identifier; //NSUUID, device-address for android or device-uuid for ios
     QString pname; //devicename
@@ -151,9 +145,7 @@ class BTSerialLink : public QObject//: public LinkInterface
     friend class LinkInterface;
     
 private:
-#ifdef __ios__
     BTSerialLinkWrapper* btlwrapper;
-#endif
     MAVLinkProtocol* mavhandler;
    
     //for connected link;

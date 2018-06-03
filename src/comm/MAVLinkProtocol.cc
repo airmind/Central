@@ -171,7 +171,7 @@ void MAVLinkProtocol::resetMetadataForLink(LinkInterface *link)
 }
 
 //<<<<<<< HEAD
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 
 void MAVLinkProtocol::resetMetadataForLink(const BTSerialLink *link) {
     
@@ -678,7 +678,7 @@ void MAVLinkProtocol::_sendMessage(mavlink_message_t message)
     }
     */
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     for (int i=0; i<_linkMgr->getBTSeriallinks()->count(); i++) {
         
         BTSerialLink* link = _linkMgr->getBTSeriallinks()->value<BTSerialLink*>(i);
@@ -736,7 +736,7 @@ void MAVLinkProtocol::_sendMessage(LinkInterface* link, mavlink_message_t messag
 //<<<<<<< HEAD
 
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 /**
  * @param link the link to send the message over
  * @param message message to send
@@ -788,7 +788,7 @@ void MAVLinkProtocol::_sendMessage(BTSerialLink* link, mavlink_message_t message
     }
 }
 
-#endif //__mindskin__
+#endif //__DRONETAG_BLE__
 
 /**
  * The heartbeat is sent out of order and does not reset the

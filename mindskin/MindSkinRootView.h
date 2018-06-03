@@ -8,28 +8,19 @@
 
 #ifndef qgroundcontrol_MindSkinRootView_h
 #define qgroundcontrol_MindSkinRootView_h
-
+#include <QObject>
 #include <QString>
 
 class MindSkinRootView_wrapper;
 
-class MindSkinRootView {
+class MindSkinRootView : public QObject {
     
 private:
-    
- 
-#ifdef __ios__
+
     MindSkinRootView_wrapper* skinroot_wrapper;
-    
-    
-    
-#endif
-    
 #ifdef __android__
     
 #endif
-    
-    
     //private constructor;
     MindSkinRootView();
     
@@ -37,8 +28,12 @@ public:
     static MindSkinRootView* sharedInstance();
     void launchMindskinUI();
     void shutdown();
-    
     void showMessage(const QString& msg);
+    
+public slots:
+    void showBLEConnectionsView();
+    void dismissBLEConnectionsView();
+
     
 };
 

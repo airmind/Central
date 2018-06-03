@@ -18,7 +18,9 @@ LinuxBuild {
 }
 
 MacBuild {
-    DESTDIR_COPY_RESOURCE_LIST = $$DESTDIR/$${TARGET}.app/Contents/MacOS
+    # DESTDIR_COPY_RESOURCE_LIST = $$DESTDIR/$${TARGET}.app/Contents/MacOS
+    # use actually build directory in xcode;
+    DESTDIR_COPY_RESOURCE_LIST = $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/MacOS
 }
 
 # Windows version of QMAKE_COPY_DIR of course doesn't work the same as Mac/Linux. It will only
@@ -48,13 +50,19 @@ iOSBuild {
 
 MacBuild {
     # Update version info in bundle
-    QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $${MAC_VERSION}\" $$DESTDIR/$${TARGET}.app/Contents/Info.plist
-    QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $${MAC_BUILD}\" $$DESTDIR/$${TARGET}.app/Contents/Info.plist
+    QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $${MAC_VERSION}\" $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/Info.plist
+    QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $${MAC_BUILD}\" $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/Info.plist
+    
+    # update icon file name
+    QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleIconFile $${ICON_BUNDLE_NAME}\" $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/Info.plist
+
+    # update bundle plist executable file name
+    QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleExecutable $${TARGET}\" $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/Info.plist
 
     # Copy non-standard frameworks into app package
-    QMAKE_POST_LINK += && rsync -a --delete $$BASEDIR/libs/lib/Frameworks $$DESTDIR/$${TARGET}.app/Contents/
+    QMAKE_POST_LINK += && rsync -a --delete $$BASEDIR/libs/lib/Frameworks $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/
     # SDL2 Framework
-    QMAKE_POST_LINK += && install_name_tool -change "@rpath/SDL2.framework/Versions/A/SDL2" "@executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2" $$DESTDIR/$${TARGET}.app/Contents/MacOS/$${TARGET}
+    QMAKE_POST_LINK += && install_name_tool -change "@rpath/SDL2.framework/Versions/A/SDL2" "@executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2" $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/MacOS/$${TARGET}
 }
 
 WindowsBuild {

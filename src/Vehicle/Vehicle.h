@@ -233,7 +233,7 @@ public:
             JoystickManager*        joystickManager);
 //<<<<<<< HEAD
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     Vehicle(BTSerialLink*          link,
             int                     vehicleId,
             int                     defaultComponentId,
@@ -490,7 +490,7 @@ public:
     /// Returns the highest quality link available to the Vehicle. If you need to hold a reference to this link use
     /// LinkManager::sharedLinkInterfaceForGet to get QSharedPointer for link.
     LinkInterface* priorityLink(void) { return _priorityLink.data(); }
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     QObject* priorityLinkBLE(void);
     
 #endif
@@ -498,12 +498,12 @@ public:
     /// Sends a message to the specified link
     /// @return true: message sent, false: Link no longer connected
     bool sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     bool sendMessageOnLink(BTSerialLink* link, mavlink_message_t message);
 #endif
 
     
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     /// Sends a message to the priority link
     /// @return true: message sent, false: Link no longer connected
     bool sendMessageOnPriorityLink(mavlink_message_t message) { return sendMessageOnLink(priorityLink(), message); }
@@ -661,7 +661,7 @@ public:
     static const int cMaxRcChannels = 18;
 
     bool containsLink(LinkInterface* link) { return _links.contains(link); }
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     bool containsLinkConfig(QString& linkConfigName);
 #endif
     /*
@@ -749,7 +749,7 @@ public:
     /// Vehicle is about to be deleted
     void prepareDelete();
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void setAirFrameType(int airFrameType);
     int getAirFrameType();
     void disconnected();
@@ -850,7 +850,7 @@ signals:
 private slots:
     void _mavlinkMessageReceived(LinkInterface* link, mavlink_message_t message);
 //<<<<<<< HEAD
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void _mavlinkMessageReceived(BTSerialLink* link, mavlink_message_t message);
     void _linkInactiveOrDeleted(BTSerialLink* link);
 
@@ -869,7 +869,7 @@ private slots:
     //void _sendMessage(mavlink_message_t message);
 //=======
 //>>>>>>> master
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void _sendMessageOnLink(BTSerialLink* link, mavlink_message_t message);
 #endif
     void _sendMessageOnLink(LinkInterface* link, mavlink_message_t message);
@@ -909,7 +909,7 @@ private:
     bool _containsLink(LinkInterface* link);
     void _addLink(LinkInterface* link);
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     bool _containsLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
     
@@ -934,7 +934,7 @@ private:
     void _handleCommandLong(mavlink_message_t& message);
     void _handleAutopilotVersion(LinkInterface* link, mavlink_message_t& message);
     void _handleProtocolVersion(LinkInterface* link, mavlink_message_t& message);
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void _handleAutopilotVersion(BTSerialLink* link, mavlink_message_t& message);
     void _handleProtocolVersion(BTSerialLink* link, mavlink_message_t& message);
 #endif
@@ -988,7 +988,7 @@ private:
     /// This way Link deletion works correctly.
     //QList<SharedLinkInterface> _links;
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     QList<BTSerialLink*> _blelinks;
 #endif
 //=======

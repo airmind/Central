@@ -35,12 +35,12 @@
 //<<<<<<< HEAD
 //<<<<<<< account //switch 7
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 #include "BTSerialLink.h"
 #include <QtNetwork>
 #endif
 
-#if defined(_BLE_DEBUG_) && defined(__mindskin__) && defined(__ios__)
+#if defined(_BLE_DEBUG_) && defined(__DRONETAG_BLE__) && defined(__ios__)
 #include "BLEDebugTextView.h"
 #endif
 
@@ -120,12 +120,11 @@ public:
     const QList<SerialLink*> getSerialLinks();
 #endif
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     //BTSerialLink* getlink();
     //const QList<BTSerialLink*> getBTSerialLinks();
     QmlObjectListModel* getBTSeriallinks               (void) { return &_blelinks; }
 
-#if defined(__ios__)||defined(__android__)
     //for link operation call backs;
     void setCallbackDelegate(void*);
     bool discoverBTLinks(void * delegate);
@@ -158,12 +157,11 @@ public:
     
     /// use Qt signal instead ?
     void didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_list);
-#endif
 
 #if defined(_BLE_DEBUG_) && defined(__ios__)
     BLEDebugTextView* openDebugView();
 #endif
-#endif //_mindskin__
+#endif //_DRONETAG_BLE__
     
     void setConnectionsSuspended(QString reason);
 
@@ -184,7 +182,7 @@ public:
     /// Returns true if the link manager is holding this link
     //bool containsLink(LinkInterface* link);
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     //bool containsLink(BTSerialLink* link);
 #endif
     
@@ -213,7 +211,7 @@ public:
     void _addLink(LinkInterface* link);
 
 //<<<<<<< HEAD
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void _deleteLink(BTSerialLink* link);
     void _addLink(BTSerialLink* link);
 #endif
@@ -270,7 +268,7 @@ signals:
 //<<<<<<< HEAD
     void linkConfigurationChanged();
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void newLink(BTSerialLink* link);
     void linkDeleted(BTSerialLink* link);
     void linkConnected(BTSerialLink* link);
@@ -278,7 +276,6 @@ signals:
     
     void linkDisconnected(BTSerialLink* link);
     //new signal for discovering;
- #if defined(__ios__) || defined(__android__)
     void peripheralsDiscovered(void* inrangelist, void* outrangelist);
     void bleLinkRSSIUpdated (BTSerialLink* link, int rssi);
     // New vehicle has been seen on the link.
@@ -295,7 +292,6 @@ signals:
     void radioLinkGetIntoRange(BTSerialLink* link, int rssi);
     
 
-#endif
 #endif
 //=======
 
@@ -320,7 +316,7 @@ private slots:
     void _activeLinkCheck(void);
 #endif
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void _bleLinkConnected(void);
     void _bleLinkDisconnected(void);
 #endif
@@ -337,7 +333,7 @@ private:
     void _removeConfiguration(LinkConfiguration* config);
     //bool _setAutoconnectWorker(bool& currentAutoconnect, bool newAutoconnect, const char* autoconnectKey);
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     int _registerTrialConnect(BTSerialLink* blelink);
     bool _removeTrialConnect(BTSerialLink* blelink);
 
@@ -349,7 +345,7 @@ private:
 #endif
 //<<<<<<< HEAD
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     BLEHelper* blehelper = NULL;
 #endif
     
@@ -392,7 +388,7 @@ private:
     QmlObjectListModel  _autoconnectConfigurations;
 */
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     //BTSerialLink is not a Qthread, so need to be handled seperately.
     //QList<BTSerialLink*> _blelinks;
     //QMutex                      _bleLinkListMutex;         ///< Mutex for thread safe access to _blelinks list

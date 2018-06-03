@@ -7,14 +7,14 @@
 # License terms set in COPYING.md
 # -------------------------------------------------
 
-exists($${OUT_PWD}/qgroundcontrol.pro) {
-    error("You must use shadow build (e.g. mkdir build; cd build; qmake ../qgroundcontrol.pro).")
+exists($${OUT_PWD}/mindskin.pro) {
+    error("You must use shadow build (e.g. mkdir build; cd build; qmake ../mindskin.pro).")
 }
 
 message(Qt version $$[QT_VERSION])
 
 !equals(QT_MAJOR_VERSION, 5) | !greaterThan(QT_MINOR_VERSION, 6) {
-    error("Unsupported Qt version, 5.7+ is required")
+    error("Unsupported Qt version, 5.9.2+ is required")
 }
 
 include(QGCCommon.pri)
@@ -24,9 +24,9 @@ TEMPLATE = app
 QGCROOT  = $$absolute_path($$PWD)
 
 DebugBuild {
-    DESTDIR  = $${OUT_PWD}/debug
+    DESTDIR  = $${OUT_PWD}/bin/debug
 } else {
-    DESTDIR  = $${OUT_PWD}/release
+    DESTDIR  = $${OUT_PWD}/bin/release
 }
 
 #
@@ -34,9 +34,10 @@ DebugBuild {
 #
 
 MacBuild {
-    QMAKE_INFO_PLIST    = Custom-Info.plist
+    QMAKE_INFO_PLIST    = MindSkin_macx.plist
     ICON                = $${BASEDIR}/resources/icons/macx.icns
-    OTHER_FILES        += Custom-Info.plist
+    ICON_BUNDLE_NAME    = macx.icns
+    OTHER_FILES        += MindSkin_macx.plist
     equals(QT_MAJOR_VERSION, 5) | greaterThan(QT_MINOR_VERSION, 5) {
         LIBS           += -framework ApplicationServices
     }
@@ -255,9 +256,9 @@ ReleaseBuild {
 #
 
 MacBuild {
-    QMAKE_INFO_PLIST    = Custom-Info.plist
+    QMAKE_INFO_PLIST    = MindSkin_macx.plist
     ICON                = $${BASEDIR}/resources/icons/macx.icns
-    OTHER_FILES        += Custom-Info.plist
+    OTHER_FILES        += MindSkin_macx.plist
 equals(QT_MAJOR_VERSION, 5) | greaterThan(QT_MINOR_VERSION, 5) {
     LIBS               += -framework ApplicationServices
 }
@@ -334,7 +335,7 @@ CustomBuild {
         message("Using custom qgroundcontrol.qrc")
         RESOURCES += $$PWD/custom/qgroundcontrol.qrc
     } else {
-        RESOURCES += $$absolute_path($$PWD)/qgroundcontrol.qrc
+        RESOURCES += $$PWD/qgroundcontrol.qrc
     }
     exists($$PWD/custom/qgcresources.qrc) {
         message("Using custom qgcresources.qrc")
@@ -347,8 +348,8 @@ CustomBuild {
     DEFINES += QGC_ORG_NAME=\"\\\"DroneTag.org\\\"\"
     DEFINES += QGC_ORG_DOMAIN=\"\\\"org.dronetag\\\"\"
     RESOURCES += \
-        $$absolute_path($$PWD)/qgroundcontrol.qrc \
-        $$absolute_path($$PWD)/qgcresources.qrc
+        $$PWD/qgroundcontrol.qrc \
+        $$PWD/qgcresources.qrc
 }
 
 # On Qt 5.9 android versions there is the following bug: https://bugreports.qt.io/browse/QTBUG-61424
@@ -366,7 +367,7 @@ equals(QT_MAJOR_VERSION, 5):equals(QT_MINOR_VERSION, 9):AndroidBuild {
 
 DebugBuild {
     # Unit Test resources
-    RESOURCES += UnitTest.qrc
+     RESOURCES += UnitTest.qrc
 }
 
 DEPENDPATH += \
@@ -452,7 +453,7 @@ SOURCES += \
 #
 
 DebugBuild { PX4FirmwarePlugin { PX4FirmwarePluginFactory  { APMFirmwarePlugin { APMFirmwarePluginFactory { !MobileBuild {
-    DEFINES += UNITTEST_BUILD
+     DEFINES += UNITTEST_BUILD
 
     INCLUDEPATH += \
         src/qgcunittest

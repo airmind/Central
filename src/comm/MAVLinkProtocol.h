@@ -25,7 +25,7 @@
 #include "QGCTemporaryFile.h"
 #include "QGCToolbox.h"
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 //#include "BTSerialLink.h"
 class BTSerialLink;
 #endif
@@ -96,7 +96,7 @@ public:
      */
     virtual void resetMetadataForLink(LinkInterface *link);
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void resetMetadataForLink(const BTSerialLink *link);
     void linkConnected(BTSerialLink* link);
     void linkDisconnected(BTSerialLink* link);
@@ -114,7 +114,7 @@ public slots:
     /** @brief Receive bytes from a communication interface */
     void receiveBytes(LinkInterface* link, QByteArray b);
     
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void receiveBytes(BTSerialLink* link, QByteArray b);
 #endif
     
@@ -171,7 +171,7 @@ signals:
     /// Heartbeat received on link
     void vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType);
 #endif
     
@@ -200,7 +200,7 @@ signals:
      */
     void radioStatusChanged(LinkInterface* link, unsigned rxerrors, unsigned fixed, int rssi, int remrssi,
     unsigned txbuf, unsigned noise, unsigned remnoise);
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     void radioStatusChanged(BTSerialLink* link, unsigned rxerrors, unsigned fixed, unsigned rssi, unsigned remrssi,
                             unsigned txbuf, unsigned noise, unsigned remnoise);
     
@@ -228,7 +228,7 @@ private:
     void _sendMessage(LinkInterface* link, mavlink_message_t message);
     void _sendMessage(LinkInterface* link, mavlink_message_t message, quint8 systemid, quint8 componentid);
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
     /** @brief Send MAVLink message */
     void _sendMessage(BTSerialLink* link, mavlink_message_t message);
     /** @brief Send MAVLink message with correct system / component ID */

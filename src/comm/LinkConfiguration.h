@@ -50,7 +50,7 @@ public:
         TypeSerial,     ///< Serial Link
 #endif
         
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
         TypeBLESerial,     ///< Bluetooth Serial Link
 #endif
         TypeUdp,        ///< UDP Link

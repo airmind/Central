@@ -98,7 +98,7 @@ LinkManager::LinkManager(QGCApplication* app, QGCToolbox* toolbox)
 
 LinkManager::~LinkManager()
 {
-#if defined(__mindskin__) && defined(__ios__)
+#if defined(__DRONETAG_BLE__) && defined(__ios__)
     delete blehelper;
 #endif
 }
@@ -169,17 +169,16 @@ void LinkManager::setToolbox(QGCToolbox *toolbox)
 
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 //for BT LE;
 bool LinkManager::discoverBTLinks(void* delegate) {
-    #ifdef __ios__
+    #ifndef __android__
         if (blehelper == NULL) {
             //create blehelper object;
             blehelper = new BLEHelper();
         }
         blehelper->discover(delegate);
-    #endif
-    #ifdef __android__
+    #else
         Q_UNUSED(delegate);
         QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "discover", "(V)V" );
         cleanJavaException();
@@ -188,10 +187,9 @@ bool LinkManager::discoverBTLinks(void* delegate) {
 }
 
 bool LinkManager::stopScanning() {
-    #ifdef __ios__
+    #ifndef __android__
         blehelper->stopScanning();
-    #endif
-    #ifdef __android__
+    #else
         QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "stopScanning", "(V)V" );
         cleanJavaException();
     #endif
@@ -199,13 +197,12 @@ bool LinkManager::stopScanning() {
 }
 
 void LinkManager::setCallbackDelegate(void* delegate) {
-    #ifdef __ios__
+    #ifndef __android__
         if(blehelper==NULL) {
             blehelper = new BLEHelper();
         }
         blehelper->setCallbackDelegate(delegate);
-    #endif
-    #ifdef __android__
+    #else
             Q_UNUSED(delegate);
     #endif
 }
@@ -216,13 +213,7 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
     BTSerialLink* blelink = new BTSerialLink((BTSerialConfiguration*)config, _mavlinkProtocol);
     
     if(blelink) {
-#ifdef __android__
-        __android_log_print(ANDROID_LOG_INFO, kJTag, "createConnectedBLELink to add ble-link");
-        _addLink(blelink);
-        blelink->_connect();
-#endif
-
-#ifdef __ios__
+#ifndef __android__
         //check if existing link;
         if (_blelinks.contains(blelink)) {
             return blelink;
@@ -292,6 +283,10 @@ BTSerialLink* LinkManager::createConnectedBLELink(BTSerialConfiguration* config)
             return blelink;
             
         }
+#else
+        __android_log_print(ANDROID_LOG_INFO, kJTag, "createConnectedBLELink to add ble-link");
+        _addLink(blelink);
+        blelink->_connect();
 #endif
     }
     return blelink;
@@ -438,12 +433,11 @@ bool LinkManager::disconnectLink(BTSerialLink* link) {
 }
 
 //new signal - have a try;
-#if defined(__ios__) || defined(__android__)
 void LinkManager::didDiscoverBLELinks(void* inrangelist, void* outrangelist) {
     //inrangelist/outrangelist have platform dependent types so can not use directly in implementation. needs type conversion.
     emit peripheralsDiscovered(inrangelist, outrangelist);
 }
-#endif
+
 
 void LinkManager::didConnectBLEHardware(QString peripheralUUID) {
     bool found=false;
@@ -550,7 +544,6 @@ void LinkManager::didDisconnectBLELink(BTSerialLink* blelink) {
     emit linkDisconnected(blelink);
 }
 
-#if defined(__ios__)||defined(__android__)
 void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_list) {
     Q_ASSERT(peripheral_link_list);
     
@@ -651,7 +644,6 @@ void LinkManager::didUpdateConnectedBLELinkRSSI(QList<QString>* peripheral_link_
     
     //emit bleLinkRSSIUpdated (peripheral_link_list);
 }
-#endif
 #endif
 
 
@@ -768,7 +760,7 @@ void LinkManager::_addLink(LinkInterface* link)
     }
 
 
-#ifndef __mindskin__  //?__ios__
+#ifndef __DRONETAG_BLE__  //?__ios__
     connect(link, &LinkInterface::communicationError,   _app,               &QGCApplication::criticalMessageBoxOnMainThread);
     connect(link, &LinkInterface::bytesReceived,        _mavlinkProtocol,   &MAVLinkProtocol::receiveBytes);
     
@@ -799,7 +791,7 @@ void LinkManager::_addLink(LinkInterface* link)
     
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 /*
 
 bool LinkManager::containsLink(BTSerialLink* link) {
@@ -1063,14 +1055,14 @@ void LinkManager::_linkConnected(void)
 void LinkManager::_linkDisconnected(void)
 {
     emit linkDisconnected((LinkInterface*)sender());
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
       #ifdef __android__
         LinkInterface *link = (LinkInterface*)sender();
         if(link != NULL) {
             LinkConfiguration *linkConfig = link->getLinkConfiguration();
             if(linkConfig != NULL) {
 //                if(linkConfig->type() != LinkConfiguration::TypeUdp) {
-                    MSLog("[_linkDisconnected] %s",linkConfig->name().toLatin1().data());
+                    //MSLog("[_linkDisconnected] %s",linkConfig->name().toLatin1().data());
                     QAndroidJniObject jLinkConfigName = QAndroidJniObject::fromString(linkConfig->name());
                     QAndroidJniObject::callStaticMethod<void>( "org/airmind/ble/LinkManager", "disConnected", "(Ljava/lang/String;)V",jLinkConfigName.object<jstring>());
                     cleanJavaException();
@@ -1419,7 +1411,7 @@ QStringList LinkManager::linkTypeStrings(void) const
 #ifndef NO_SERIAL_LINK
         list += "Serial";
 #endif
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
         list += "Bluetooth Low Energy";  ///< Bluetooth Serial Link
 #endif
         list += "UDP";

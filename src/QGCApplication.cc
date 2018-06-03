@@ -33,7 +33,7 @@
 #include <mindskinlog.h>
 #endif
 
-#if defined (__mindskin__) && defined(__ios__)
+#if defined (__mindskin__)
 #include "MindSkinRootView.h"
 #endif
 
@@ -436,7 +436,7 @@ bool QGCApplication::_initForNormalAppBoot(void)
         #ifdef __android__
 //            qDebug()<<"Test from migu";
 //            showMessage("Test from migu");
-            MSLog("to call startMindSkinUI()");
+            //MSLog("to call startMindSkinUI()");
             startMindSkinUI();
         #endif //__android__
     #else //__mindskin__
@@ -514,6 +514,13 @@ void QGCApplication::_initSetting(void){
     }
     
     settings.sync();
+
+    //start BLE scanning from here.
+    connect(toolbox()->linkManager(), &LinkManager::peripheralsDiscovered, MindSkinRootView::sharedInstance(), &MindSkinRootView::showBLEConnectionsView);
+    //qgcApp()->toolbox()->linkManager()->setCallbackDelegate((__bridge void *)self);
+    toolbox()->linkManager()->discoverBTLinks(NULL); /*add a threshold value?*/
+
+
     
     qDebug() << "Call ended";
 

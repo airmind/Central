@@ -25,6 +25,10 @@ public:
 
 public slots:
     void receiveMessage(LinkInterface* link,mavlink_message_t message);
+#ifdef __DRONETAG_BLE__
+    void receiveMessage(BTSerialLink* link,mavlink_message_t message);
+#endif
+
     /** @brief Clear all messages */
     void clearView();
     /** @brief Update view */

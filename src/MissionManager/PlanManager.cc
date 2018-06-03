@@ -154,7 +154,7 @@ void PlanManager::_requestList(void)
     _clearMissionItems();
 
     _dedicatedLink = _vehicle->priorityLink();
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     mavlink_msg_mission_request_list_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                                qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
                                                _dedicatedLink->mavlinkChannel(),
@@ -303,7 +303,7 @@ void PlanManager::_readTransactionComplete(void)
     qCDebug(PlanManagerLog) << "_readTransactionComplete read sequence complete";
     
     mavlink_message_t message;
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     mavlink_msg_mission_ack_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                       qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
                                       _dedicatedLink->mavlinkChannel(),
@@ -386,7 +386,7 @@ void PlanManager::_requestNextMissionItem(void)
 
     qCDebug(PlanManagerLog) << QStringLiteral("_requestNextMissionItem %1 sequenceNumber:retry").arg(_planTypeString()) << _itemIndicesToRead[0] << _retryCount;
     mavlink_message_t message;
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     if (_vehicle->capabilityBits() & MAV_PROTOCOL_CAPABILITY_MISSION_INT) {
         mavlink_msg_mission_request_int_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                                   qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
@@ -611,7 +611,7 @@ void PlanManager::_handleMissionRequest(const mavlink_message_t& message, bool m
     qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionRequest %1 sequenceNumber:command").arg(_planTypeString()) << missionRequest.seq << item->command();
 
     mavlink_message_t   messageOut;
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     if (missionItemInt) {
         mavlink_msg_mission_item_int_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                                qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),
@@ -1031,7 +1031,7 @@ void PlanManager::_removeAllWorker(void)
     emit progressPct(0);
 
     _connectToMavlink();
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     _dedicatedLink = _vehicle->priorityLink();
     mavlink_msg_mission_clear_all_pack_chan(qgcApp()->toolbox()->mavlinkProtocol()->getSystemId(),
                                             qgcApp()->toolbox()->mavlinkProtocol()->getComponentId(),

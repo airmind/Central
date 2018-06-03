@@ -69,7 +69,7 @@ void MultiVehicleManager::setToolbox(QGCToolbox *toolbox)
    QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
    qmlRegisterUncreatableType<MultiVehicleManager>("QGroundControl.MultiVehicleManager", 1, 0, "MultiVehicleManager", "Reference only");
     
-#ifndef __mindskin__
+#ifndef __DRONETAG_BLE__
     connect(_mavlinkProtocol, &MAVLinkProtocol::vehicleHeartbeatInfo, this, &MultiVehicleManager::_vehicleHeartbeatInfo);
 #else 
 //    #ifdef __ios__
@@ -173,7 +173,7 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
 }
 
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 
 void MultiVehicleManager::_vehicleHeartbeatInfo(BTSerialLink* link, int vehicleId, int componentId, int vehicleMavlinkVersion, int vehicleFirmwareType, int vehicleType)
 {
@@ -515,7 +515,7 @@ Vehicle* MultiVehicleManager::getVehicleById(int vehicleId)
     return NULL;
 }
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 Vehicle* MultiVehicleManager::getVehicleByLinkConfigName(QString linkConfigName) {
     for (int i=0; i< _vehicles.count(); i++) {
         Vehicle* vehicle = qobject_cast<Vehicle*>(_vehicles[i]);

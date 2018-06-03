@@ -1,6 +1,8 @@
 #include "QGCMAVLink.h"
 #include "MAVLinkDecoder.h"
-
+#ifdef __DRONETAG_BLE__
+#include "BTSerialLink.h"
+#endif
 #include <QDebug>
 
 MAVLinkDecoder::MAVLinkDecoder(MAVLinkProtocol* protocol) :
@@ -39,10 +41,13 @@ MAVLinkDecoder::MAVLinkDecoder(MAVLinkProtocol* protocol) :
     textMessageFilter.insert(MAVLINK_MSG_ID_NAMED_VALUE_FLOAT, false);
     textMessageFilter.insert(MAVLINK_MSG_ID_NAMED_VALUE_INT, false);
 //    textMessageFilter.insert(MAVLINK_MSG_ID_HIGHRES_IMU, false);
-
+#ifndef __DRONETAG_BLE__
     connect(protocol, &MAVLinkProtocol::messageReceived, this, &MAVLinkDecoder::receiveMessage);
+#else
+    connect(protocol, static_cast<void (MAVLinkProtocol::*)(LinkInterface*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this,static_cast<void (MAVLinkDecoder::*)(LinkInterface*, mavlink_message_t)>(&MAVLinkDecoder::receiveMessage));
+    connect(protocol, static_cast<void (MAVLinkProtocol::*)(BTSerialLink*, mavlink_message_t)>(&MAVLinkProtocol::messageReceived), this,static_cast<void (MAVLinkDecoder::*)(BTSerialLink*, mavlink_message_t)>(&MAVLinkDecoder::receiveMessage));
+#endif
     connect(this, &MAVLinkDecoder::finish, this, &QThread::quit);
-
     start(LowestPriority);
 }
 
@@ -110,6 +115,63 @@ void MAVLinkDecoder::receiveMessage(LinkInterface* link,mavlink_message_t messag
     // Send out combined math expressions
     // FIXME XXX TODO
 }
+
+#ifdef __DRONETAG_BLE__
+void MAVLinkDecoder::receiveMessage(BTSerialLink* link,mavlink_message_t message)
+{
+    Q_UNUSED(link);
+    
+    uint32_t msgid = message.msgid;
+    const mavlink_message_info_t* msgInfo = mavlink_get_message_info(&message);
+    if(!msgInfo) {
+        qWarning() << "Invalid MAVLink message received. ID:" << msgid;
+        return;
+    }
+    
+    msgDict[message.msgid] = message;
+    
+    // Store an arrival time for this message. This value ends up being calculated later.
+    quint64 time = 0;
+    
+    // The SYSTEM_TIME message is special, in that it's handled here for synchronizing the QGC time with the remote time.
+    if (message.msgid == MAVLINK_MSG_ID_SYSTEM_TIME)
+    {
+        mavlink_system_time_t timebase;
+        mavlink_msg_system_time_decode(&message, &timebase);
+        sysDict[msgid].onboardTimeOffset = (timebase.time_unix_usec+500)/1000 - timebase.time_boot_ms;
+        sysDict[msgid].onboardToGCSUnixTimeOffsetAndDelay  = static_cast<qint64>(QGC::groundTimeMilliseconds() - (timebase.time_unix_usec+500)/1000);
+    }
+    else
+    {
+        
+        // See if first value is a time value and if it is, use that as the arrival time for this data.
+        uint8_t fieldid = 0;
+        uint8_t* m = (uint8_t*)(msgDict[msgid].payload64);
+        
+        if (QString(msgInfo->fields[fieldid].name) == QString("time_boot_ms") && msgInfo->fields[fieldid].type == MAVLINK_TYPE_UINT32_T)
+        {
+            time = *((quint32*)(m+msgInfo->fields[fieldid].wire_offset));
+        }
+        else if (QString(msgInfo->fields[fieldid].name).contains("usec") && msgInfo->fields[fieldid].type == MAVLINK_TYPE_UINT64_T)
+        {
+            time = *((quint64*)(m+msgInfo->fields[fieldid].wire_offset));
+            time = (time+500)/1000; // Scale to milliseconds, round up/down correctly
+        }
+    }
+    
+    // Align UAS time to global time
+    time = getUnixTimeFromMs(message.sysid, time);
+    
+    // Send out all field values for this message
+    for (unsigned int i = 0; i < msgInfo->num_fields; ++i)
+    {
+        emitFieldValue(&message, i, time);
+    }
+    
+    // Send out combined math expressions
+    // FIXME XXX TODO
+}
+#endif
 
 quint64 MAVLinkDecoder::getUnixTimeFromMs(int systemID, quint64 time)
 {

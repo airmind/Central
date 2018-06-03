@@ -1,30 +1,40 @@
 MobileBuild {
     CONFIG += __mindskin__
 }
+
+MacBuild {
+    CONFIG += __mindskin__
+}
+
+CONFIG += __DRONETAG_BLE__
 # CONFIG += __remotehead__
-# CONFIG += __dronetag__
+
+# Airmind - BLE
+__DRONETAG_BLE__ {
+    message ("Use DroneTag BLE config")
+    DEFINES += __DRONETAG_BLE__
+}
 
 # Airmind - mind skin
 __mindskin__ {
-    message ("Use mind skin")
+    message ("Use mind skin config")
+    !contains (DEFINES, __DRONETAG_BLE__) {
+        message ("BLE support is mandatory for mindskin config")
+        DEFINES += __DRONETAG_BLE__
+    }
 
     DebugBuild {
         DEFINES += _BLE_DEBUG_
     }
 
-    __dronetag__ {
-        DEFINES += __dronetag__
-    }
+#    __dronetag__ {
+#        DEFINES += __dronetag__
+#    }
 
     DEFINES += __mindskin__
     DEFINES += __mindskin_DEBUG__
 #exclusive macro
     DEFINES -= __remotehead__
-}
-
-# Airmind - BLE
-contains (DEFINES, __mindble__) {
-    message ("Enable BLE")
 }
 
 # Airmind - Remote Head

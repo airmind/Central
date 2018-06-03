@@ -18,7 +18,7 @@
 #ifndef NO_SERIAL_LINK
 #include "SerialLink.h"
 #endif
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
 #include "BTSerialLink.h"
 #endif
 
@@ -88,7 +88,7 @@ LinkConfiguration* LinkConfiguration::createSettings(int type, const QString& na
             config = new SerialConfiguration(name);
             break;
 #endif
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
         case LinkConfiguration::TypeBLESerial:
             config = new BTSerialConfiguration(name);
             break;
@@ -132,7 +132,7 @@ LinkConfiguration* LinkConfiguration::duplicateSettings(LinkConfiguration* sourc
             break;
 #endif
 
-#ifdef __mindskin__
+#ifdef __DRONETAG_BLE__
         case TypeBLESerial:
             dupe = new BTSerialConfiguration(dynamic_cast<BTSerialConfiguration*>(source));
             break;
