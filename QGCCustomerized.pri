@@ -12,7 +12,9 @@ MacBuild:__DRONETAG_BLE__ {
 }
 
 MacBuild:__mindskin__ {
-    BUNDLE.files       += $$PWD/BLE/BEEP1C.WAV
+    BUNDLE.files       += $$PWD/BLE/BEEP1C.WAV $$PWD/mindskin/macos/newview.xib
+    BUNDLE.path        = Contents/Resources
+    QMAKE_BUNDLE_DATA  += BUNDLE
     LIBS               += -framework AppKit
     LIBS               += -framework CoreBluetooth
     LIBS               += -framework AudioToolbox
@@ -25,14 +27,14 @@ __DRONETAG_BLE__ {
         BLE/BLE_definitions.h \
 
     iOSBuild {
-        INCLUDEPATH += BLE/ios
+        INCLUDEPATH += BLE/macxios
         HEADERS += \
-        BLE/ios/BTSerialLink_objc.h \
-        BLE/ios/BLELinkConnectionDelegate.h \
-        BLE/ios/qt2ioshelper.h \
+        BLE/macxios/BTSerialLink_objc.h \
+        BLE/macxios/BLELinkConnectionDelegate.h \
+        BLE/macxios/qt2ioshelper.h \
  
         OBJECTIVE_SOURCES += \
-        BLE/ios/BTSerialLink.mm \
+        BLE/macxios/BTSerialLink.mm \
         
         DebugBuild {
             HEADERS += \
@@ -46,14 +48,14 @@ __DRONETAG_BLE__ {
     }
     
     MacBuild {
-        INCLUDEPATH += BLE/ios
+        INCLUDEPATH += BLE/macxios
         HEADERS += \
-        BLE/ios/BTSerialLink_objc.h \
-        BLE/ios/BLELinkConnectionDelegate.h \
-        BLE/ios/qt2ioshelper.h \
+        BLE/macxios/BTSerialLink_objc.h \
+        BLE/macxios/BLELinkConnectionDelegate.h \
+        BLE/macxios/qt2ioshelper.h \
 
         OBJECTIVE_SOURCES += \
-        BLE/ios/BTSerialLink.mm \
+        BLE/macxios/BTSerialLink.mm \
         
         DebugBuild {
             
@@ -97,7 +99,7 @@ __mindskin__ {
     HEADERS += $$PWD/mindskin/mindskinlog.h \
                $$PWD/mindskin/ParameterLoadHelper.h
     iOSBuild {
-        INCLUDEPATH += BLE/ios
+        INCLUDEPATH += BLE/macxios
         HEADERS += \
             mindskin/tagNodesManager.h \
             mindskin/ios/ConnectPopover.h \

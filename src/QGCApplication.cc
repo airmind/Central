@@ -432,25 +432,25 @@ bool QGCApplication::_initForNormalAppBoot(void)
             //launch mindskin;
             MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
             skinroot -> launchMindskinUI();
-        #endif //__ios__
+        #endif
         #ifdef __android__
 //            qDebug()<<"Test from migu";
 //            showMessage("Test from migu");
             //MSLog("to call startMindSkinUI()");
             startMindSkinUI();
-        #endif //__android__
-    #else //__mindskin__
+        #endif
+    #else
         _qmlAppEngine = new QQmlApplicationEngine(this);
         _qmlAppEngine->addImportPath("qrc:/qml");
         _qmlAppEngine->rootContext()->setContextProperty("joystickManager", toolbox()->joystickManager());
         _qmlAppEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
         _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
-    #endif
-#else //__mobile__
+    #endif //__mindskin__
+#else
     // Start the user interface
     MainWindow* mainWindow = MainWindow::_create();
     Q_CHECK_PTR(mainWindow);
-#endif
+#endif //__mobile__
 
     // Now that main window is up check for lost log files
     connect(this, &QGCApplication::checkForLostLogFiles, toolbox()->mavlinkProtocol(), &MAVLinkProtocol::checkForLostLogFiles);
@@ -461,7 +461,6 @@ bool QGCApplication::_initForNormalAppBoot(void)
     
     
 #ifndef __mindskin__ //get into event-loop asap to show messages in mindskin UI;
-    
     if (_settingsUpgraded) {
        settings.clear();
        settings.setValue(_settingsVersionKey, QGC_SETTINGS_VERSION);
@@ -482,6 +481,11 @@ bool QGCApplication::_initForNormalAppBoot(void)
 
     
     settings.sync();
+#else
+#ifndef __mobile__
+    //for mac and linux build using mindskin;
+    _initSetting();
+#endif
 #endif
     
     return true;

@@ -49,6 +49,9 @@ iOSBuild {
 }
 
 MacBuild {
+    # Copy bundle plist file
+    QMAKE_POST_LINK += && cp $${QMAKE_INFO_PLIST} $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/Info.plist
+
     # Update version info in bundle
     QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $${MAC_VERSION}\" $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/Info.plist
     QMAKE_POST_LINK += && /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $${MAC_BUILD}\" $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Contents/Info.plist

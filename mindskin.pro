@@ -34,7 +34,7 @@ DebugBuild {
 #
 
 MacBuild {
-    QMAKE_INFO_PLIST    = MindSkin_macx.plist
+    QMAKE_INFO_PLIST    = $${BASEDIR}/MindSkin_macx.plist
     ICON                = $${BASEDIR}/resources/icons/macx.icns
     ICON_BUNDLE_NAME    = macx.icns
     OTHER_FILES        += MindSkin_macx.plist
@@ -256,7 +256,7 @@ ReleaseBuild {
 #
 
 MacBuild {
-    QMAKE_INFO_PLIST    = MindSkin_macx.plist
+    QMAKE_INFO_PLIST    = $${BASEDIR}/MindSkin_macx.plist
     ICON                = $${BASEDIR}/resources/icons/macx.icns
     OTHER_FILES        += MindSkin_macx.plist
 equals(QT_MAJOR_VERSION, 5) | greaterThan(QT_MINOR_VERSION, 5) {
