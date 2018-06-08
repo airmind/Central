@@ -188,17 +188,17 @@ void MindSkinRootView::showMessage(const QString& msg) {
 -(void)showBLEConnectionsView {
     tagBLEScanningPanel* scanpanel = [tagBLEScanningPanel sharedInstance];
     if (![scanpanel presented]) {
+        NSLog(@"presenting scan panel...");
         NSWindow* rootwin = (NSWindow*)[self getNSViewRootController];
-        
         NSView* rootview = rootwin.contentView;
         NSRect rootrect = [rootview frame];
         NSRect initrect = NSMakeRect(rootrect.origin.x+rootrect.size.width, 60, rootrect.size.width/4, rootrect.size.height-60);
         NSRect destrect = NSMakeRect(rootrect.origin.x+3*rootrect.size.width/4, 60, rootrect.size.width/4, rootrect.size.height-60);
-
         [scanpanel initScanningPanel:initrect];
-        
+        [rootwin addChildWindow:scanpanel ordered:NSWindowAbove];
+        [scanpanel setFrame:initrect display:NO animate:NO];
+
         dispatch_async(dispatch_get_main_queue(), ^{
-            [rootwin addChildWindow:scanpanel ordered:NSWindowAbove];
             [scanpanel setFrame:destrect display:NO animate:YES];
 
         //animate view in;
@@ -238,7 +238,7 @@ void MindSkinRootView::showMessage(const QString& msg) {
         });
 
         [rootwin removeChildWindow:scanpanel];
-        //[scanpanel releaseScanningPanel];
+        [scanpanel release];
 
     }
 }

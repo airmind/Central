@@ -1276,8 +1276,9 @@ NSString* qt2ioshelper::QString2NSString (const QString* qstr) {
             if (p_uuidlist->count() > 0) {
                 refQGCLinkManager->didUpdateConnectedBLELinkRSSI(p_uuidlist);
                 
-                
-                [delegatecontroller didReadConnectedBTLinkRSSI:connectedPeripheral];
+                if (delegatecontroller!=nil) {
+                    [delegatecontroller didReadConnectedBTLinkRSSI:connectedPeripheral];
+                }
             }
             
         });
