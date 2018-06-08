@@ -15,6 +15,7 @@
 #include "ParameterLoadHelper.h"
 #import "BTSerialLink_objc.h"
 #include "mindskinMessageViewController.h"
+#import "tagBLEScanningPanel.h"
 
 /// ///////////////////////////////////////////////
 ///     @brief MindSkinRootView_wrapper
@@ -132,7 +133,6 @@ void MindSkinRootView::showMessage(const QString& msg) {
 
 -(MindSkinRootView_impl_objc*)init {
     self = [super init];
-    tagvc = nil;
     return self;
 }
 
@@ -186,49 +186,20 @@ void MindSkinRootView::showMessage(const QString& msg) {
 }
 
 -(void)showBLEConnectionsView {
-    //tagNodesViewController* tagvc = [tagNodesViewController sharedInstance];
-    if (!tagvc) {
-            //[[NSApplication sharedApplication] orderFrontStandardAboutPanel:nil];
+    tagBLEScanningPanel* scanpanel = [tagBLEScanningPanel sharedInstance];
+    if (![scanpanel presented]) {
         NSWindow* rootwin = (NSWindow*)[self getNSViewRootController];
-        tagvc = [[tagNodesViewController alloc] initWithNibName:@"newview" bundle:[NSBundle mainBundle]];
-        //NSViewController* testvc = [[NSViewController alloc] initWithNibName:@"newview" bundle:nil];
-        [[BLEHelper_objc sharedInstance] setCallbackDelegate:tagvc];
         
         NSView* rootview = rootwin.contentView;
         NSRect rootrect = [rootview frame];
         NSRect initrect = NSMakeRect(rootrect.origin.x+rootrect.size.width, 60, rootrect.size.width/4, rootrect.size.height-60);
         NSRect destrect = NSMakeRect(rootrect.origin.x+3*rootrect.size.width/4, 60, rootrect.size.width/4, rootrect.size.height-60);
 
-        NSVisualEffectView* blurView = [[NSVisualEffectView alloc] initWithFrame:initrect];
-        NSPanel* awin = [[NSPanel alloc] init];
-        awin.floatingPanel = YES;
-        [awin setStyleMask:NSWindowStyleMaskBorderless|NSWindowStyleMaskResizable];
-        
-        awin.contentView = blurView;
-        [awin.contentView setWantsLayer:YES];
-        [awin.contentView setState:NSVisualEffectStateActive];
-        [awin.contentView setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
-        [awin.contentView setMaterial:NSVisualEffectMaterialDark];
-
-        //[awin.contentView addSubview:tagvc.view];
-
-        NSRect frame = NSMakeRect(800, 600, 90, 40);
-        NSButton* pushButton = [[NSButton alloc] initWithFrame: frame];
-        pushButton.bezelStyle = NSRoundedBezelStyle;
-        [rootview addSubview:pushButton];
-
-        //[awin.contentView addSubview:pushButton];
+        [scanpanel initScanningPanel:initrect];
         
         dispatch_async(dispatch_get_main_queue(), ^{
-            /*[rootwin beginSheet:awin completionHandler: {
-                
-            }];*/
-            [awin setFrame:initrect display:NO animate:NO];
-            //NSRect tagframe = NSMakeRect(200, 200, 400, 400);
-            [awin.contentView addSubview:tagvc.view];
-
-            [rootwin addChildWindow:awin ordered:NSWindowAbove];
-            [awin setFrame:destrect display:NO animate:YES];
+            [rootwin addChildWindow:scanpanel ordered:NSWindowAbove];
+            [scanpanel setFrame:destrect display:NO animate:YES];
 
         //animate view in;
             /*
@@ -246,27 +217,30 @@ void MindSkinRootView::showMessage(const QString& msg) {
 }
 
 -(void)dismissBLEConnectionsView {
-    //NSViewController* rootcontroller = (NSViewController*)[self getNSViewRootController];
-    NSView* rootview = (NSView*)[self getNSViewRootController];
-    tagNodesViewController* tagvc = [tagNodesViewController sharedInstance];
-    
-    CGRect rootrect = [rootview frame];
-    CGRect destrect = CGRectMake(rootrect.origin.x+rootrect.size.width, 60, rootrect.size.width/4, rootrect.size.height-60);
+    tagBLEScanningPanel* scanpanel = [tagBLEScanningPanel sharedInstance];
+    if ([scanpanel presented]) {
+        NSWindow* rootwin = (NSWindow*)[self getNSViewRootController];
 
-    if ([tagvc isPresented]) {
+        NSRect rootrect = [rootwin.contentView frame];
+        NSRect destrect = NSMakeRect(rootrect.origin.x+rootrect.size.width, 60, rootrect.size.width/4, rootrect.size.height-60);
+
         //animate view out;
-        CGRect viewFrame = [self.view frame];
         dispatch_async(dispatch_get_main_queue(), ^{
+            [scanpanel setFrame:destrect display:NO animate:YES];
+/*
             [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
                 context.duration = 0.5;
                 [tagvc.view setFrame:destrect];
             }
                             completionHandler:^{
                              }];
+  */
         });
-        [tagvc.view removeFromSuperview];
-        [tagvc release];
-     }
+
+        [rootwin removeChildWindow:scanpanel];
+        [scanpanel releaseScanningPanel];
+
+    }
 }
 
 

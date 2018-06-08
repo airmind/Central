@@ -11,14 +11,11 @@
 
 #import <AppKit/AppKit.h>
 #include "MindSkinRootView.h"
-#import "tagNodesViewController.h"
 
 @interface MindSkinRootView_impl_objc : NSObject{
     BOOL presented;
     
     NSViewController* skinrootcontroller;
-    tagNodesViewController* tagvc;
-
 };
 
 +(MindSkinRootView_impl_objc*) sharedInstance;

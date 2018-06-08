@@ -521,6 +521,8 @@ void QGCApplication::_initSetting(void){
 
     //start BLE scanning from here.
     connect(toolbox()->linkManager(), &LinkManager::peripheralsDiscovered, MindSkinRootView::sharedInstance(), &MindSkinRootView::showBLEConnectionsView);
+    connect(toolbox()->linkManager(), static_cast<void (LinkManager::*)(BTSerialLink*)>(&LinkManager::linkConnected), MindSkinRootView::sharedInstance(), &MindSkinRootView::dismissBLEConnectionsView);
+
     //qgcApp()->toolbox()->linkManager()->setCallbackDelegate((__bridge void *)self);
     toolbox()->linkManager()->discoverBTLinks(NULL); /*add a threshold value?*/
 

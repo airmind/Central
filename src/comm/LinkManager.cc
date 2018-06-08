@@ -496,8 +496,6 @@ void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
     _removeTrialConnect(blelink);
     _addLink(blelink);
     
-    emit linkConnected(blelink);
-    
     BTSerialConfiguration* cfg_curlink = blelink->getLinkConfiguration();
 
     //find next, and connect all pending links on same peripheral one by one;
@@ -519,6 +517,7 @@ void LinkManager::didConnectBLELink(BTSerialLink* blelink) {
         nextblink->_connect();
     }
     else {
+        emit linkConnected(blelink);
         return;
     }
 }
