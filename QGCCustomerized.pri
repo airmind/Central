@@ -149,14 +149,15 @@ __mindskin__ {
         mindskin/macos/mindskinMessageViewController.h\
         mindskin/macos/ParameterLoadHelper_objc.h \
         mindskin/macos/TagNodesUIDelegateHelper.h
+        mindskin/macos/tagBLEScanningPanel.h
 
         OBJECTIVE_SOURCES += \
         mindskin/macos/tagNodesViewController.mm \
         mindskin/macos/MindSkinRootView_impl_objc.mm \
         mindskin/macos/mindskinMessageViewController.mm \
         mindskin/macos/ParameterLoadHelper.mm \
-        mindskin/macos/TagNodesUIDelegateHelper.m
-
+        mindskin/macos/TagNodesUIDelegateHelper.m \
+        mindskin/macos/tagBLEScanningPanel.m
     }
 
 
