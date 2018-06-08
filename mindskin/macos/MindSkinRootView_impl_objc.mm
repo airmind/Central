@@ -238,7 +238,7 @@ void MindSkinRootView::showMessage(const QString& msg) {
         });
 
         [rootwin removeChildWindow:scanpanel];
-        [scanpanel releaseScanningPanel];
+        //[scanpanel releaseScanningPanel];
 
     }
 }
