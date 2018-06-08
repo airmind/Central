@@ -1921,7 +1921,7 @@ void BTSerialLink::setMAVLinkProtocolHandler(MAVLinkProtocol* protocolhandler) {
 
 
 void BTSerialLink::didReadBytes(const char* data, qint64 size) {
-    mavhandler->receiveBytes(this, QByteArray::QByteArray(data, size));
+    mavhandler->receiveBytes(this, QByteArray(data, size));
 }
 
 void BTSerialLink::didConnect() {
