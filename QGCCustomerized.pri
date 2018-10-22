@@ -1,7 +1,7 @@
 iOSBuild:__mindskin__ {
     BUNDLE.files       += $$PWD/mindskin/ios/TagNodesViewController.xib
     BUNDLE.files       += $$PWD/mindskin/ios/RacerMainMenuViewController.xib
-    BUNDLE.files       += $$PWD/BLE/BEEP1C.WAV
+    BUNDLE.files       += $$PWD/BLE/BEEP1C.WAV $$PWD/mindskin/ios/tagBLEScanningView.xib
     LIBS               += -framework CoreBluetooth
     LIBS               += -framework AudioToolbox
 
@@ -102,8 +102,7 @@ __mindskin__ {
         INCLUDEPATH += BLE/macxios
         HEADERS += \
             mindskin/tagNodesManager.h \
-            mindskin/ios/ConnectPopover.h \
-            mindskin/ios/ConnectPopoverViewController.h \
+            mindskin/ios/tagBLEScanningPanel.h \
             mindskin/ios/MindStickButton.h \
             mindskin/ios/MindStickButtonViewController.h \
             mindskin/MindSkinRootView.h \
@@ -112,7 +111,8 @@ __mindskin__ {
             mindskin/ios/mindskinMessageViewController.h \
             mindskin/ios/RacerMainMenuView.h \
             mindskin/ios/RacerMainMenuViewController.h \
-            mindskin/ios/ParameterLoadHelper_objc.h
+            mindskin/ios/ParameterLoadHelper_objc.h \
+            mindskin/ios/TagNodesUIDelegateHelper.h
 
         SOURCES += \
             mindskin/tagNodesManager.cpp \
@@ -120,14 +120,15 @@ __mindskin__ {
             mindskin/mindskinlog.cc \
 
         OBJECTIVE_SOURCES += \
-            mindskin/ios/ConnectPopoverViewController.mm \
+            mindskin/ios/tagBLEScanningPanel.m \
             mindskin/ios/MindStickButtonViewController.mm \
             mindskin/ios/MindSkinRootView_impl_objc.mm \
             mindskin/ios/tagNodesViewController.mm \
             mindskin/ios/mindskinMessageViewController.mm \
             mindskin/ios/RacerMainMenuView.mm \
             mindskin/ios/RacerMainMenuViewController.mm \
-            mindskin/ios/ParameterLoadHelper.mm
+            mindskin/ios/ParameterLoadHelper.mm \
+            mindskin/ios/TagNodesUIDelegateHelper.m
 
         DebugBuild {
             HEADERS += \

@@ -626,8 +626,8 @@
         
         //get tag node system ID;
         //Load Flight controller UI;
-        tagNodeInfoViewController* tagInfovc = [[tagNodeInfoViewController alloc] initWithNibName:@"tagNodeInfoViewController" bundle:nil];
-        [self presentViewController:tagInfovc animated:YES completion:nil];
+        //tagNodeInfoViewController* tagInfovc = [[tagNodeInfoViewController alloc] initWithNibName:@"tagNodeInfoViewController" bundle:nil];
+        //[self presentViewController:tagInfovc animated:YES completion:nil];
         
     }
     else {

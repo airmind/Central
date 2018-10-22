@@ -430,6 +430,8 @@ bool QGCApplication::_initForNormalAppBoot(void)
 
         #ifdef __ios__
             //launch mindskin;
+            //mixed UI;
+            _qmlAppEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
             MindSkinRootView* skinroot = MindSkinRootView::sharedInstance();
             skinroot -> launchMindskinUI();
         #endif

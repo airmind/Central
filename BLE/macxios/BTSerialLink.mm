@@ -1034,7 +1034,6 @@ NSString* qt2ioshelper::QString2NSString (const QString* qstr) {
     
 }
 
-
 -(void)dealloc{
     NSLog(@"ble helper dealloced...");
     if (discoveredPeripherals!=nil) {
@@ -1076,6 +1075,7 @@ NSString* qt2ioshelper::QString2NSString (const QString* qstr) {
     
     if (RSSI.integerValue > -15) {
         //not reasonable value, simply return;
+        NSLog(@"BLE RSSI abnormal - too high");
         return;
     }
 

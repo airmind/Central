@@ -65,7 +65,9 @@ ParameterManager::ParameterManager(Vehicle* vehicle)
     , _initialLoadComplete(false)
     , _waitingForDefaultComponent(false)
     , _saveRequired(false)
+#ifndef __DRONETAG_BLE__
     , _logReplay(vehicle->priorityLink() && vehicle->priorityLink()->isLogReplay())
+#endif
     , _parameterSetMajorVersion(-1)
     , _parameterMetaData(NULL)
     , _prevWaitingReadParamIndexCount(0)
@@ -77,7 +79,18 @@ ParameterManager::ParameterManager(Vehicle* vehicle)
     , _totalParamCount(0)
 {
     _versionParam = vehicle->firmwarePlugin()->getVersionParam();
-
+#ifdef __DRONETAG_BLE__
+    QObject* vlink = vehicle->priorityLinkBLE();
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        _logReplay=((LinkInterface*)vlink)->isLogReplay();
+    }
+    else if(dynamic_cast<BTSerialLink*>(vlink)){
+        _logReplay = ((BTSerialLink*)vlink)->isLogReplay();
+    }
+    else {
+        _logReplay = false;
+    }
+#endif
     if (_vehicle->isOfflineEditingVehicle()) {
         _loadOfflineEditingParams();
         return;
@@ -456,18 +469,17 @@ void ParameterManager::refreshAllParameters(uint8_t componentId)
     if (_logReplay) {
         return;
     }
-
+    
     _dataMutex.lock();
-
+ 
     if (!_initialLoadComplete) {
         _initialRequestTimeoutTimer.start();
     }
 
-#ifdef __DRONETAG_BLE__
     if(componentId == MAV_COMP_ID_ALL) {
         _totalParamCount = 0;
     }
-#endif
+
     // Reset index wait lists
     foreach (int cid, _paramCountMap.keys()) {
         // Add/Update all indices to the wait list, parameter index is 0-based

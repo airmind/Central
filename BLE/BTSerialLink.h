@@ -273,14 +273,13 @@ public slots:
     void didReadBytes(const char* data, qint64 size);
     void didConnect();
     void didDisconnect();
-    
+    virtual bool isLogReplay(void) { return false; }
+
 protected slots:
     void _socketError(QAbstractSocket::SocketError socketError);
     
 
     virtual void readBytes(void);
-    
-    virtual bool isLogReplay(void) { return false; }
     
     /// Sets the mavlink channel to use for this link
     void _setMavlinkChannel(uint8_t channel) { Q_ASSERT(!_mavlinkChannelSet); _mavlinkChannelSet = true; _mavlinkChannel = channel; }

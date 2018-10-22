@@ -15,6 +15,7 @@
 #include "qt2ioshelper.h"
 #include "QGCApplication.h"
 #include "ParameterLoadHelper.h"
+#import "tagBLEScanningPanel.h"
 
 #import "mindskinMessageViewController.h"
 
@@ -33,7 +34,9 @@ public:
     ~MindSkinRootView_wrapper();
     
     void presentMindSkinRootUI();
-    
+    void showBLEConnectionsView();
+    void dismissBLEConnectionsView();
+
     void showMessage(const QString& msg);
 
     
@@ -51,6 +54,13 @@ void MindSkinRootView_wrapper::presentMindSkinRootUI() {
     [skinroot_objc presentMindSkinRootUI];
 }
 
+void MindSkinRootView_wrapper::showBLEConnectionsView() {
+    [skinroot_objc showBLEConnectionsView];
+}
+
+void MindSkinRootView_wrapper::dismissBLEConnectionsView() {
+    [skinroot_objc dismissBLEConnectionsView];
+}
 
 void MindSkinRootView_wrapper::showMessage(const QString& msg) {
     [skinroot_objc showMessage:(qt2ioshelper::QString2NSString(&msg))];
@@ -80,6 +90,14 @@ MindSkinRootView* MindSkinRootView::sharedInstance() {
 
 void MindSkinRootView::launchMindskinUI(){
     skinroot_wrapper->presentMindSkinRootUI();
+}
+
+void MindSkinRootView::showBLEConnectionsView() {
+    skinroot_wrapper->showBLEConnectionsView();
+}
+
+void MindSkinRootView::dismissBLEConnectionsView() {
+    skinroot_wrapper->dismissBLEConnectionsView();
 }
 
 void MindSkinRootView::shutdown(){
@@ -124,17 +142,25 @@ void MindSkinRootView::showMessage(const QString& msg) {
     
     //present Mindskin UI entry;
     
-#ifdef __dronetag__
+#ifdef __DRONETAG_BLE__
+    //prepare BLE scanning view controller;
+    //do nothing for the moment;
+
+    /*
     UIViewController* tagnodesctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
     skinrootcontroller = tagnodesctlr;
+     
 
     [rootcontroller presentViewController:tagnodesctlr animated:YES completion:^{
         qgcApp()->_initSetting();
-    }];
+    }];*/
+    skinrootcontroller = rootcontroller;
+
+    qgcApp()->_initSetting();
+     
 #else
-    //todo: try to get a link to see if its racer or mindpx
-    //launch racer by default;
-    tagNodesViewController* racermainctlr = [[tagNodesViewController alloc] initWithNibName:@"TagNodesViewController" bundle:nil];
+    
+    tagNodesViewController* tgvc = [[tagNodesViewController alloc] initWithNibName:@"new" bundle:nil];
     CGRect rect = [racermainctlr.view frame];
     
     sideMenuViewController* sidemenunctlr = [[sideMenuViewController alloc] init];
@@ -158,8 +184,68 @@ void MindSkinRootView::showMessage(const QString& msg) {
     [rootcontroller presentViewController:splitViewController animated:YES completion:^{
         qgcApp()->_initSetting();
     }];
+    
 #endif
     
+}
+
+
+-(void)showBLEConnectionsView {
+    tagBLEScanningPanel* scanpanel = [tagBLEScanningPanel sharedInstance];
+    if (![scanpanel presented]) {
+        NSLog(@"presenting scan panel...");
+        UIViewController* rootcontroller = (UIViewController*)[self getUIViewRootController];
+        UIView* rootview = rootcontroller.view;
+        CGRect rootrect = [rootview frame];
+        CGRect initrect = CGRectMake(rootrect.origin.x+rootrect.size.width, 60, rootrect.size.width/4, rootrect.size.height-60);
+        CGRect destrect = CGRectMake(rootrect.origin.x+3*rootrect.size.width/4, 60, rootrect.size.width/4, rootrect.size.height-60);
+        [scanpanel initScanningPanel:initrect];
+        [rootview addSubview:scanpanel.view];
+        [scanpanel.view setFrame:initrect];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [scanpanel.view setFrame:destrect];
+            
+            //animate view in;
+            /*
+             [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+             context.duration = 0.5;
+             [awin setFrame:destrect display:YES animate:NO];
+             }
+             completionHandler:^{
+             }];
+             
+             */
+        });
+    }
+    
+}
+
+-(void)dismissBLEConnectionsView {
+    tagBLEScanningPanel* scanpanel = [tagBLEScanningPanel sharedInstance];
+    if ([scanpanel presented]) {
+        UIViewController* rootcontroller = (UIViewController*)[self getUIViewRootController];
+
+        CGRect rootrect = [rootcontroller.view frame];
+        CGRect destrect = CGRectMake(rootrect.origin.x+rootrect.size.width, 60, rootrect.size.width/4, rootrect.size.height-60);
+        
+        //animate view out;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [scanpanel.view setFrame:destrect];
+            /*
+             [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+             context.duration = 0.5;
+             [tagvc.view setFrame:destrect];
+             }
+             completionHandler:^{
+             }];
+             */
+        });
+        
+        [scanpanel.view removeFromSuperview];
+        [scanpanel release];
+        
+    }
 }
 
 -(UIResponder*)getUIViewRootController {

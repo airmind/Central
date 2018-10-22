@@ -3200,20 +3200,34 @@ void Vehicle::_sendMavCommandAgain(void)
     cmd.target_system = _id;
     cmd.target_component = queuedCommand.component;
     
-#ifdef __DRONETAG_BLE__
-    mavlink_msg_command_long_encode_chan(_mavlink->getSystemId(),
-                                         _mavlink->getComponentId(),
-                                         _blelinks[0]->getMavlinkChannel(),
-                                         &msg,
-                                         &cmd);
-    sendMessageOnLink(_blelinks[0], msg);
-#else
+#ifndef __DRONETAG_BLE__
     mavlink_msg_command_long_encode_chan(_mavlink->getSystemId(),
                                          _mavlink->getComponentId(),
                                          priorityLink()->mavlinkChannel(),
                                          &msg,
                                          &cmd);
     sendMessageOnLink(priorityLink(), msg);
+
+#else
+    QObject* vlink = priorityLinkBLE();
+    if (dynamic_cast<LinkInterface*>(vlink)) {
+        mavlink_msg_command_long_encode_chan(_mavlink->getSystemId(),
+                                             _mavlink->getComponentId(),
+                                             ((LinkInterface*)vlink)->mavlinkChannel(),
+                                             &msg,
+                                             &cmd);
+        sendMessageOnLink((LinkInterface*)vlink, msg);
+        
+    }
+    else {
+        mavlink_msg_command_long_encode_chan(_mavlink->getSystemId(),
+                                             _mavlink->getComponentId(),
+                                             ((BTSerialLink*)vlink)->getMavlinkChannel(),
+                                             &msg,
+                                             &cmd);
+        sendMessageOnLink((BTSerialLink*)vlink, msg);
+    }
+
 #endif
     
 }

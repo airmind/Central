@@ -5,7 +5,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>MindCentral</string>
 	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
+	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIcons</key>
@@ -62,7 +62,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>4</string>
 	<key>ForAppStore</key>
 	<string>YES</string>
 	<key>LSRequiresIPhoneOS</key>
